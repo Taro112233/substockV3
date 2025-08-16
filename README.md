@@ -38,6 +38,7 @@ Directory structure:
     │       └── auth-client.tsx
     ├── components/
     │   ├── BackgroundDecoration.tsx
+    │   ├── CookieDebug.tsx
     │   ├── DemoComponents.tsx
     │   ├── FloatingActionButton.tsx
     │   ├── ShowcaseFooter.tsx

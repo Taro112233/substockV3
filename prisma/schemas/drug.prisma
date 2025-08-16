@@ -1,24 +1,22 @@
 // prisma/schemas/drug.prisma
 // ===== 3. DRUG MASTER SCHEMA =====
 
-// Enhanced Drug Model with Hospital-specific Data
+// Enhanced Drug Model with Hospital-specific Data and Enums
 model Drug {
-  id              String   @id @default(cuid())
-  hospitalDrugCode String  @unique // รหัสยาเฉพาะโรงพยาบาล
-  name            String   // ชื่อยาทางการค้า
-  genericName     String?  // ชื่อสามัญยา
-  dosageForm      String   // รูปแบบยา (เม็ด, แคปซูล, ขวด, หลอด)
-  strength        String?  // ความแรงยา (500mg, 250mg/5ml)
-  unit            String   // หน่วยนับ (เม็ด, ขวด, หลอด, กล่อง)
-  packageSize     String?  // ขนาดบรรจุ (1x100's, 1x500ml)
-  pricePerBox     Float    @default(0) // ราคาต่อกล่อง/หน่วย
-  category        String?  // หมวดหมู่ยา
-  reorderPoint    Int      @default(10) // จุดสั่งซื้อใหม่
-  isActive        Boolean  @default(true)
-  importBatch     String?  // batch ที่ import เข้ามา
-  notes           String?  // หมายเหตุเพิ่มเติม
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id              String       @id @default(cuid())
+  hospitalDrugCode String      @unique // รหัสยาเฉพาะโรงพยาบาล
+  name            String       // ชื่อยาทางการค้า
+  genericName     String?      // ชื่อสามัญยา
+  dosageForm      DosageForm   // รูปแบบยา (enum)
+  strength        String?      // ความแรงยา (500, 250)
+  unit            String       // หน่วยนับ (mg, g, mg/5ml)
+  packageSize     String?      // ขนาดบรรจุ (100's, 500)
+  pricePerBox     Float        @default(0) // ราคาต่อกล่อง/หน่วย
+  category        DrugCategory @default(GENERAL) // หมวดหมู่ยา (enum)
+  isActive        Boolean      @default(true)
+  notes           String?      // หมายเหตุเพิ่มเติม
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
   
   // Relations
   stocks          Stock[]
@@ -29,6 +27,7 @@ model Drug {
   @@index([hospitalDrugCode])
   @@index([name])
   @@index([category])
+  @@index([dosageForm])
   @@index([isActive])
   @@index([genericName])
   @@map("drugs")

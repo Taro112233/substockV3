@@ -1,6 +1,6 @@
 // This file is auto-generated. Do not edit manually.
 // Edit files in prisma/schemas/ directory instead.
-// Last generated: 2025-08-16T10:00:33.449Z
+// Last generated: 2025-08-16T10:49:43.681Z
 // Hospital Pharmacy Stock Management System V3.0
 
 generator client {
@@ -63,6 +63,49 @@ enum TransferStatus {
   CANCELLED   // ยกเลิก
 }
 
+// ===== DRUG-SPECIFIC ENUMS =====
+enum DosageForm {
+  APP    // Applicator
+  BAG    // Bag
+  CAP    // Capsule
+  CR     // Cream
+  DOP    // Drops
+  ENE    // Enema
+  GEL    // Gel
+  HAN    // Hand
+  IMP    // Implant
+  INJ    // Injection
+  LIQ    // Liquid
+  LOT    // Lotion
+  LVP    // Large Volume Parenteral
+  MDI    // Metered Dose Inhaler
+  MIX    // Mixture
+  NAS    // Nasal
+  NB     // Nebule
+  OIN    // Ointment
+  PAT    // Patch
+  POW    // Powder
+  PWD    // Powder (alternate)
+  SAC    // Sachet
+  SOL    // Solution
+  SPR    // Spray
+  SUP    // Suppository
+  SUS    // Suspension
+  SYR    // Syrup
+  TAB    // Tablet
+  TUR    // Tube
+}
+
+enum DrugCategory {
+  REFER           // ยา refer
+  HIGH_ALERT      // ยา High Alert Drug
+  NARCOTIC        // ยา เสพติด
+  REFRIGERATED    // ยา แช่เย็น
+  PSYCHIATRIC     // ยา จิตเวช
+  FLUID           // สารน้ำ
+  GENERAL         // ยาทั่วไป (default)
+}
+
 // ==========================================
 // DRUG - V3.0
 // ==========================================
@@ -70,24 +113,22 @@ enum TransferStatus {
 // prisma/schemas/drug.prisma
 // ===== 3. DRUG MASTER SCHEMA =====
 
-// Enhanced Drug Model with Hospital-specific Data
+// Enhanced Drug Model with Hospital-specific Data and Enums
 model Drug {
-  id              String   @id @default(cuid())
-  hospitalDrugCode String  @unique // รหัสยาเฉพาะโรงพยาบาล
-  name            String   // ชื่อยาทางการค้า
-  genericName     String?  // ชื่อสามัญยา
-  dosageForm      String   // รูปแบบยา (เม็ด, แคปซูล, ขวด, หลอด)
-  strength        String?  // ความแรงยา (500mg, 250mg/5ml)
-  unit            String   // หน่วยนับ (เม็ด, ขวด, หลอด, กล่อง)
-  packageSize     String?  // ขนาดบรรจุ (1x100's, 1x500ml)
-  pricePerBox     Float    @default(0) // ราคาต่อกล่อง/หน่วย
-  category        String?  // หมวดหมู่ยา
-  reorderPoint    Int      @default(10) // จุดสั่งซื้อใหม่
-  isActive        Boolean  @default(true)
-  importBatch     String?  // batch ที่ import เข้ามา
-  notes           String?  // หมายเหตุเพิ่มเติม
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id              String       @id @default(cuid())
+  hospitalDrugCode String      @unique // รหัสยาเฉพาะโรงพยาบาล
+  name            String       // ชื่อยาทางการค้า
+  genericName     String?      // ชื่อสามัญยา
+  dosageForm      DosageForm   // รูปแบบยา (enum)
+  strength        String?      // ความแรงยา (500mg, 250mg/5ml)
+  unit            String       // หน่วยนับ (เม็ด, ขวด, หลอด, กล่อง)
+  packageSize     String?      // ขนาดบรรจุ (1x100's, 1x500ml)
+  pricePerBox     Float        @default(0) // ราคาต่อกล่อง/หน่วย
+  category        DrugCategory @default(GENERAL) // หมวดหมู่ยา (enum)
+  isActive        Boolean      @default(true)
+  notes           String?      // หมายเหตุเพิ่มเติม
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
   
   // Relations
   stocks          Stock[]
@@ -98,6 +139,7 @@ model Drug {
   @@index([hospitalDrugCode])
   @@index([name])
   @@index([category])
+  @@index([dosageForm])
   @@index([isActive])
   @@index([genericName])
   @@map("drugs")
@@ -127,33 +169,6 @@ model DrugBatch {
   @@index([department])
   @@index([drugId])
   @@map("drug_batches")
-}
-
-// ==========================================
-// IMPORT - V3.0
-// ==========================================
-
-// prisma/schemas/import.prisma
-// ===== 6. IMPORT HISTORY SCHEMA =====
-
-// Import History for Drug Data Management
-model ImportHistory {
-  id            String   @id @default(cuid())
-  filename      String
-  totalRecords  Int
-  successCount  Int
-  failureCount  Int
-  errors        Json?    // เก็บข้อผิดพลาดที่เกิดขึ้น
-  importedBy    String
-  createdAt     DateTime @default(now())
-  
-  // Relations
-  importedByUser User @relation(fields: [importedBy], references: [id])
-  
-  // Indexes
-  @@index([createdAt])
-  @@index([importedBy])
-  @@map("import_history")
 }
 
 // ==========================================
@@ -237,7 +252,7 @@ model Transfer {
   
   // Departments & Users
   fromDept          Department     // หน่วยงานที่ขอเบิก (ต้นทาง)
-  toDept            Department     // หน่วยงานที่เบิก (ปลายทาง)
+  toDept            Department     // หน่วยงานที่รับเบิก (ปลายทาง)
   
   // User Signatures (Auto from login)
   requesterId       String         // ผู้เบิก

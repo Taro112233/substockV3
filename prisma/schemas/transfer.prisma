@@ -9,7 +9,7 @@ model Transfer {
   
   // Departments & Users
   fromDept          Department     // หน่วยงานที่ขอเบิก (ต้นทาง)
-  toDept            Department     // หน่วยงานที่เบิก (ปลายทาง)
+  toDept            Department     // หน่วยงานที่รับเบิก (ปลายทาง)
   
   // User Signatures (Auto from login)
   requesterId       String         // ผู้เบิก

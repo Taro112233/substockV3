@@ -1,13 +1,11 @@
-// app/api/auth/login/route.ts - Fixed Type Error
+// app/api/auth/login/route.ts - Updated to use Jose
 import { PrismaClient } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
-import { serialize } from 'cookie';
 import { z } from 'zod';
 import { 
   comparePassword, 
   createToken, 
-  userToPayload, 
-  getCookieOptions,
+  userToPayload,
   AuthError 
 } from '@/lib/auth';
 
@@ -22,6 +20,10 @@ const loginSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    console.log('🔍 [DEBUG] Login request:', {
+      username: body.username,
+      hasPassword: !!body.password
+    });
     
     // Validate input
     const { username, password } = loginSchema.parse(body);
@@ -30,6 +32,13 @@ export async function POST(req: NextRequest) {
     const user = await prisma.user.findUnique({
       where: { username },
     });
+    
+    console.log('🔍 [DEBUG] Found user:', user ? {
+      id: user.id,
+      username: user.username,
+      status: user.status,
+      hasPassword: !!user.password
+    } : 'not found');
     
     if (!user) {
       return NextResponse.json(
@@ -47,16 +56,16 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // ⭐ Fixed: Check user status with proper type handling
+    // Check user status
     if (user.status !== 'APPROVED') {
-      let errorMessage: string; // ✅ Change to string type
+      let errorMessage: string;
       
       if (user.status === 'SUSPENDED') {
         errorMessage = AuthError.USER_SUSPENDED;
       } else if (user.status === 'INACTIVE') {
         errorMessage = AuthError.USER_INACTIVE;
       } else {
-        errorMessage = AuthError.USER_NOT_APPROVED; // Default for UNAPPROVED
+        errorMessage = AuthError.USER_NOT_APPROVED;
       }
       
       return NextResponse.json(
@@ -71,17 +80,16 @@ export async function POST(req: NextRequest) {
       data: { lastLogin: new Date() },
     });
     
-    // Create token
+    // ⭐ Create token with Jose (async)
     const userPayload = userToPayload(user);
-    const token = createToken(userPayload);
+    const token = await createToken(userPayload);
     
-    // Set cookie
-    const cookieOptions = getCookieOptions();
-    const cookie = serialize('auth-token', token, cookieOptions);
+    console.log('🔍 [DEBUG] JWT Token created:', token.substring(0, 50) + '...');
     
-    // Return success response
+    // Create response
     const response = NextResponse.json({
       success: true,
+      message: "เข้าสู่ระบบสำเร็จ",
       user: {
         id: user.id,
         username: user.username,
@@ -93,7 +101,18 @@ export async function POST(req: NextRequest) {
       token,
     });
     
-    response.headers.set('Set-Cookie', cookie);
+    // ⭐ Set cookie with NextResponse.cookies (recommended approach)
+    response.cookies.set('auth-token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+      path: '/',
+    });
+    
+    console.log('🔍 [DEBUG] Login successful for user:', user.id);
+    console.log('🔍 [DEBUG] Cookie set successfully');
+    
     return response;
     
   } catch (error) {

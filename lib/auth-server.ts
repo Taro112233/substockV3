@@ -1,19 +1,31 @@
-// lib/auth-server.ts - Server-side auth utilities
-import { headers } from 'next/headers';
-import { JWTUser } from './auth';
+// lib/auth-server.ts - แบบง่าย: ดึง user จาก cookie โดยตรง
+import { cookies } from 'next/headers';
+import { verifyToken } from './auth';
 
-// ดึงข้อมูล user จาก middleware headers
+export interface JWTUser {
+  userId: string;
+  username: string;
+  firstName: string;
+  lastName: string;
+  position?: string;
+  status: string;
+}
+
+// ดึงข้อมูล user จาก cookie โดยตรง (ไม่ผ่าน middleware headers)
 export async function getServerUser(): Promise<JWTUser | null> {
   try {
-    const headersList = await headers();
-    const userData = headersList.get('x-user-data');
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth-token')?.value;
     
-    if (!userData) {
+    if (!token) {
       return null;
     }
-
-    return JSON.parse(userData) as JWTUser;
-  } catch {
+    
+    // Verify token และดึงข้อมูล user
+    const user = await verifyToken(token);
+    return user;
+  } catch (error) {
+    console.error('Error getting server user:', error);
     return null;
   }
 }

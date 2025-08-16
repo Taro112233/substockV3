@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Hospital, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+import { CookieDebug } from '@/components/CookieDebug';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({

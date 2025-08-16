@@ -1,11 +1,14 @@
-// lib/auth.ts - Updated for V3.0 Schema
-import jwt from 'jsonwebtoken';
+// lib/auth.ts - แก้ไขใช้ Jose แทน jsonwebtoken
+import { SignJWT, jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
-// ⭐ Import from generated Prisma client instead of direct import
 import type { User, UserStatus } from '@prisma/client';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-change-in-production';
-const JWT_EXPIRES_IN = '7d'; // 7 วัน
+// ⭐ ใช้ TextEncoder สำหรับ Web Crypto API
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || 'your-super-secret-key-change-in-production'
+);
+
+const JWT_EXPIRES_IN = '7d';
 
 export interface UserPayload {
   userId: string;
@@ -21,28 +24,47 @@ export interface JWTUser extends UserPayload {
   exp?: number;
 }
 
-// สร้าง JWT Token
-export function createToken(user: UserPayload): string {
-  return jwt.sign(user, JWT_SECRET, { 
-    expiresIn: JWT_EXPIRES_IN,
-    algorithm: 'HS256'
-  });
+// ⭐ สร้าง JWT Token ด้วย Jose
+export async function createToken(user: UserPayload): Promise<string> {
+  return await new SignJWT({
+    userId: user.userId,
+    username: user.username,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    position: user.position,
+    status: user.status
+  })
+  .setProtectedHeader({ alg: 'HS256' })
+  .setExpirationTime(JWT_EXPIRES_IN)
+  .setIssuedAt()
+  .sign(JWT_SECRET);
 }
 
-// ตรวจสอบ JWT Token
-export function verifyToken(token: string): JWTUser | null {
+// ⭐ ตรวจสอบ JWT Token ด้วย Jose (รองรับ Edge Runtime)
+export async function verifyToken(token: string): Promise<JWTUser | null> {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JWTUser;
-    return decoded;
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    
+    // แปลง payload เป็น JWTUser
+    return {
+      userId: payload.userId as string,
+      username: payload.username as string,
+      firstName: payload.firstName as string,
+      lastName: payload.lastName as string,
+      position: payload.position as string | undefined,
+      status: payload.status as UserStatus,
+      iat: payload.iat,
+      exp: payload.exp
+    };
   } catch (error) {
     console.error('JWT verification failed:', error);
     return null;
   }
 }
 
-// Hash password
+// Hash password (ยังคงใช้ bcrypt ได้ใน API routes)
 export async function hashPassword(password: string): Promise<string> {
-  const saltRounds = 12; // สูงกว่าปกติเพื่อความปลอดภัย
+  const saltRounds = 12;
   return bcrypt.hash(password, saltRounds);
 }
 
@@ -51,18 +73,19 @@ export async function comparePassword(password: string, hashedPassword: string):
   return bcrypt.compare(password, hashedPassword);
 }
 
-// สร้าง secure cookie options
+// ⭐ Cookie options สำหรับ development
 export function getCookieOptions() {
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProduction,
     sameSite: 'lax' as const,
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 วัน
-    path: '/'
+    path: '/',
   };
 }
 
-// ⭐ แปลง User model เป็น UserPayload สำหรับ JWT
 export function userToPayload(user: User): UserPayload {
   return {
     userId: user.id,
@@ -74,21 +97,17 @@ export function userToPayload(user: User): UserPayload {
   };
 }
 
-// ตรวจสอบสถานะผู้ใช้
 export function isUserActive(user: JWTUser): boolean {
   return user.status === 'APPROVED';
 }
 
-// Refresh token logic (optional - สำหรับ extended sessions)
 export function shouldRefreshToken(user: JWTUser): boolean {
   if (!user.exp) return false;
   const now = Math.floor(Date.now() / 1000);
   const timeToExpiry = user.exp - now;
-  // Refresh ถ้าเหลือเวลาน้อยกว่า 1 วัน
   return timeToExpiry < 24 * 60 * 60;
 }
 
-// Error types สำหรับ authentication
 export const AuthError = {
   INVALID_CREDENTIALS: 'Invalid username or password',
   USER_NOT_FOUND: 'User not found',
@@ -98,7 +117,6 @@ export const AuthError = {
   INVALID_TOKEN: 'Invalid or expired token'
 } as const;
 
-// ⭐ Type guard สำหรับ UserStatus
 export function isValidUserStatus(status: string): status is UserStatus {
   return ['UNAPPROVED', 'APPROVED', 'SUSPENDED', 'INACTIVE'].includes(status);
 }

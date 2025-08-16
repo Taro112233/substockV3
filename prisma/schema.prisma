@@ -1,6 +1,10 @@
 // This file is auto-generated. Do not edit manually.
 // Edit files in prisma/schemas/ directory instead.
+<<<<<<< HEAD
 // Last generated: 2025-08-16T05:43:00.392Z
+=======
+// Last generated: 2025-08-16T05:32:48.702Z
+>>>>>>> parent of e530702 (transfer)
 
 generator client {
   provider = "prisma-client-js"

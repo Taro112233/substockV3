@@ -1,3 +1,109 @@
+Directory structure:
+└── taro112233-substockv3/
+    ├── README.md
+    ├── components.json
+    ├── eslint.config.mjs
+    ├── next.config.ts
+    ├── package.json
+    ├── pnpm-lock.yaml
+    ├── pnpm-workspace.yaml
+    ├── postcss.config.mjs
+    ├── tsconfig.json
+    ├── app/
+    │   ├── globals.css
+    │   ├── layout.tsx
+    │   ├── page.tsx
+    │   ├── api/
+    │   │   ├── arcjet/
+    │   │   │   └── route.ts
+    │   │   └── auth/
+    │   │       ├── login/
+    │   │       │   └── route.ts
+    │   │       └── register/
+    │   │           └── route.ts
+    │   ├── showcase/
+    │   │   └── page.tsx
+    │   └── utils/
+    │       ├── auth-client.ts
+    │       └── auth.ts
+    ├── components/
+    │   ├── BackgroundDecoration.tsx
+    │   ├── DemoComponents.tsx
+    │   ├── FloatingActionButton.tsx
+    │   ├── ShowcaseFooter.tsx
+    │   ├── ShowcaseHeader.tsx
+    │   ├── ShowcaseNavigation.tsx
+    │   ├── sections/
+    │   │   ├── ActionsSection.tsx
+    │   │   ├── AdvancedPatternsSection.tsx
+    │   │   ├── AuthSection.tsx
+    │   │   ├── DisplaySection.tsx
+    │   │   ├── FormsSection.tsx
+    │   │   ├── LayoutSection.tsx
+    │   │   └── VisualizationSection.tsx
+    │   └── ui/
+    │       ├── accordion.tsx
+    │       ├── alert-dialog.tsx
+    │       ├── alert.tsx
+    │       ├── aspect-ratio.tsx
+    │       ├── avatar.tsx
+    │       ├── badge.tsx
+    │       ├── breadcrumb.tsx
+    │       ├── button.tsx
+    │       ├── calendar.tsx
+    │       ├── card.tsx
+    │       ├── carousel.tsx
+    │       ├── chart.tsx
+    │       ├── checkbox.tsx
+    │       ├── collapsible.tsx
+    │       ├── command.tsx
+    │       ├── context-menu.tsx
+    │       ├── dialog.tsx
+    │       ├── drawer.tsx
+    │       ├── dropdown-menu.tsx
+    │       ├── form.tsx
+    │       ├── hover-card.tsx
+    │       ├── input-otp.tsx
+    │       ├── input.tsx
+    │       ├── label.tsx
+    │       ├── menubar.tsx
+    │       ├── navigation-menu.tsx
+    │       ├── pagination.tsx
+    │       ├── popover.tsx
+    │       ├── progress.tsx
+    │       ├── radio-group.tsx
+    │       ├── resizable.tsx
+    │       ├── scroll-area.tsx
+    │       ├── select.tsx
+    │       ├── separator.tsx
+    │       ├── sheet.tsx
+    │       ├── sidebar.tsx
+    │       ├── skeleton.tsx
+    │       ├── slider.tsx
+    │       ├── sonner.tsx
+    │       ├── switch.tsx
+    │       ├── table.tsx
+    │       ├── tabs.tsx
+    │       ├── textarea.tsx
+    │       ├── toggle-group.tsx
+    │       ├── toggle.tsx
+    │       └── tooltip.tsx
+    ├── hooks/
+    │   └── use-mobile.ts
+    ├── lib/
+    │   └── utils.ts
+    ├── prisma/
+    │   ├── schema.prisma
+    │   └── schemas/
+    │       ├── base.prisma
+    │       ├── drug.prisma
+    │       ├── import.prisma
+    │       ├── stock.prisma
+    │       ├── transfer.prisma
+    │       └── user.prisma
+    └── scripts/
+        └── merge-schemas.js
+
 # 📌 Project Instructions for Claude: Hospital Pharmacy Stock Management System V3.0
 
 **Project Name:** Hospital Pharmacy Stock Management System  
@@ -40,346 +146,6 @@
 
 ## 📊 Updated Database Schema (V3.0)
 
-### Enhanced Schema with Complete Workflow
-```prisma
-// ===== USER MANAGEMENT WITH APPROVAL SYSTEM =====
-model User {
-  id          String     @id @default(cuid())
-  username    String     @unique
-  password    String     // bcrypt hashed
-  firstName   String
-  lastName    String
-  position    String     // ตำแหน่งงาน
-  department  Department
-  role        Role
-  status      UserStatus @default(UNAPPROVED)
-  isActive    Boolean    @default(true)
-  lastLogin   DateTime?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  
-  // Relations
-  stockTransactions     StockTransaction[]
-  transfersRequested    Transfer[] @relation("RequesterUser")
-  transfersApproved     Transfer[] @relation("ApproverUser")
-  transfersDispensed    Transfer[] @relation("DispenserUser")
-  transfersReceived     Transfer[] @relation("ReceiverUser")
-  imports               ImportHistory[]
-  
-  @@index([department])
-  @@index([status])
-  @@index([username])
-}
-
-// ===== ENHANCED DRUG MODEL =====
-model Drug {
-  id              String   @id @default(cuid())
-  hospitalDrugCode String  @unique // รหัสยาเฉพาะโรงพยาบาล
-  name            String   // ชื่อยาทางการค้า
-  genericName     String?  // ชื่อสามัญยา
-  dosageForm      String   // รูปแบบยา (เม็ด, แคปซูล, ขวด, หลอด)
-  strength        String?  // ความแรงยา (500mg, 250mg/5ml)
-  unit            String   // หน่วยนับ (เม็ด, ขวด, หลอด, กล่อง)
-  packageSize     String?  // ขนาดบรรจุ (1x100's, 1x500ml)
-  pricePerBox     Float    @default(0) // ราคาต่อกล่อง/หน่วย
-  category        String?  // หมวดหมู่ยา
-  reorderPoint    Int      @default(10) // จุดสั่งซื้อใหม่
-  isActive        Boolean  @default(true)
-  importBatch     String?  // batch ที่ import เข้ามา
-  notes           String?  // หมายเหตุเพิ่มเติม
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  // Relations
-  stocks          Stock[]
-  transferItems   TransferItem[]
-  batches         DrugBatch[]
-  
-  @@index([hospitalDrugCode])
-  @@index([name])
-  @@index([category])
-  @@index([isActive])
-}
-
-// ===== DRUG BATCH MANAGEMENT (LOT/EXPIRY) =====
-model DrugBatch {
-  id            String   @id @default(cuid())
-  drugId        String
-  department    Department
-  lotNumber     String
-  expiryDate    DateTime
-  manufacturer  String?
-  quantity      Int      @default(0)
-  costPerUnit   Float    @default(0)
-  receivedDate  DateTime @default(now())
-  
-  // Relations
-  drug          Drug     @relation(fields: [drugId], references: [id])
-  transactions  StockTransaction[]
-  
-  @@unique([drugId, department, lotNumber, expiryDate])
-  @@index([expiryDate])
-  @@index([department])
-}
-
-// ===== STOCK WITH BATCH TRACKING =====
-model Stock {
-  id            String     @id @default(cuid())
-  drugId        String
-  department    Department
-  totalQuantity Int        @default(0) // รวมจากทุก batch
-  reservedQty   Int        @default(0) // จำนวนที่จองไว้
-  minimumStock  Int        @default(10) // minimum stock ของแผนกนั้น
-  totalValue    Float      @default(0) // มูลค่ารวม
-  lastUpdated   DateTime   @updatedAt
-  
-  // Relations
-  drug          Drug               @relation(fields: [drugId], references: [id])
-  transactions  StockTransaction[]
-  
-  @@unique([drugId, department])
-  @@index([department])
-  @@index([totalQuantity])
-}
-
-// ===== ENHANCED TRANSFER SYSTEM =====
-model Transfer {
-  id                String         @id @default(cuid())
-  requisitionNumber String         @unique // เลขที่ใบเบิก (manual input)
-  title             String         // ชื่อใบเบิก
-  
-  // Departments & Users
-  fromDept          Department     // หน่วยงานที่ขอเบิก (ต้นทาง)
-  toDept            Department     // หน่วยงานที่เบิก (ปลายทาง)
-  
-  // User Signatures (Auto from login)
-  requesterId       String         // ผู้เบิก
-  approverId        String?        // ผู้อนุมัติ
-  dispenserId       String?        // ผู้จ่าย
-  receiverId        String?        // ผู้รับ
-  
-  // Status & Dates
-  status            TransferStatus @default(PENDING)
-  purpose           String         // วัตถุประสงค์
-  requestNote       String?        // หมายเหตุการขอ
-  approvalNote      String?        // หมายเหตุการอนุมัติ
-  
-  // Financial
-  totalItems        Int            @default(0)
-  totalValue        Float          @default(0) // มูลค่ารวม
-  
-  // Timestamps
-  requestedAt       DateTime       @default(now())
-  approvedAt        DateTime?
-  dispensedAt       DateTime?      // วันที่เตรียมของเสร็จ
-  deliveredAt       DateTime?      // วันที่ส่งของ
-  receivedAt        DateTime?      // วันที่รับของ
-  
-  // Relations
-  requester         User           @relation("RequesterUser", fields: [requesterId], references: [id])
-  approver          User?          @relation("ApproverUser", fields: [approverId], references: [id])
-  dispenser         User?          @relation("DispenserUser", fields: [dispenserId], references: [id])
-  receiver          User?          @relation("ReceiverUser", fields: [receiverId], references: [id])
-  items             TransferItem[]
-  
-  @@index([status])
-  @@index([fromDept])
-  @@index([toDept])
-  @@index([requestedAt])
-}
-
-// ===== ENHANCED TRANSFER ITEMS =====
-model TransferItem {
-  id              String   @id @default(cuid())
-  transferId      String
-  drugId          String
-  
-  // Quantities at different stages
-  requestedQty    Int      // จำนวนเบิก
-  approvedQty     Int?     // จำนวนอนุมัติ
-  dispensedQty    Int?     // จำนวนจ่าย (ใบส่งของ)
-  receivedQty     Int?     // จำนวนรับจริง
-  
-  // Batch Information (for dispensing)
-  lotNumber       String?  // Lot number
-  expiryDate      DateTime? // วันหมดอายุ
-  manufacturer    String?  // บริษัท
-  
-  // Financial
-  unitPrice       Float    @default(0) // ราคาต่อหน่วย
-  totalValue      Float    @default(0) // มูลค่า (dispensedQty × unitPrice)
-  
-  // Notes
-  itemNote        String?  // หมายเหตุรายการ
-  
-  // Relations
-  transfer        Transfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
-  drug            Drug     @relation(fields: [drugId], references: [id])
-  
-  @@index([transferId])
-  @@index([drugId])
-}
-
-// ===== ENHANCED TRANSACTION TRACKING =====
-model StockTransaction {
-  id            String          @id @default(cuid())
-  stockId       String
-  userId        String
-  batchId       String?         // Link to specific batch
-  transferId    String?         // Link to transfer if applicable
-  
-  type          TransactionType
-  quantity      Int             // จำนวน (+/-)
-  beforeQty     Int             // จำนวนก่อนทำรายการ
-  afterQty      Int             // จำนวนหลังทำรายการ
-  
-  unitCost      Float           @default(0)
-  totalCost     Float           @default(0)
-  
-  reference     String?         // เลขที่อ้างอิง
-  note          String?         // หมายเหตุ
-  createdAt     DateTime        @default(now())
-  
-  // Relations
-  stock         Stock           @relation(fields: [stockId], references: [id])
-  user          User            @relation(fields: [userId], references: [id])
-  batch         DrugBatch?      @relation(fields: [batchId], references: [id])
-  
-  @@index([stockId])
-  @@index([type])
-  @@index([transferId])
-  @@index([createdAt])
-}
-
-// ===== IMPORT HISTORY =====
-model ImportHistory {
-  id            String   @id @default(cuid())
-  filename      String
-  totalRecords  Int
-  successCount  Int
-  failureCount  Int
-  errors        Json?    // เก็บข้อผิดพลาดที่เกิดขึ้น
-  importedBy    String
-  createdAt     DateTime @default(now())
-  
-  // Relations
-  importedByUser User @relation(fields: [importedBy], references: [id])
-  
-  @@index([createdAt])
-}
-
-// ===== UPDATED ENUMS =====
-enum Department {
-  PHARMACY    // คลังยา
-  OPD         // OPD
-}
-
-enum Role {
-  PHARMACY_MANAGER    // หัวหน้าคลังยา - สิทธิ์เต็ม
-  PHARMACY_STAFF      // เจ้าหน้าที่คลังยา - จัดการสต็อก
-  OPD_MANAGER         // หัวหน้า OPD - สิทธิ์เต็มในแผนก
-  OPD_STAFF           // เจ้าหน้าที่ OPD - เบิกจ่ายพื้นฐาน
-  ADMIN               // ระบบ Admin - อนุมัติผู้ใช้
-}
-
-enum UserStatus {
-  UNAPPROVED  // ยังไม่ได้รับการอนุมัติ
-  APPROVED    // อนุมัติแล้ว
-  SUSPENDED   // ระงับการใช้งาน
-  INACTIVE    // ไม่ใช้งาน
-}
-
-enum TransactionType {
-  RECEIVE_EXTERNAL    // รับยาจากภายนอก (ซื้อ/บริจาค)
-  DISPENSE_EXTERNAL   // จ่ายยาให้ผู้ป่วย
-  TRANSFER_OUT        // ส่งยาให้แผนกอื่น
-  TRANSFER_IN         // รับยาจากแผนกอื่น
-  ADJUST_INCREASE     // ปรับเพิ่ม (นับสต็อก/คืนยา)
-  ADJUST_DECREASE     // ปรับลด (เสียหาย/หมดอายุ)
-  RESERVE             // จองยา
-  UNRESERVE           // ยกเลิกการจอง
-}
-
-enum TransferStatus {
-  PENDING     // กำลังเบิก / ใบเบิกใหม่
-  APPROVED    // กำลังเตรียมจัดส่ง
-  PREPARED    // กำลังจัดส่ง (เตรียมของเสร็จ)
-  DELIVERED   // จัดส่งสำเร็จ
-  PARTIAL     // รับบางส่วน
-  CANCELLED   // ยกเลิก
-}
-```====
-model TransferItem {
-  id            String   @id @default(cuid())
-  transferId    String
-  drugId        String
-  requestedQty  Int      // จำนวนที่ขอ
-  approvedQty   Int?     // จำนวนที่อนุมัติ
-  sentQty       Int?     // จำนวนที่ส่งจริง
-  receivedQty   Int?     // จำนวนที่รับจริง
-  unitCost      Float    @default(0)
-  totalCost     Float    @default(0)
-  note          String?  // หมายเหตุรายการ
-  
-  // Relations
-  transfer      Transfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
-  drug          Drug     @relation(fields: [drugId], references: [id])
-  
-  @@index([transferId])
-  @@index([drugId])
-}
-
-// ===== IMPORT HISTORY =====
-model ImportHistory {
-  id            String   @id @default(cuid())
-  filename      String
-  totalRecords  Int
-  successCount  Int
-  failureCount  Int
-  errors        Json?    // เก็บข้อผิดพลาดที่เกิดขึ้น
-  importedBy    String
-  createdAt     DateTime @default(now())
-  
-  // Relations
-  importedByUser User @relation(fields: [importedBy], references: [id])
-  
-  @@index([createdAt])
-}
-
-// ===== ENUMS =====
-enum Department {
-  PHARMACY    // คลังยา
-  OPD         // OPD
-}
-
-enum Role {
-  PHARMACY_MANAGER    // หัวหน้าคลังยา - สิทธิ์เต็ม
-  PHARMACY_STAFF      // เจ้าหน้าที่คลังยา - จัดการสต็อก
-  OPD_MANAGER         // หัวหน้า OPD - สิทธิ์เต็มในแผนก
-  OPD_STAFF           // เจ้าหน้าที่ OPD - เบิกจ่ายพื้นฐาน
-}
-
-enum TransactionType {
-  RECEIVE_EXTERNAL    // รับยาจากภายนอก (ซื้อ/บริจาค)
-  DISPENSE_EXTERNAL   // จ่ายยาให้ผู้ป่วย
-  TRANSFER_OUT        // ส่งยาให้แผนกอื่น
-  TRANSFER_IN         // รับยาจากแผนกอื่น
-  ADJUST_INCREASE     // ปรับเพิ่ม (นับสต็อก/คืนยา)
-  ADJUST_DECREASE     // ปรับลด (เสียหาย/หมดอายุ)
-  RESERVE             // จองยา
-  UNRESERVE           // ยกเลิกการจอง
-}
-
-enum TransferStatus {
-  PENDING     // รอการอนุมัติ
-  APPROVED    // อนุมัติแล้ว รอส่ง
-  SENT        // ส่งแล้ว รอรับ
-  RECEIVED    // รับครบแล้ว
-  PARTIAL     // รับบางส่วน
-  CANCELLED   // ยกเลิก
-  REJECTED    // ปฏิเสธ
-}
-```
 
 ## 🎯 Core Features (MVP V3.0)
 

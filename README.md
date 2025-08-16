@@ -17,17 +17,27 @@ Directory structure:
     │   ├── api/
     │   │   ├── arcjet/
     │   │   │   └── route.ts
-    │   │   └── auth/
-    │   │       ├── login/
-    │   │       │   └── route.ts
-    │   │       ├── logout/
-    │   │       │   └── route.ts
-    │   │       ├── me/
-    │   │       │   └── route.ts
-    │   │       └── register/
-    │   │           └── route.ts
+    │   │   ├── auth/
+    │   │   │   ├── login/
+    │   │   │   │   └── route.ts
+    │   │   │   ├── logout/
+    │   │   │   │   └── route.ts
+    │   │   │   ├── me/
+    │   │   │   │   └── route.ts
+    │   │   │   └── register/
+    │   │   │       └── route.ts
+    │   │   ├── drugs/
+    │   │   │   └── route.ts
+    │   │   ├── stock/
+    │   │   │   └── route.ts
+    │   │   └── transfers/
+    │   │       └── route.ts
     │   ├── dashboard/
-    │   │   └── page.tsx
+    │   │   ├── page.tsx
+    │   │   ├── opd/
+    │   │   │   └── page.tsx
+    │   │   └── pharmacy/
+    │   │       └── page.tsx
     │   ├── login/
     │   │   └── page.tsx
     │   ├── register/
@@ -44,6 +54,9 @@ Directory structure:
     │   ├── ShowcaseFooter.tsx
     │   ├── ShowcaseHeader.tsx
     │   ├── ShowcaseNavigation.tsx
+    │   ├── modules/
+    │   │   └── stock/
+    │   │       └── stock-card.tsx
     │   ├── sections/
     │   │   ├── ActionsSection.tsx
     │   │   ├── AdvancedPatternsSection.tsx
@@ -106,6 +119,7 @@ Directory structure:
     ├── lib/
     │   ├── auth-server.ts
     │   ├── auth.ts
+    │   ├── prisma.ts
     │   └── utils.ts
     ├── prisma/
     │   ├── schema.prisma
@@ -124,7 +138,8 @@ Directory structure:
     │   ├── merge-schemas.js
     │   └── merge-seeds.js
     └── types/
-        └── cookie.d.ts
+        ├── cookie.d.ts
+        └── index.ts
 
 # 📌 Project Instructions for Claude: Hospital Pharmacy Stock Management System V3.0
 

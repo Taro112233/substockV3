@@ -1,6 +1,6 @@
 // This file is auto-generated. Do not edit manually.
 // Edit files in prisma/schemas/ directory instead.
-// Last generated: 2025-08-16T08:17:12.679Z
+// Last generated: 2025-08-16T08:36:35.422Z
 // Hospital Pharmacy Stock Management System V3.0
 
 generator client {
@@ -10,7 +10,6 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  // directUrl = env("DIRECT_URL")
 }
 
 
@@ -19,11 +18,9 @@ datasource db {
 // ==========================================
 
 // prisma/schemas/base.prisma
-// ===== 1. BASE CONFIGURATION & ENUMS =====
+// ===== 1. BASE CONFIGURATION & ENUMS - V3.0 UPDATED =====
 
-
-
-
+// ⚠️ NOTE: Remove generator and datasource from here - they're in main schema
 
 // ===== CORE ENUMS =====
 enum Department {
@@ -36,6 +33,14 @@ enum UserStatus {
   APPROVED    // อนุมัติแล้ว
   SUSPENDED   // ระงับการใช้งาน
   INACTIVE    // ไม่ใช้งาน
+}
+
+enum Role {
+  PHARMACY_MANAGER    // หัวหน้าคลังยา - สิทธิ์เต็ม
+  PHARMACY_STAFF      // เจ้าหน้าที่คลังยา - จัดการสต็อก
+  OPD_MANAGER         // หัวหน้า OPD - สิทธิ์เต็มในแผนก
+  OPD_STAFF           // เจ้าหน้าที่ OPD - เบิกจ่ายพื้นฐาน
+  ADMIN               // ระบบ Admin - อนุมัติผู้ใช้
 }
 
 enum TransactionType {
@@ -312,19 +317,19 @@ model TransferItem {
 // ==========================================
 
 // prisma/schemas/user.prisma
-// ===== 2. USER MANAGEMENT SCHEMA =====
+// ===== 2. USER MANAGEMENT SCHEMA - V3.0 COMPLETE =====
 
-// Simplified User Management - Unified Hospital Access
+// Updated User Management - Unified Hospital Access with All Required Fields
 model User {
   id          String     @id @default(cuid())
-  username    String     @unique
+  username    String     @unique  // ⭐ REQUIRED: For authentication
   password    String     // bcrypt hashed
-  firstName   String
-  lastName    String
+  firstName   String     // ⭐ REQUIRED: First name
+  lastName    String     // ⭐ REQUIRED: Last name  
   position    String?    // ตำแหน่งงาน (optional)
-  status      UserStatus @default(UNAPPROVED)
+  status      UserStatus @default(UNAPPROVED) // ⭐ REQUIRED: User approval status
   isActive    Boolean    @default(true)
-  lastLogin   DateTime?
+  lastLogin   DateTime?  // ⭐ REQUIRED: Track login activity
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   

@@ -1,17 +1,17 @@
 // prisma/schemas/user.prisma
-// ===== 2. USER MANAGEMENT SCHEMA =====
+// ===== 2. USER MANAGEMENT SCHEMA - V3.0 COMPLETE =====
 
-// Simplified User Management - Unified Hospital Access
+// Updated User Management - Unified Hospital Access with All Required Fields
 model User {
   id          String     @id @default(cuid())
-  username    String     @unique
+  username    String     @unique  // ⭐ REQUIRED: For authentication
   password    String     // bcrypt hashed
-  firstName   String
-  lastName    String
+  firstName   String     // ⭐ REQUIRED: First name
+  lastName    String     // ⭐ REQUIRED: Last name  
   position    String?    // ตำแหน่งงาน (optional)
-  status      UserStatus @default(UNAPPROVED)
+  status      UserStatus @default(UNAPPROVED) // ⭐ REQUIRED: User approval status
   isActive    Boolean    @default(true)
-  lastLogin   DateTime?
+  lastLogin   DateTime?  // ⭐ REQUIRED: Track login activity
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   

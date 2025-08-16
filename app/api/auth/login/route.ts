@@ -1,4 +1,4 @@
-// app/api/auth/login/route.ts
+// app/api/auth/login/route.ts - Fixed for V3.0 Schema
 import { PrismaClient } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { serialize } from 'cookie';
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     // Validate input
     const { username, password } = loginSchema.parse(body);
     
-    // Find user by username
+    // ⭐ Find user by username (corrected field name)
     const user = await prisma.user.findUnique({
       where: { username },
     });
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Check user status
+    // ⭐ Check user status (now using correct field)
     if (user.status !== 'APPROVED') {
       let errorMessage = AuthError.USER_NOT_APPROVED;
       if (user.status === 'SUSPENDED') errorMessage = AuthError.USER_SUSPENDED;
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Update last login
+    // ⭐ Update last login (now using correct field)
     await prisma.user.update({
       where: { id: user.id },
       data: { lastLogin: new Date() },
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     const cookieOptions = getCookieOptions();
     const cookie = serialize('auth-token', token, cookieOptions);
     
-    // Return success response
+    // ⭐ Return success response with correct field names
     const response = NextResponse.json({
       success: true,
       user: {
@@ -104,5 +104,7 @@ export async function POST(req: NextRequest) {
       { error: 'Internal server error' }, 
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }

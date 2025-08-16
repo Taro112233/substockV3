@@ -3,6 +3,128 @@ Directory structure:
     ├── README.md
     ├── components.json
     ├── eslint.config.mjs
+    ├── middleware.ts
+    ├── next.config.ts
+    ├── package.json
+    ├── pnpm-lock.yaml
+    ├── pnpm-workspace.yaml
+    ├── postcss.config.mjs
+    ├── tsconfig.json
+    ├── app/
+    │   ├── globals.css
+    │   ├── layout.tsx
+    │   ├── page.tsx
+    │   ├── api/
+    │   │   ├── arcjet/
+    │   │   │   └── route.ts
+    │   │   └── auth/
+    │   │       ├── login/
+    │   │       │   └── route.ts
+    │   │       ├── logout/
+    │   │       │   └── route.ts
+    │   │       ├── me/
+    │   │       │   └── route.ts
+    │   │       └── register/
+    │   │           └── route.ts
+    │   ├── dashboard/
+    │   │   └── page.tsx
+    │   ├── login/
+    │   │   └── page.tsx
+    │   ├── register/
+    │   │   └── page.tsx
+    │   ├── showcase/
+    │   │   └── page.tsx
+    │   └── utils/
+    │       └── auth-client.tsx
+    ├── components/
+    │   ├── BackgroundDecoration.tsx
+    │   ├── DemoComponents.tsx
+    │   ├── FloatingActionButton.tsx
+    │   ├── ShowcaseFooter.tsx
+    │   ├── ShowcaseHeader.tsx
+    │   ├── ShowcaseNavigation.tsx
+    │   ├── sections/
+    │   │   ├── ActionsSection.tsx
+    │   │   ├── AdvancedPatternsSection.tsx
+    │   │   ├── AuthSection.tsx
+    │   │   ├── DisplaySection.tsx
+    │   │   ├── FormsSection.tsx
+    │   │   ├── LayoutSection.tsx
+    │   │   └── VisualizationSection.tsx
+    │   └── ui/
+    │       ├── accordion.tsx
+    │       ├── alert-dialog.tsx
+    │       ├── alert.tsx
+    │       ├── aspect-ratio.tsx
+    │       ├── avatar.tsx
+    │       ├── badge.tsx
+    │       ├── breadcrumb.tsx
+    │       ├── button.tsx
+    │       ├── calendar.tsx
+    │       ├── card.tsx
+    │       ├── carousel.tsx
+    │       ├── chart.tsx
+    │       ├── checkbox.tsx
+    │       ├── collapsible.tsx
+    │       ├── command.tsx
+    │       ├── context-menu.tsx
+    │       ├── dialog.tsx
+    │       ├── drawer.tsx
+    │       ├── dropdown-menu.tsx
+    │       ├── form.tsx
+    │       ├── hover-card.tsx
+    │       ├── input-otp.tsx
+    │       ├── input.tsx
+    │       ├── label.tsx
+    │       ├── menubar.tsx
+    │       ├── navigation-menu.tsx
+    │       ├── pagination.tsx
+    │       ├── popover.tsx
+    │       ├── progress.tsx
+    │       ├── radio-group.tsx
+    │       ├── resizable.tsx
+    │       ├── scroll-area.tsx
+    │       ├── select.tsx
+    │       ├── separator.tsx
+    │       ├── sheet.tsx
+    │       ├── sidebar.tsx
+    │       ├── skeleton.tsx
+    │       ├── slider.tsx
+    │       ├── sonner.tsx
+    │       ├── switch.tsx
+    │       ├── table.tsx
+    │       ├── tabs.tsx
+    │       ├── textarea.tsx
+    │       ├── toggle-group.tsx
+    │       ├── toggle.tsx
+    │       └── tooltip.tsx
+    ├── hooks/
+    │   └── use-mobile.ts
+    ├── lib/
+    │   ├── auth-server.ts
+    │   ├── auth.ts
+    │   └── utils.ts
+    ├── prisma/
+    │   ├── schema.prisma
+    │   └── schemas/
+    │       ├── base.prisma
+    │       ├── drug.prisma
+    │       ├── import.prisma
+    │       ├── stock.prisma
+    │       ├── transfer.prisma
+    │       └── user.prisma
+    └── scripts/
+        └── merge-schemas.js
+
+
+================================================
+FILE: README.md
+================================================
+Directory structure:
+└── taro112233-substockv3/
+    ├── README.md
+    ├── components.json
+    ├── eslint.config.mjs
     ├── next.config.ts
     ├── package.json
     ├── pnpm-lock.yaml

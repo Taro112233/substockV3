@@ -1,14 +1,7 @@
 // prisma/schemas/base.prisma
-// ===== 1. BASE CONFIGURATION & ENUMS =====
+// ===== 1. BASE CONFIGURATION & ENUMS - V3.0 UPDATED =====
 
-generator client {
-  provider = "prisma-client-js"
-}
-
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+// ⚠️ NOTE: Remove generator and datasource from here - they're in main schema
 
 // ===== CORE ENUMS =====
 enum Department {
@@ -21,6 +14,14 @@ enum UserStatus {
   APPROVED    // อนุมัติแล้ว
   SUSPENDED   // ระงับการใช้งาน
   INACTIVE    // ไม่ใช้งาน
+}
+
+enum Role {
+  PHARMACY_MANAGER    // หัวหน้าคลังยา - สิทธิ์เต็ม
+  PHARMACY_STAFF      // เจ้าหน้าที่คลังยา - จัดการสต็อก
+  OPD_MANAGER         // หัวหน้า OPD - สิทธิ์เต็มในแผนก
+  OPD_STAFF           // เจ้าหน้าที่ OPD - เบิกจ่ายพื้นฐาน
+  ADMIN               // ระบบ Admin - อนุมัติผู้ใช้
 }
 
 enum TransactionType {

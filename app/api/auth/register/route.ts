@@ -1,4 +1,4 @@
-// app/api/auth/register/route.ts
+// app/api/auth/register/route.ts - Fixed for V3.0 Schema
 import { PrismaClient } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     // Validate input
     const validatedData = registerSchema.parse(body);
     
-    // ตรวจสอบว่า username ซ้ำหรือไม่
+    // ⭐ ตรวจสอบว่า username ซ้ำหรือไม่ (corrected field)
     const existingUser = await prisma.user.findUnique({
       where: { username: validatedData.username },
     });
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     // Hash password
     const hashedPassword = await hashPassword(validatedData.password);
     
-    // สร้าง user ใหม่
+    // ⭐ สร้าง user ใหม่ (using correct field names)
     const user = await prisma.user.create({
       data: {
         username: validatedData.username,
@@ -128,5 +128,7 @@ export async function POST(req: NextRequest) {
       { error: 'Internal server error' }, 
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }

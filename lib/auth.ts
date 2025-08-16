@@ -1,7 +1,8 @@
-// lib/auth.ts
+// lib/auth.ts - Updated for V3.0 Schema
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { User, UserStatus } from '@prisma/client';
+// ⭐ Import from generated Prisma client instead of direct import
+import type { User, UserStatus } from '@prisma/client';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-change-in-production';
 const JWT_EXPIRES_IN = '7d'; // 7 วัน
@@ -61,14 +62,14 @@ export function getCookieOptions() {
   };
 }
 
-// แปลง User model เป็น UserPayload สำหรับ JWT
+// ⭐ แปลง User model เป็น UserPayload สำหรับ JWT
 export function userToPayload(user: User): UserPayload {
   return {
     userId: user.id,
     username: user.username,
     firstName: user.firstName,
     lastName: user.lastName,
-    position: user.position,
+    position: user.position || undefined,
     status: user.status
   };
 }
@@ -96,3 +97,8 @@ export const AuthError = {
   USER_INACTIVE: 'User account inactive',
   INVALID_TOKEN: 'Invalid or expired token'
 } as const;
+
+// ⭐ Type guard สำหรับ UserStatus
+export function isValidUserStatus(status: string): status is UserStatus {
+  return ['UNAPPROVED', 'APPROVED', 'SUSPENDED', 'INACTIVE'].includes(status);
+}

@@ -1,16 +1,14 @@
 // prisma/schemas/user.prisma
 // ===== 2. USER MANAGEMENT SCHEMA =====
 
-// User Management with Approval System
+// Simplified User Management - Unified Hospital Access
 model User {
   id          String     @id @default(cuid())
   username    String     @unique
   password    String     // bcrypt hashed
   firstName   String
   lastName    String
-  position    String     // ตำแหน่งงาน
-  department  Department
-  role        Role
+  position    String?    // ตำแหน่งงาน (optional)
   status      UserStatus @default(UNAPPROVED)
   isActive    Boolean    @default(true)
   lastLogin   DateTime?
@@ -26,9 +24,8 @@ model User {
   imports               ImportHistory[]
   
   // Indexes สำหรับ Performance
-  @@index([department])
   @@index([status])
   @@index([username])
-  @@index([role])
+  @@index([isActive])
   @@map("users")
 }

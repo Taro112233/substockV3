@@ -1,36 +1,108 @@
 // app/api/auth/login/route.ts
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { NextRequest, NextResponse } from 'next/server';
 import { serialize } from 'cookie';
+import { z } from 'zod';
+import { 
+  comparePassword, 
+  createToken, 
+  userToPayload, 
+  getCookieOptions,
+  AuthError 
+} from '@/lib/auth';
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
+
+// Validation schema
+const loginSchema = z.object({
+  username: z.string().min(1, 'Username is required'),
+  password: z.string().min(1, 'Password is required'),
+});
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password } = await req.json();
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
-    }
+    const body = await req.json();
+    
+    // Validate input
+    const { username, password } = loginSchema.parse(body);
+    
+    // Find user by username
     const user = await prisma.user.findUnique({
-      where: { email },
-      include: { accounts: true },
+      where: { username },
     });
-    if (!user || !user.accounts[0]?.password) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: AuthError.INVALID_CREDENTIALS }, 
+        { status: 401 }
+      );
     }
-    const valid = await bcrypt.compare(password, user.accounts[0].password);
-    if (!valid) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+    
+    // Check password
+    const isValidPassword = await comparePassword(password, user.password);
+    if (!isValidPassword) {
+      return NextResponse.json(
+        { error: AuthError.INVALID_CREDENTIALS }, 
+        { status: 401 }
+      );
     }
-    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-    const cookie = serialize('token', token, { path: '/', httpOnly: true, maxAge: 60 * 60 * 24 * 7 });
-    const res = NextResponse.json({ user: { id: user.id, name: user.name, email: user.email }, token });
-    res.headers.set('Set-Cookie', cookie);
-    return res;
-  } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    
+    // Check user status
+    if (user.status !== 'APPROVED') {
+      let errorMessage = AuthError.USER_NOT_APPROVED;
+      if (user.status === 'SUSPENDED') errorMessage = AuthError.USER_SUSPENDED;
+      if (user.status === 'INACTIVE') errorMessage = AuthError.USER_INACTIVE;
+      
+      return NextResponse.json(
+        { error: errorMessage }, 
+        { status: 403 }
+      );
+    }
+    
+    // Update last login
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLogin: new Date() },
+    });
+    
+    // Create token
+    const userPayload = userToPayload(user);
+    const token = createToken(userPayload);
+    
+    // Set cookie
+    const cookieOptions = getCookieOptions();
+    const cookie = serialize('auth-token', token, cookieOptions);
+    
+    // Return success response
+    const response = NextResponse.json({
+      success: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        position: user.position,
+        fullName: `${user.firstName} ${user.lastName}`
+      },
+      token,
+    });
+    
+    response.headers.set('Set-Cookie', cookie);
+    return response;
+    
+  } catch (error) {
+    console.error('Login error:', error);
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid input data', details: error.issues }, 
+        { status: 400 }
+      );
+    }
+    
+    return NextResponse.json(
+      { error: 'Internal server error' }, 
+      { status: 500 }
+    );
   }
-} 
+}

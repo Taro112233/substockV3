@@ -16,14 +16,6 @@ enum Department {
   OPD         // OPD
 }
 
-enum Role {
-  PHARMACY_MANAGER    // หัวหน้าคลังยา - สิทธิ์เต็ม
-  PHARMACY_STAFF      // เจ้าหน้าที่คลังยา - จัดการสต็อก
-  OPD_MANAGER         // หัวหน้า OPD - สิทธิ์เต็มในแผนก
-  OPD_STAFF           // เจ้าหน้าที่ OPD - เบิกจ่ายพื้นฐาน
-  ADMIN               // ระบบ Admin - อนุมัติผู้ใช้
-}
-
 enum UserStatus {
   UNAPPROVED  // ยังไม่ได้รับการอนุมัติ
   APPROVED    // อนุมัติแล้ว

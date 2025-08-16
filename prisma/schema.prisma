@@ -1,6 +1,6 @@
 // This file is auto-generated. Do not edit manually.
 // Edit files in prisma/schemas/ directory instead.
-// Last generated: 2025-08-16T07:23:03.223Z
+// Last generated: 2025-08-16T08:17:12.679Z
 // Hospital Pharmacy Stock Management System V3.0
 
 generator client {
@@ -29,14 +29,6 @@ datasource db {
 enum Department {
   PHARMACY    // คลังยา
   OPD         // OPD
-}
-
-enum Role {
-  PHARMACY_MANAGER    // หัวหน้าคลังยา - สิทธิ์เต็ม
-  PHARMACY_STAFF      // เจ้าหน้าที่คลังยา - จัดการสต็อก
-  OPD_MANAGER         // หัวหน้า OPD - สิทธิ์เต็มในแผนก
-  OPD_STAFF           // เจ้าหน้าที่ OPD - เบิกจ่ายพื้นฐาน
-  ADMIN               // ระบบ Admin - อนุมัติผู้ใช้
 }
 
 enum UserStatus {
@@ -322,16 +314,14 @@ model TransferItem {
 // prisma/schemas/user.prisma
 // ===== 2. USER MANAGEMENT SCHEMA =====
 
-// User Management with Approval System
+// Simplified User Management - Unified Hospital Access
 model User {
   id          String     @id @default(cuid())
   username    String     @unique
   password    String     // bcrypt hashed
   firstName   String
   lastName    String
-  position    String     // ตำแหน่งงาน
-  department  Department
-  role        Role
+  position    String?    // ตำแหน่งงาน (optional)
   status      UserStatus @default(UNAPPROVED)
   isActive    Boolean    @default(true)
   lastLogin   DateTime?
@@ -347,9 +337,8 @@ model User {
   imports               ImportHistory[]
   
   // Indexes สำหรับ Performance
-  @@index([department])
   @@index([status])
   @@index([username])
-  @@index([role])
+  @@index([isActive])
   @@map("users")
 }

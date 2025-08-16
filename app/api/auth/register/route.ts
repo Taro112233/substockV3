@@ -1,51 +1,132 @@
 // app/api/auth/register/route.ts
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { 
+  hashPassword, 
+  createToken, 
+  userToPayload, 
+  getCookieOptions 
+} from '@/lib/auth';
 import { serialize } from 'cookie';
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
+
+// Validation schema - Simplified
+const registerSchema = z.object({
+  username: z.string().min(3, 'Username must be at least 3 characters'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  position: z.string().optional(), // Optional position
+});
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password } = await req.json();
-    if (!name || !email || !password) {
-      return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+    const body = await req.json();
+    
+    // Validate input
+    const validatedData = registerSchema.parse(body);
+    
+    // ตรวจสอบว่า username ซ้ำหรือไม่
+    const existingUser = await prisma.user.findUnique({
+      where: { username: validatedData.username },
+    });
+    
+    if (existingUser) {
+      return NextResponse.json(
+        { error: 'Username already exists' }, 
+        { status: 409 }
+      );
     }
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
-      return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
-    }
-    const hashed = await bcrypt.hash(password, 10);
-    const now = new Date();
+    
+    // Hash password
+    const hashedPassword = await hashPassword(validatedData.password);
+    
+    // สร้าง user ใหม่
     const user = await prisma.user.create({
       data: {
-        name,
-        email,
-        emailVerified: false,
-        createdAt: now,
-        updatedAt: now,
-        accounts: {
-          create: {
-            accountId: email,
-            providerId: 'credentials',
-            password: hashed,
-            createdAt: now,
-            updatedAt: now,
-          },
-        },
+        username: validatedData.username,
+        password: hashedPassword,
+        firstName: validatedData.firstName,
+        lastName: validatedData.lastName,
+        position: validatedData.position,
+        status: 'UNAPPROVED', // ต้องรออนุมัติ
+        isActive: true,
       },
-      include: { accounts: true },
     });
-    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-    const cookie = serialize('token', token, { path: '/', httpOnly: true, maxAge: 60 * 60 * 24 * 7 });
-    const res = NextResponse.json({ user: { id: user.id, name: user.name, email: user.email }, token });
-    res.headers.set('Set-Cookie', cookie);
-    return res;
-  } catch (e) {
-    console.error(e);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    
+    // ใน development mode หรือถ้าเป็นผู้ใช้คนแรก สามารถ auto-approve ได้
+    const userCount = await prisma.user.count();
+    const shouldAutoApprove = process.env.NODE_ENV === 'development' || userCount === 1;
+    
+    if (shouldAutoApprove) {
+      const approvedUser = await prisma.user.update({
+        where: { id: user.id },
+        data: { status: 'APPROVED' },
+      });
+      
+      // สร้าง token และ login ทันที
+      const userPayload = userToPayload(approvedUser);
+      const token = createToken(userPayload);
+      const cookieOptions = getCookieOptions();
+      const cookie = serialize('auth-token', token, cookieOptions);
+      
+      const response = NextResponse.json({
+        success: true,
+        message: 'Registration successful',
+        user: {
+          id: approvedUser.id,
+          username: approvedUser.username,
+          firstName: approvedUser.firstName,
+          lastName: approvedUser.lastName,
+          position: approvedUser.position,
+          status: approvedUser.status,
+          fullName: `${approvedUser.firstName} ${approvedUser.lastName}`
+        },
+        token,
+        autoApproved: true,
+      });
+      
+      response.headers.set('Set-Cookie', cookie);
+      return response;
+    }
+    
+    // ต้องรออนุมัติ
+    return NextResponse.json({
+      success: true,
+      message: 'Registration successful. Please wait for admin approval.',
+      user: {
+        id: user.id,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        position: user.position,
+        status: user.status,
+        fullName: `${user.firstName} ${user.lastName}`
+      },
+      requiresApproval: true,
+    });
+    
+  } catch (error) {
+    console.error('Registration error:', error);
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { 
+          error: 'Invalid input data', 
+          details: error.issues.map((e: any) => ({
+            field: e.path.join('.'),
+            message: e.message
+          }))
+        }, 
+        { status: 400 }
+      );
+    }
+    
+    return NextResponse.json(
+      { error: 'Internal server error' }, 
+      { status: 500 }
+    );
   }
 }

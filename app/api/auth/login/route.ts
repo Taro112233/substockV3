@@ -1,4 +1,4 @@
-// app/api/auth/login/route.ts - Fixed for V3.0 Schema
+// app/api/auth/login/route.ts - Fixed Type Error
 import { PrismaClient } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { serialize } from 'cookie';
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     // Validate input
     const { username, password } = loginSchema.parse(body);
     
-    // ⭐ Find user by username (corrected field name)
+    // Find user by username
     const user = await prisma.user.findUnique({
       where: { username },
     });
@@ -47,11 +47,17 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // ⭐ Check user status (now using correct field)
+    // ⭐ Fixed: Check user status with proper type handling
     if (user.status !== 'APPROVED') {
-      let errorMessage = AuthError.USER_NOT_APPROVED;
-      if (user.status === 'SUSPENDED') errorMessage = AuthError.USER_SUSPENDED;
-      if (user.status === 'INACTIVE') errorMessage = AuthError.USER_INACTIVE;
+      let errorMessage: string; // ✅ Change to string type
+      
+      if (user.status === 'SUSPENDED') {
+        errorMessage = AuthError.USER_SUSPENDED;
+      } else if (user.status === 'INACTIVE') {
+        errorMessage = AuthError.USER_INACTIVE;
+      } else {
+        errorMessage = AuthError.USER_NOT_APPROVED; // Default for UNAPPROVED
+      }
       
       return NextResponse.json(
         { error: errorMessage }, 
@@ -59,7 +65,7 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // ⭐ Update last login (now using correct field)
+    // Update last login
     await prisma.user.update({
       where: { id: user.id },
       data: { lastLogin: new Date() },
@@ -73,7 +79,7 @@ export async function POST(req: NextRequest) {
     const cookieOptions = getCookieOptions();
     const cookie = serialize('auth-token', token, cookieOptions);
     
-    // ⭐ Return success response with correct field names
+    // Return success response
     const response = NextResponse.json({
       success: true,
       user: {

@@ -99,6 +99,8 @@ Directory structure:
     │       ├── toggle-group.tsx
     │       ├── toggle.tsx
     │       └── tooltip.tsx
+    ├── data/
+    │   └── realDrug.csv
     ├── hooks/
     │   └── use-mobile.ts
     ├── lib/
@@ -107,14 +109,20 @@ Directory structure:
     │   └── utils.ts
     ├── prisma/
     │   ├── schema.prisma
-    │   └── schemas/
-    │       ├── base.prisma
-    │       ├── drug.prisma
-    │       ├── stock.prisma
-    │       ├── transfer.prisma
-    │       └── user.prisma
+    │   ├── seed.ts
+    │   ├── schemas/
+    │   │   ├── base.prisma
+    │   │   ├── drug.prisma
+    │   │   ├── stock.prisma
+    │   │   ├── transfer.prisma
+    │   │   └── user.prisma
+    │   └── seeds/
+    │       ├── real-drugs.seed.ts
+    │       └── users.seed.ts
     ├── scripts/
-    │   └── merge-schemas.js
+    │   ├── debug-drugs.js
+    │   ├── merge-schemas.js
+    │   └── merge-seeds.js
     └── types/
         └── cookie.d.ts
 

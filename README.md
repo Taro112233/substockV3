@@ -110,7 +110,6 @@ Directory structure:
     │   └── schemas/
     │       ├── base.prisma
     │       ├── drug.prisma
-    │       ├── import.prisma
     │       ├── stock.prisma
     │       ├── transfer.prisma
     │       └── user.prisma

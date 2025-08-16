@@ -21,7 +21,6 @@ model User {
   transfersApproved     Transfer[] @relation("ApproverUser")
   transfersDispensed    Transfer[] @relation("DispenserUser")
   transfersReceived     Transfer[] @relation("ReceiverUser")
-  imports               ImportHistory[]
   
   // Indexes สำหรับ Performance
   @@index([status])

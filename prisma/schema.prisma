@@ -1,6 +1,6 @@
 // This file is auto-generated. Do not edit manually.
 // Edit files in prisma/schemas/ directory instead.
-// Last generated: 2025-08-16T10:49:43.681Z
+// Last generated: 2025-08-16T11:02:26.642Z
 // Hospital Pharmacy Stock Management System V3.0
 
 generator client {
@@ -120,9 +120,9 @@ model Drug {
   name            String       // ชื่อยาทางการค้า
   genericName     String?      // ชื่อสามัญยา
   dosageForm      DosageForm   // รูปแบบยา (enum)
-  strength        String?      // ความแรงยา (500mg, 250mg/5ml)
-  unit            String       // หน่วยนับ (เม็ด, ขวด, หลอด, กล่อง)
-  packageSize     String?      // ขนาดบรรจุ (1x100's, 1x500ml)
+  strength        String?      // ความแรงยา (500, 250)
+  unit            String       // หน่วยนับ (mg, g, mg/5ml)
+  packageSize     String?      // ขนาดบรรจุ (100's, 500)
   pricePerBox     Float        @default(0) // ราคาต่อกล่อง/หน่วย
   category        DrugCategory @default(GENERAL) // หมวดหมู่ยา (enum)
   isActive        Boolean      @default(true)
@@ -354,7 +354,6 @@ model User {
   transfersApproved     Transfer[] @relation("ApproverUser")
   transfersDispensed    Transfer[] @relation("DispenserUser")
   transfersReceived     Transfer[] @relation("ReceiverUser")
-  imports               ImportHistory[]
   
   // Indexes สำหรับ Performance
   @@index([status])

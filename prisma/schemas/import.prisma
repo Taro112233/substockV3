@@ -1,0 +1,22 @@
+// prisma/schemas/import.prisma
+// ===== 6. IMPORT HISTORY SCHEMA =====
+
+// Import History for Drug Data Management
+model ImportHistory {
+  id            String   @id @default(cuid())
+  filename      String
+  totalRecords  Int
+  successCount  Int
+  failureCount  Int
+  errors        Json?    // เก็บข้อผิดพลาดที่เกิดขึ้น
+  importedBy    String
+  createdAt     DateTime @default(now())
+  
+  // Relations
+  importedByUser User @relation(fields: [importedBy], references: [id])
+  
+  // Indexes
+  @@index([createdAt])
+  @@index([importedBy])
+  @@map("import_history")
+}

@@ -1,0 +1,61 @@
+// prisma/schemas/stock.prisma
+// ===== 4. STOCK MANAGEMENT SCHEMA =====
+
+// Stock with Department Isolation & Batch Tracking
+model Stock {
+  id            String     @id @default(cuid())
+  drugId        String
+  department    Department
+  totalQuantity Int        @default(0) // รวมจากทุก batch
+  reservedQty   Int        @default(0) // จำนวนที่จองไว้
+  minimumStock  Int        @default(10) // minimum stock ของแผนกนั้น
+  totalValue    Float      @default(0) // มูลค่ารวม
+  lastUpdated   DateTime   @updatedAt
+  
+  // Relations
+  drug          Drug               @relation(fields: [drugId], references: [id], onDelete: Cascade)
+  transactions  StockTransaction[]
+  
+  // Constraints - แต่ละยาใน 1 แผนกมี stock record เดียว
+  @@unique([drugId, department])
+  
+  // Indexes สำหรับ Performance
+  @@index([department])
+  @@index([totalQuantity])
+  @@index([drugId])
+  @@map("stocks")
+}
+
+// Enhanced Transaction Tracking
+model StockTransaction {
+  id            String          @id @default(cuid())
+  stockId       String
+  userId        String
+  batchId       String?         // Link to specific batch
+  transferId    String?         // Link to transfer if applicable
+  
+  type          TransactionType
+  quantity      Int             // จำนวน (+/-)
+  beforeQty     Int             // จำนวนก่อนทำรายการ
+  afterQty      Int             // จำนวนหลังทำรายการ
+  
+  unitCost      Float           @default(0)
+  totalCost     Float           @default(0)
+  
+  reference     String?         // เลขที่อ้างอิง
+  note          String?         // หมายเหตุ
+  createdAt     DateTime        @default(now())
+  
+  // Relations
+  stock         Stock           @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  user          User            @relation(fields: [userId], references: [id])
+  batch         DrugBatch?      @relation(fields: [batchId], references: [id])
+  
+  // Indexes สำหรับ Performance & Reporting
+  @@index([stockId])
+  @@index([type])
+  @@index([transferId])
+  @@index([createdAt])
+  @@index([userId])
+  @@map("stock_transactions")
+}

@@ -1,0 +1,85 @@
+// prisma/schemas/transfer.prisma
+// ===== 5. TRANSFER SYSTEM SCHEMA =====
+
+// Enhanced Transfer System with Multi-step Workflow
+model Transfer {
+  id                String         @id @default(cuid())
+  requisitionNumber String         @unique // เลขที่ใบเบิก (manual input)
+  title             String         // ชื่อใบเบิก
+  
+  // Departments & Users
+  fromDept          Department     // หน่วยงานที่ขอเบิก (ต้นทาง)
+  toDept            Department     // หน่วยงานที่เบิก (ปลายทาง)
+  
+  // User Signatures (Auto from login)
+  requesterId       String         // ผู้เบิก
+  approverId        String?        // ผู้อนุมัติ
+  dispenserId       String?        // ผู้จ่าย
+  receiverId        String?        // ผู้รับ
+  
+  // Status & Notes
+  status            TransferStatus @default(PENDING)
+  purpose           String         // วัตถุประสงค์
+  requestNote       String?        // หมายเหตุการขอ
+  approvalNote      String?        // หมายเหตุการอนุมัติ
+  
+  // Financial
+  totalItems        Int            @default(0)
+  totalValue        Float          @default(0) // มูลค่ารวม
+  
+  // Timestamps - Track complete workflow
+  requestedAt       DateTime       @default(now())
+  approvedAt        DateTime?
+  dispensedAt       DateTime?      // วันที่เตรียมของเสร็จ
+  deliveredAt       DateTime?      // วันที่ส่งของ
+  receivedAt        DateTime?      // วันที่รับของ
+  
+  // Relations
+  requester         User           @relation("RequesterUser", fields: [requesterId], references: [id])
+  approver          User?          @relation("ApproverUser", fields: [approverId], references: [id])
+  dispenser         User?          @relation("DispenserUser", fields: [dispenserId], references: [id])
+  receiver          User?          @relation("ReceiverUser", fields: [receiverId], references: [id])
+  items             TransferItem[]
+  
+  // Indexes สำหรับ Performance
+  @@index([status])
+  @@index([fromDept])
+  @@index([toDept])
+  @@index([requestedAt])
+  @@index([requisitionNumber])
+  @@map("transfers")
+}
+
+// Enhanced Transfer Items with Batch Information
+model TransferItem {
+  id              String   @id @default(cuid())
+  transferId      String
+  drugId          String
+  
+  // Quantities at different stages
+  requestedQty    Int      // จำนวนเบิก
+  approvedQty     Int?     // จำนวนอนุมัติ
+  dispensedQty    Int?     // จำนวนจ่าย (ใบส่งของ)
+  receivedQty     Int?     // จำนวนรับจริง
+  
+  // Batch Information (for dispensing)
+  lotNumber       String?  // Lot number
+  expiryDate      DateTime? // วันหมดอายุ
+  manufacturer    String?  // บริษัท
+  
+  // Financial
+  unitPrice       Float    @default(0) // ราคาต่อหน่วย
+  totalValue      Float    @default(0) // มูลค่า (dispensedQty × unitPrice)
+  
+  // Notes
+  itemNote        String?  // หมายเหตุรายการ
+  
+  // Relations
+  transfer        Transfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  drug            Drug     @relation(fields: [drugId], references: [id])
+  
+  // Indexes
+  @@index([transferId])
+  @@index([drugId])
+  @@map("transfer_items")
+}

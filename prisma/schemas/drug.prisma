@@ -1,0 +1,61 @@
+// prisma/schemas/drug.prisma
+// ===== 3. DRUG MASTER SCHEMA =====
+
+// Enhanced Drug Model with Hospital-specific Data
+model Drug {
+  id              String   @id @default(cuid())
+  hospitalDrugCode String  @unique // รหัสยาเฉพาะโรงพยาบาล
+  name            String   // ชื่อยาทางการค้า
+  genericName     String?  // ชื่อสามัญยา
+  dosageForm      String   // รูปแบบยา (เม็ด, แคปซูล, ขวด, หลอด)
+  strength        String?  // ความแรงยา (500mg, 250mg/5ml)
+  unit            String   // หน่วยนับ (เม็ด, ขวด, หลอด, กล่อง)
+  packageSize     String?  // ขนาดบรรจุ (1x100's, 1x500ml)
+  pricePerBox     Float    @default(0) // ราคาต่อกล่อง/หน่วย
+  category        String?  // หมวดหมู่ยา
+  reorderPoint    Int      @default(10) // จุดสั่งซื้อใหม่
+  isActive        Boolean  @default(true)
+  importBatch     String?  // batch ที่ import เข้ามา
+  notes           String?  // หมายเหตุเพิ่มเติม
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  stocks          Stock[]
+  transferItems   TransferItem[]
+  batches         DrugBatch[]
+  
+  // Indexes สำหรับ Performance
+  @@index([hospitalDrugCode])
+  @@index([name])
+  @@index([category])
+  @@index([isActive])
+  @@index([genericName])
+  @@map("drugs")
+}
+
+// Drug Batch Management (LOT/EXPIRY)
+model DrugBatch {
+  id            String   @id @default(cuid())
+  drugId        String
+  department    Department
+  lotNumber     String
+  expiryDate    DateTime
+  manufacturer  String?
+  quantity      Int      @default(0)
+  costPerUnit   Float    @default(0)
+  receivedDate  DateTime @default(now())
+  
+  // Relations
+  drug          Drug     @relation(fields: [drugId], references: [id], onDelete: Cascade)
+  transactions  StockTransaction[]
+  
+  // Constraints
+  @@unique([drugId, department, lotNumber, expiryDate])
+  
+  // Indexes
+  @@index([expiryDate])
+  @@index([department])
+  @@index([drugId])
+  @@map("drug_batches")
+}

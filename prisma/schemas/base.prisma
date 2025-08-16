@@ -1,0 +1,52 @@
+// prisma/schemas/base.prisma
+// ===== 1. BASE CONFIGURATION & ENUMS =====
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===== CORE ENUMS =====
+enum Department {
+  PHARMACY    // คลังยา
+  OPD         // OPD
+}
+
+enum Role {
+  PHARMACY_MANAGER    // หัวหน้าคลังยา - สิทธิ์เต็ม
+  PHARMACY_STAFF      // เจ้าหน้าที่คลังยา - จัดการสต็อก
+  OPD_MANAGER         // หัวหน้า OPD - สิทธิ์เต็มในแผนก
+  OPD_STAFF           // เจ้าหน้าที่ OPD - เบิกจ่ายพื้นฐาน
+  ADMIN               // ระบบ Admin - อนุมัติผู้ใช้
+}
+
+enum UserStatus {
+  UNAPPROVED  // ยังไม่ได้รับการอนุมัติ
+  APPROVED    // อนุมัติแล้ว
+  SUSPENDED   // ระงับการใช้งาน
+  INACTIVE    // ไม่ใช้งาน
+}
+
+enum TransactionType {
+  RECEIVE_EXTERNAL    // รับยาจากภายนอก (ซื้อ/บริจาค)
+  DISPENSE_EXTERNAL   // จ่ายยาให้ผู้ป่วย
+  TRANSFER_OUT        // ส่งยาให้แผนกอื่น
+  TRANSFER_IN         // รับยาจากแผนกอื่น
+  ADJUST_INCREASE     // ปรับเพิ่ม (นับสต็อก/คืนยา)
+  ADJUST_DECREASE     // ปรับลด (เสียหาย/หมดอายุ)
+  RESERVE             // จองยา
+  UNRESERVE           // ยกเลิกการจอง
+}
+
+enum TransferStatus {
+  PENDING     // กำลังเบิก / ใบเบิกใหม่
+  APPROVED    // กำลังเตรียมจัดส่ง
+  PREPARED    // กำลังจัดส่ง (เตรียมของเสร็จ)
+  DELIVERED   // จัดส่งสำเร็จ
+  PARTIAL     // รับบางส่วน
+  CANCELLED   // ยกเลิก
+}

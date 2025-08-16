@@ -1,0 +1,34 @@
+// prisma/schemas/user.prisma
+// ===== 2. USER MANAGEMENT SCHEMA =====
+
+// User Management with Approval System
+model User {
+  id          String     @id @default(cuid())
+  username    String     @unique
+  password    String     // bcrypt hashed
+  firstName   String
+  lastName    String
+  position    String     // ตำแหน่งงาน
+  department  Department
+  role        Role
+  status      UserStatus @default(UNAPPROVED)
+  isActive    Boolean    @default(true)
+  lastLogin   DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  // Relations - จะเชื่อมต่อกับ models อื่นในภายหลัง
+  stockTransactions     StockTransaction[]
+  transfersRequested    Transfer[] @relation("RequesterUser")
+  transfersApproved     Transfer[] @relation("ApproverUser")
+  transfersDispensed    Transfer[] @relation("DispenserUser")
+  transfersReceived     Transfer[] @relation("ReceiverUser")
+  imports               ImportHistory[]
+  
+  // Indexes สำหรับ Performance
+  @@index([department])
+  @@index([status])
+  @@index([username])
+  @@index([role])
+  @@map("users")
+}

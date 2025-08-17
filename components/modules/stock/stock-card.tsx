@@ -5,33 +5,26 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { AlertTriangle, MoreVertical } from 'lucide-react'
+import { Stock } from '@/types/dashboard'
+import { 
+  calculateAvailableStock, 
+  isLowStock, 
+  getStockStatusColor,
+  formatCurrency 
+} from '@/lib/utils/dashboard'
+import { AlertTriangle } from 'lucide-react'
 
 interface StockCardProps {
-  stock: {
-    id: string
-    totalQuantity: number
-    reservedQty: number
-    minimumStock: number
-    totalValue: number
-    drug: {
-      hospitalDrugCode: string
-      name: string
-      genericName?: string
-      dosageForm: string
-      strength?: string
-      unit: string
-      category: string
-    }
-  }
+  stock: Stock
+  department: 'PHARMACY' | 'OPD'
   onAdjust?: (stockId: string) => void
   onViewDetail?: (stockId: string) => void
 }
 
-export function StockCard({ stock, onAdjust, onViewDetail }: StockCardProps) {
-  const isLowStock = stock.totalQuantity <= stock.minimumStock
-  const available = stock.totalQuantity - stock.reservedQty
-
+export function StockCard({ stock, department, onAdjust, onViewDetail }: StockCardProps) {
+  const available = calculateAvailableStock(stock)
+  const lowStock = isLowStock(stock)
+  
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'HIGH_ALERT': return 'destructive'
@@ -57,8 +50,21 @@ export function StockCard({ stock, onAdjust, onViewDetail }: StockCardProps) {
     }
   }
 
+  const departmentBadgeConfig = {
+    PHARMACY: { className: 'bg-blue-100 text-blue-800', label: 'Pharmacy Stock' },
+    OPD: { className: 'bg-green-100 text-green-800', label: 'OPD Stock' }
+  }
+
+  const lowStockAction = {
+    PHARMACY: { label: 'เติมสต็อก', color: 'bg-orange-600 hover:bg-orange-700' },
+    OPD: { label: 'เบิกเพิ่ม', color: 'bg-orange-600 hover:bg-orange-700' }
+  }
+
+  const deptBadge = departmentBadgeConfig[department]
+  const action = lowStockAction[department]
+
   return (
-    <Card className={`transition-all hover:shadow-md cursor-pointer ${isLowStock ? 'border-red-200 bg-red-50' : ''}`}>
+    <Card className={`transition-all hover:shadow-md cursor-pointer ${getStockStatusColor(stock)}`}>
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex-1">
@@ -66,12 +72,18 @@ export function StockCard({ stock, onAdjust, onViewDetail }: StockCardProps) {
               <Badge variant="outline" className="text-xs">
                 {stock.drug.hospitalDrugCode}
               </Badge>
-              {isLowStock && (
+              
+              {lowStock && (
                 <Badge variant="destructive" className="text-xs">
                   <AlertTriangle className="h-3 w-3 mr-1" />
-                  สต็อกต่ำ
+                  {department === 'PHARMACY' ? 'สต็อกต่ำ' : 'ต้องเบิกเพิ่ม'}
                 </Badge>
               )}
+              
+              <Badge variant="secondary" className={`text-xs ${deptBadge.className}`}>
+                {deptBadge.label}
+              </Badge>
+              
               <Badge variant={getCategoryColor(stock.drug.category)} className="text-xs">
                 {getCategoryLabel(stock.drug.category)}
               </Badge>
@@ -91,34 +103,31 @@ export function StockCard({ stock, onAdjust, onViewDetail }: StockCardProps) {
             <div className="text-lg font-bold text-gray-900">
               {available} / {stock.totalQuantity}
             </div>
-            <div className="text-xs text-gray-500">พร้อมจ่าย / รวม</div>
-            {stock.reservedQty > 0 && (
-              <div className="text-xs text-orange-600">จอง: {stock.reservedQty}</div>
-            )}
-            <div className="text-xs text-gray-500">Min: {stock.minimumStock}</div>
-            <div className="text-sm font-medium text-green-600">
-              ₿{stock.totalValue.toLocaleString()}
+            <div className="text-xs text-gray-500">
+              ใช้งานได้ / ทั้งหมด
             </div>
+            {stock.reservedQty > 0 && (
+              <div className="text-xs text-orange-600">
+                จอง: {stock.reservedQty}
+              </div>
+            )}
           </div>
           
-          <div className="flex flex-col space-y-1">
-            {onAdjust && (
+          <div className="text-right">
+            <p className="text-lg font-bold text-green-600">
+              {formatCurrency(stock.totalValue)}
+            </p>
+            <p className="text-xs text-gray-500">มูลค่า</p>
+            {lowStock && (
               <Button 
                 size="sm" 
-                variant="outline" 
-                onClick={() => onAdjust(stock.id)}
-                className="text-xs"
+                className={`mt-2 ${action.color}`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onAdjust?.(stock.id)
+                }}
               >
-                ปรับสต็อก
-              </Button>
-            )}
-            {onViewDetail && (
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => onViewDetail(stock.id)}
-              >
-                <MoreVertical className="h-4 w-4" />
+                {action.label}
               </Button>
             )}
           </div>

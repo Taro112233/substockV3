@@ -3,49 +3,38 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Package, Calculator, CheckCircle, AlertTriangle, ArrowRightLeft, Plus, Users } from 'lucide-react'
-
-interface Stock {
-  id: string
-  drugId: string
-  department: 'PHARMACY' | 'OPD'
-  totalQuantity: number
-  reservedQty: number
-  minimumStock: number
-  totalValue: number
-  drug: {
-    hospitalDrugCode: string
-    name: string
-    genericName?: string
-    dosageForm: string
-    strength?: string
-    unit: string
-    category: string
-  }
-}
+import { DashboardStatsCards } from '@/components/modules/dashboard/dashboard-stats'
+import { StockManagementTab } from '@/components/modules/dashboard/stock-management-tab'
+import { TransferTab } from '@/components/modules/dashboard/transfer-tab'
+import { HistoryTab } from '@/components/modules/dashboard/history-tab'
+import { TransferDetailModal } from '@/components/modules/transfer/transfer-detail-modal'
+import { Stock, Transfer, Transaction } from '@/types/dashboard'
+import { calculateDashboardStats } from '@/lib/utils/dashboard'
+import { Package, FileText, History } from 'lucide-react'
 
 export default function OPDDashboard() {
   const [stocks, setStocks] = useState<Stock[]>([])
+  const [transfers, setTransfers] = useState<Transfer[]>([])
+  const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
+  const [activeTransfer, setActiveTransfer] = useState<Transfer | null>(null)
 
-  // Mock user data - will be replaced with actual auth
+  // Mock user data
   const user = {
     firstName: 'สมหญิง',
     lastName: 'พยาบาล',
-    position: 'พยาบาลวิชาชีพ'
+    position: 'พยาบาลวิชาชีพ',
+    department: 'OPD' as const
   }
 
   useEffect(() => {
-    fetchOPDStocks()
+    fetchData()
   }, [])
 
-  const fetchOPDStocks = async () => {
+  const fetchData = async () => {
     try {
-      // Mock data for now - will be replaced with actual API call
+      // Mock data for OPD - replace with actual API calls
       const mockStocks: Stock[] = [
         {
           id: '4',
@@ -84,258 +73,199 @@ export default function OPDDashboard() {
           }
         }
       ]
-      
+
+      // Same transfers but from OPD perspective (receiving from pharmacy)
+      const mockTransfers: Transfer[] = [
+        {
+          id: 'TR001',
+          transferNumber: 'TR-2024-001',
+          fromDept: 'PHARMACY',
+          toDept: 'OPD',
+          status: 'PENDING',
+          totalItems: 2,
+          totalValue: 1500,
+          requestedAt: '2024-01-20T10:30:00',
+          requestedBy: 'สมหญิง พยาบาล',
+          items: [
+            {
+              id: 'TI001',
+              drugCode: 'PAR001',
+              drugName: 'Paracetamol 500mg',
+              requestedQty: 50,
+              unit: 'เม็ด'
+            },
+            {
+              id: 'TI002',
+              drugCode: 'IBU001',
+              drugName: 'Ibuprofen 400mg',
+              requestedQty: 30,
+              unit: 'เม็ด'
+            }
+          ]
+        },
+        {
+          id: 'TR002',
+          transferNumber: 'TR-2024-002',
+          fromDept: 'PHARMACY',
+          toDept: 'OPD',
+          status: 'SENT',
+          totalItems: 1,
+          totalValue: 800,
+          requestedAt: '2024-01-19T14:15:00',
+          requestedBy: 'สมหญิง พยาบาล',
+          approvedAt: '2024-01-19T15:00:00',
+          sentAt: '2024-01-19T16:30:00',
+          items: [
+            {
+              id: 'TI003',
+              drugCode: 'AMX001',
+              drugName: 'Amoxicillin 250mg',
+              requestedQty: 20,
+              approvedQty: 20,
+              sentQty: 20,
+              unit: 'แคปซูล'
+            }
+          ]
+        }
+      ]
+
+      const mockTransactions: Transaction[] = [
+        {
+          id: 'TX003',
+          type: 'TRANSFER_IN',
+          drugCode: 'PAR001',
+          drugName: 'Paracetamol 500mg',
+          quantity: 50,
+          unit: 'เม็ด',
+          reference: 'TR-2024-001',
+          createdAt: '2024-01-20T10:30:00',
+          createdBy: 'สมหญิง พยาบาล'
+        },
+        {
+          id: 'TX004',
+          type: 'DISPENSING',
+          drugCode: 'IBU001',
+          drugName: 'Ibuprofen 400mg',
+          quantity: -10,
+          unit: 'เม็ด',
+          reference: 'จ่ายให้ผู้ป่วย',
+          createdAt: '2024-01-19T14:30:00',
+          createdBy: 'สมหญิง พยาบาล'
+        }
+      ]
+
       setStocks(mockStocks)
+      setTransfers(mockTransfers)
+      setTransactions(mockTransactions)
     } catch (error) {
-      console.error('Failed to fetch stocks:', error)
+      console.error('Failed to fetch data:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const totalStockValue = stocks.reduce((sum, stock) => sum + stock.totalValue, 0)
-  const lowStockItems = stocks.filter(stock => stock.totalQuantity <= stock.minimumStock)
-  const availableStock = stocks.reduce((sum, stock) => sum + (stock.totalQuantity - stock.reservedQty), 0)
+  const handleTransferAction = async (transferId: string, action: string) => {
+    console.log(`Action ${action} on transfer ${transferId}`)
+    // Implement transfer action logic here
+  }
+
+  const handleStockAdjust = (stockId: string) => {
+    console.log(`Adjust stock ${stockId}`)
+    // Implement stock adjustment logic here
+  }
+
+  const handleStockDetail = (stockId: string) => {
+    console.log(`View stock detail ${stockId}`)
+    // Implement stock detail view logic here
+  }
+
+  const handleCreateTransfer = () => {
+    console.log('Create new transfer request')
+    // Implement create transfer request logic here
+  }
+
+  const handleExportHistory = () => {
+    console.log('Export history to Excel')
+    // Implement export logic here
+  }
+
+  const stats = calculateDashboardStats(stocks, transfers)
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p>กำลังโหลดข้อมูล...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">กำลังโหลดข้อมูล...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 space-y-6">
+    <div className="min-h-screen bg-gray-50 p-4 pb-20">
       {/* Header */}
-      <div className="bg-white rounded-lg p-6 shadow-sm">
-        <div className="flex flex-col space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">OPD Dashboard</h1>
-              <p className="text-gray-600">ยินดีต้อนรับ, {user.firstName} {user.lastName}</p>
-              {user.position && (
-                <p className="text-sm text-gray-500">ตำแหน่ง: {user.position}</p>
-              )}
-            </div>
-            <Badge variant="secondary" className="px-3 py-1">
-              🏥 OPD
-            </Badge>
-          </div>
-          
-          {/* Quick Stats for OPD */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <Package className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <p className="text-xs text-gray-600">ยาใน OPD</p>
-                    <p className="text-lg font-semibold">{stocks.length} รายการ</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <Calculator className="h-5 w-5 text-green-600" />
-                  <div>
-                    <p className="text-xs text-gray-600">มูลค่ารวม</p>
-                    <p className="text-lg font-semibold">₿{totalStockValue.toLocaleString()}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <div>
-                    <p className="text-xs text-gray-600">พร้อมใช้</p>
-                    <p className="text-lg font-semibold">{availableStock}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <AlertTriangle className="h-5 w-5 text-red-600" />
-                  <div>
-                    <p className="text-xs text-gray-600">ต้องเบิกเพิ่ม</p>
-                    <p className="text-lg font-semibold">{lowStockItems.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          OPD Dashboard
+        </h1>
+        <p className="text-gray-600">สวัสดี, {user.firstName} {user.lastName}</p>
+        <p className="text-sm text-gray-500">{user.position}</p>
       </div>
 
-      {/* Main Content for OPD */}
-      <Tabs defaultValue="stock" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="stock">สต็อก OPD</TabsTrigger>
-          <TabsTrigger value="requests">ใบเบิกยา</TabsTrigger>
-          <TabsTrigger value="dispense">จ่ายยาผู้ป่วย</TabsTrigger>
+      {/* Quick Stats */}
+      <DashboardStatsCards stats={stats} department={user.department} />
+
+      {/* Main Tabs */}
+      <Tabs defaultValue="stock" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsTrigger value="stock" className="flex items-center space-x-2">
+            <Package className="h-4 w-4" />
+            <span>จัดการสต็อก</span>
+          </TabsTrigger>
+          <TabsTrigger value="transfers" className="flex items-center space-x-2">
+            <FileText className="h-4 w-4" />
+            <span>ใบเบิกของ</span>
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center space-x-2">
+            <History className="h-4 w-4" />
+            <span>ประวัติ</span>
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="stock" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>สต็อกยา OPD</span>
-                <Button size="sm" variant="outline">
-                  <ArrowRightLeft className="h-4 w-4 mr-2" />
-                  เบิกยาจากคลัง
-                </Button>
-              </CardTitle>
-              <CardDescription>
-                สต็อกยาในแผนก OPD สำหรับการจ่ายยาให้ผู้ป่วย
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                {stocks.map((stock) => {
-                  const isLowStock = stock.totalQuantity <= stock.minimumStock
-                  const available = stock.totalQuantity - stock.reservedQty
-                  
-                  return (
-                    <Card key={stock.id} className={`transition-all hover:shadow-md ${isLowStock ? 'border-orange-200 bg-orange-50' : ''}`}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <Badge variant="outline" className="text-xs">
-                                {stock.drug.hospitalDrugCode}
-                              </Badge>
-                              {isLowStock && (
-                                <Badge variant="destructive" className="text-xs">
-                                  <AlertTriangle className="h-3 w-3 mr-1" />
-                                  ต้องเบิกเพิ่ม
-                                </Badge>
-                              )}
-                              <Badge variant="secondary" className="text-xs">
-                                OPD Stock
-                              </Badge>
-                            </div>
-                            
-                            <h3 className="font-semibold text-gray-900 mb-1">{stock.drug.name}</h3>
-                            {stock.drug.genericName && (
-                              <p className="text-sm text-gray-600 mb-1">{stock.drug.genericName}</p>
-                            )}
-                            <p className="text-sm text-gray-500">
-                              {stock.drug.strength && `${stock.drug.strength} • `}
-                              {stock.drug.dosageForm} • {stock.drug.unit}
-                            </p>
-                          </div>
-                          
-                          <div className="text-right space-y-1 mx-4">
-                            <div className="text-lg font-bold text-gray-900">
-                              {available} / {stock.totalQuantity}
-                            </div>
-                            <div className="text-xs text-gray-500">พร้อมจ่าย / รวม</div>
-                            {stock.reservedQty > 0 && (
-                              <div className="text-xs text-orange-600">จอง: {stock.reservedQty}</div>
-                            )}
-                            <div className="text-xs text-gray-500">ควรมี: {stock.minimumStock}</div>
-                            <div className="text-sm font-medium text-green-600">
-                              ₿{stock.totalValue.toLocaleString()}
-                            </div>
-                          </div>
-                          
-                          <div className="flex flex-col space-y-1">
-                            {isLowStock && (
-                              <Button size="sm" variant="outline" className="text-xs">
-                                เบิกเพิ่ม
-                              </Button>
-                            )}
-                            <Button variant="ghost" size="sm">
-                              รายละเอียด
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                })}
-                {stocks.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>ไม่มียาใน OPD</p>
-                    <Button className="mt-4" size="sm">
-                      <ArrowRightLeft className="h-4 w-4 mr-2" />
-                      เบิกยาจากคลัง
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="stock">
+          <StockManagementTab
+            stocks={stocks}
+            department={user.department}
+            onStockAdjust={handleStockAdjust}
+            onStockDetail={handleStockDetail}
+          />
         </TabsContent>
 
-        <TabsContent value="requests" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>ใบเบิกยา</span>
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  สร้างใบเบิกใหม่
-                </Button>
-              </CardTitle>
-              <CardDescription>
-                จัดการใบเบิกยาจากคลังยา - มุมมอง OPD
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <ArrowRightLeft className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>ไม่มีใบเบิกยา</p>
-                <Button className="mt-4" size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  สร้างใบเบิกใหม่
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="transfers">
+          <TransferTab
+            transfers={transfers}
+            department={user.department}
+            onTransferAction={handleTransferAction}
+            onViewDetail={setActiveTransfer}
+            onCreateNew={handleCreateTransfer}
+          />
         </TabsContent>
 
-        <TabsContent value="dispense" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>จ่ายยาผู้ป่วย</span>
-                <Button size="sm">
-                  <Users className="h-4 w-4 mr-2" />
-                  จ่ายยาใหม่
-                </Button>
-              </CardTitle>
-              <CardDescription>
-                ระบบจ่ายยาให้ผู้ป่วย OPD
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>ระบบจ่ายยาผู้ป่วย</p>
-                <p className="text-sm">จะพัฒนาในระยะต่อไป</p>
-                <Button className="mt-4" size="sm" disabled>
-                  <Users className="h-4 w-4 mr-2" />
-                  จ่ายยาผู้ป่วย
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="history">
+          <HistoryTab
+            transactions={transactions}
+            onExport={handleExportHistory}
+          />
         </TabsContent>
       </Tabs>
+
+      {/* Transfer Detail Modal */}
+      <TransferDetailModal
+        transfer={activeTransfer}
+        isOpen={!!activeTransfer}
+        onClose={() => setActiveTransfer(null)}
+      />
     </div>
   )
 }

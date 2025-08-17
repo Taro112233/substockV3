@@ -1,13 +1,13 @@
 // 📄 File: types/dashboard.ts
+// Fixed Dashboard Types - ตรงกับ database schema
 
-export interface Drug {
-  hospitalDrugCode: string
-  name: string
-  genericName?: string
-  dosageForm: string
-  strength?: string
-  unit: string
-  category: string
+export interface DashboardStats {
+  totalDrugs: number
+  totalValue: number
+  lowStockItems: number
+  pendingTransfers: number
+  recentTransactions: number
+  department: 'PHARMACY' | 'OPD'
 }
 
 export interface Stock {
@@ -18,60 +18,102 @@ export interface Stock {
   reservedQty: number
   minimumStock: number
   totalValue: number
-  drug: Drug
-}
-
-export interface TransferItem {
-  id: string
-  drugCode: string
-  drugName: string
-  requestedQty: number
-  approvedQty?: number
-  sentQty?: number
-  receivedQty?: number
-  unit: string
+  lastUpdated?: string
+  drug: {
+    hospitalDrugCode: string
+    name: string
+    genericName: string
+    dosageForm: string
+    strength: string
+    unit: string
+    category: string
+  }
 }
 
 export interface Transfer {
   id: string
   transferNumber: string
-  fromDept: 'PHARMACY' | 'OPD'
-  toDept: 'PHARMACY' | 'OPD'
+  fromDepartment: 'PHARMACY' | 'OPD'
+  toDepartment: 'PHARMACY' | 'OPD'
   status: 'PENDING' | 'APPROVED' | 'SENT' | 'RECEIVED' | 'CANCELLED'
-  totalItems: number
-  totalValue: number
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
   requestedAt: string
-  requestedBy: string
-  approvedAt?: string
-  sentAt?: string
-  receivedAt?: string
+  approvedAt?: string | null
+  sentAt?: string | null
+  receivedAt?: string | null
+  requestedBy: {
+    name: string
+  }
+  approvedBy?: {
+    name: string
+  } | null
   items: TransferItem[]
+  notes: string
+  totalItems?: number
+  totalValue?: number
+}
+
+export interface TransferItem {
+  id: string
+  drugId: string
+  requestedQty: number
+  approvedQty: number
+  sentQty: number
+  receivedQty: number
+  drug: {
+    hospitalDrugCode: string
+    name: string
+    strength: string
+    unit: string
+  }
 }
 
 export interface Transaction {
   id: string
-  type: 'ADJUSTMENT' | 'TRANSFER_IN' | 'TRANSFER_OUT' | 'DISPENSING'
-  drugCode: string
-  drugName: string
+  type: 'RECEIVE' | 'DISPENSE' | 'ADJUST_IN' | 'ADJUST_OUT' | 'TRANSFER_IN' | 'TRANSFER_OUT' | 'EXPIRE' | 'DAMAGED'
   quantity: number
-  unit: string
-  reference?: string
+  beforeQty: number
+  afterQty: number
+  unitCost: number
+  totalCost: number
+  reference: string
+  note: string
   createdAt: string
-  createdBy: string
+  drug: {
+    hospitalDrugCode: string
+    name: string
+    strength: string
+    unit: string
+  }
+  user: {
+    name: string
+  }
 }
 
-export interface User {
-  id: string
-  firstName: string
-  lastName: string
-  position: string
+// Component Props Types
+export interface DashboardStatsProps {
+  stats: DashboardStats
   department: 'PHARMACY' | 'OPD'
-  role: string
 }
 
-export interface DashboardStats {
-  totalItems: number
-  totalValue: number
-  lowStockCount: number
-  transferCount: number
+export interface StockManagementTabProps {
+  stocks: Stock[]
+  department: 'PHARMACY' | 'OPD'
+}
+
+export interface TransferTabProps {
+  transfers: Transfer[]
+  department: 'PHARMACY' | 'OPD'
+  onTransferAction: () => void
+  onViewDetail: (transfer: Transfer) => void
+}
+
+export interface HistoryTabProps {
+  transactions: Transaction[]
+}
+
+export interface TransferDetailModalProps {
+  transfer: Transfer
+  isOpen: boolean
+  onClose: () => void
 }

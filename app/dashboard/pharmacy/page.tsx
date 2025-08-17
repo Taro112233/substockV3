@@ -9,18 +9,35 @@ import { StockManagementTab } from '@/components/modules/dashboard/stock-managem
 import { TransferTab } from '@/components/modules/dashboard/transfer-tab'
 import { HistoryTab } from '@/components/modules/dashboard/history-tab'
 import { TransferDetailModal } from '@/components/modules/transfer/transfer-detail-modal'
-import { Stock, Transfer, Transaction, DashboardStats } from '@/types/dashboard'
-import { calculateDashboardStats } from '@/lib/utils/dashboard'
-import { Package, FileText, History } from 'lucide-react'
+import { DashboardLoading, EmptyState } from '@/components/error-boundary'
+import { Transfer, DashboardStats, Stock, Transaction } from '@/types/dashboard'
+import { Package, FileText, History, RefreshCw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { useToast } from '@/hooks/use-toast'
+
+interface DashboardData {
+  stocks: Stock[]
+  transfers: Transfer[]
+  transactions: Transaction[]
+  stats: {
+    totalDrugs: number
+    totalValue: number
+    lowStockCount: number
+    totalTransfers: number
+    pendingTransfers: number
+    approvedTransfers: number
+  }
+}
 
 export default function PharmacyDashboard() {
-  const [stocks, setStocks] = useState<Stock[]>([])
-  const [transfers, setTransfers] = useState<Transfer[]>([])
-  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
   const [activeTransfer, setActiveTransfer] = useState<Transfer | null>(null)
+  const { toast } = useToast()
 
-  // Mock user data
+  // Mock user data - ในระบบจริงจะดึงจาก authentication context
   const user = {
     firstName: 'สมชาย',
     lastName: 'เภสัชกร',
@@ -29,242 +46,260 @@ export default function PharmacyDashboard() {
   }
 
   useEffect(() => {
-    fetchData()
+    fetchDashboardData()
   }, [])
 
-  const fetchData = async () => {
+  const fetchDashboardData = async (showRefreshToast = false) => {
     try {
-      // Mock data - replace with actual API calls
-      const mockStocks: Stock[] = [
-        {
-          id: '1',
-          drugId: 'drug1',
-          department: 'PHARMACY',
-          totalQuantity: 150,
-          reservedQty: 20,
-          minimumStock: 50,
-          totalValue: 7500,
-          drug: {
-            hospitalDrugCode: 'PAR001',
-            name: 'Paracetamol 500mg',
-            genericName: 'Paracetamol',
-            dosageForm: 'TAB',
-            strength: '500mg',
-            unit: 'เม็ด',
-            category: 'GENERAL'
-          }
-        },
-        {
-          id: '2',
-          drugId: 'drug2',
-          department: 'PHARMACY',
-          totalQuantity: 25,
-          reservedQty: 5,
-          minimumStock: 30,
-          totalValue: 12500,
-          drug: {
-            hospitalDrugCode: 'AMX001',
-            name: 'Amoxicillin 250mg',
-            genericName: 'Amoxicillin',
-            dosageForm: 'CAP',
-            strength: '250mg',
-            unit: 'แคปซูล',
-            category: 'REFER'
-          }
-        }
-      ]
+      if (showRefreshToast) {
+        setRefreshing(true)
+      }
 
-      const mockTransfers: Transfer[] = [
-        {
-          id: 'TR001',
-          transferNumber: 'TR-2024-001',
-          fromDept: 'PHARMACY',
-          toDept: 'OPD',
-          status: 'PENDING',
-          totalItems: 2,
-          totalValue: 1500,
-          requestedAt: '2024-01-20T10:30:00',
-          requestedBy: 'พยาบาล OPD',
-          items: [
-            {
-              id: 'TI001',
-              drugCode: 'PAR001',
-              drugName: 'Paracetamol 500mg',
-              requestedQty: 50,
-              unit: 'เม็ด'
-            },
-            {
-              id: 'TI002',
-              drugCode: 'IBU001',
-              drugName: 'Ibuprofen 400mg',
-              requestedQty: 30,
-              unit: 'เม็ด'
-            }
-          ]
+      const response = await fetch('/api/dashboard/pharmacy', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        {
-          id: 'TR002',
-          transferNumber: 'TR-2024-002',
-          fromDept: 'PHARMACY',
-          toDept: 'OPD',
-          status: 'SENT',
-          totalItems: 1,
-          totalValue: 800,
-          requestedAt: '2024-01-19T14:15:00',
-          requestedBy: 'พยาบาล OPD',
-          approvedAt: '2024-01-19T15:00:00',
-          sentAt: '2024-01-19T16:30:00',
-          items: [
-            {
-              id: 'TI003',
-              drugCode: 'AMX001',
-              drugName: 'Amoxicillin 250mg',
-              requestedQty: 20,
-              approvedQty: 20,
-              sentQty: 20,
-              unit: 'แคปซูล'
-            }
-          ]
-        }
-      ]
+        cache: 'no-store' // ป้องกัน cache เพื่อให้ได้ข้อมูลล่าสุด
+      })
 
-      const mockTransactions: Transaction[] = [
-        {
-          id: 'TX001',
-          type: 'TRANSFER_OUT',
-          drugCode: 'PAR001',
-          drugName: 'Paracetamol 500mg',
-          quantity: -50,
-          unit: 'เม็ด',
-          reference: 'TR-2024-001',
-          createdAt: '2024-01-20T10:30:00',
-          createdBy: 'สมชาย เภสัชกร'
-        },
-        {
-          id: 'TX002',
-          type: 'ADJUSTMENT',
-          drugCode: 'AMX001',
-          drugName: 'Amoxicillin 250mg',
-          quantity: 100,
-          unit: 'แคปซูล',
-          reference: 'รับยาใหม่',
-          createdAt: '2024-01-19T09:15:00',
-          createdBy: 'สมชาย เภสัชกร'
-        }
-      ]
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`)
+      }
 
-      setStocks(mockStocks)
-      setTransfers(mockTransfers)
-      setTransactions(mockTransactions)
+      const result = await response.json()
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch data')
+      }
+
+      setData(result.data)
+      setError(null)
+
+      if (showRefreshToast) {
+        toast({
+          title: "ข้อมูลได้รับการอัปเดต",
+          description: "ข้อมูลสต็อกและใบเบิกล่าสุดแล้ว",
+          duration: 2000
+        })
+      }
+
     } catch (error) {
-      console.error('Failed to fetch data:', error)
+      console.error('Failed to fetch dashboard data:', error)
+      
+      const errorMessage = error instanceof Error ? error.message : "ไม่สามารถโหลดข้อมูลได้"
+      setError(errorMessage)
+      
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: errorMessage,
+        variant: "destructive",
+        duration: 4000
+      })
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }
 
-  const handleTransferAction = async (transferId: string, action: string) => {
-    console.log(`Action ${action} on transfer ${transferId}`)
-    // Implement transfer action logic here
+  const handleRefresh = () => {
+    fetchDashboardData(true)
   }
 
-  const handleStockAdjust = (stockId: string) => {
-    console.log(`Adjust stock ${stockId}`)
-    // Implement stock adjustment logic here
+  const handleTransferUpdate = () => {
+    fetchDashboardData()
+    setActiveTransfer(null)
   }
 
-  const handleStockDetail = (stockId: string) => {
-    console.log(`View stock detail ${stockId}`)
-    // Implement stock detail view logic here
-  }
-
-  const handleCreateTransfer = () => {
-    console.log('Create new transfer')
-    // Implement create transfer logic here
-  }
-
-  const handleExportHistory = () => {
-    console.log('Export history to Excel')
-    // Implement export logic here
-  }
-
-  const stats = calculateDashboardStats(stocks, transfers)
-
-  if (loading) {
+  // แสดง Loading State
+  if (loading && !data) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">กำลังโหลดข้อมูล...</p>
-        </div>
+      <DashboardLoading message="กำลังโหลดข้อมูลสต็อกยา..." />
+    )
+  }
+
+  // แสดง Error State
+  if (error && !data) {
+    return (
+      <div className="container mx-auto p-4 max-w-7xl">
+        <EmptyState 
+          title="ไม่สามารถโหลดข้อมูลได้"
+          description={error}
+          action={
+            <Button onClick={handleRefresh} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              ลองใหม่
+            </Button>
+          }
+        />
       </div>
     )
   }
 
+  // แสดง Empty State
+  if (!data) {
+    return (
+      <div className="container mx-auto p-4 max-w-7xl">
+        <EmptyState 
+          title="ไม่มีข้อมูลในระบบ"
+          description="กรุณาติดต่อผู้ดูแลระบบ"
+        />
+      </div>
+    )
+  }
+
+  // คำนวณ stats สำหรับแสดงผล
+  const dashboardStats: DashboardStats = {
+    totalDrugs: data.stats.totalDrugs,
+    totalValue: data.stats.totalValue,
+    lowStockItems: data.stats.lowStockCount,
+    pendingTransfers: data.stats.pendingTransfers,
+    recentTransactions: data.transactions.length,
+    department: 'PHARMACY'
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 p-4 pb-20">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          คลังยา Dashboard
-        </h1>
-        <p className="text-gray-600">สวัสดี, {user.firstName} {user.lastName}</p>
-        <p className="text-sm text-gray-500">{user.position}</p>
+    <div className="container mx-auto p-4 max-w-7xl">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            ระบบจัดการสต็อกยา - แผนกเภสัชกรรม
+          </h1>
+          <p className="text-gray-600 mt-1">
+            ยินดีต้อนรับ คุณ{user.firstName} {user.lastName} ({user.position})
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            อัปเดตล่าสุด: {new Date().toLocaleString('th-TH')}
+          </p>
+        </div>
+        
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleRefresh} 
+            variant="outline" 
+            size="sm"
+            disabled={refreshing}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            รีเฟรช
+          </Button>
+        </div>
       </div>
 
-      {/* Quick Stats */}
-      <DashboardStatsCards stats={stats} department={user.department} />
+      {/* Stats Cards */}
+      <div className="mb-6">
+        <DashboardStatsCards 
+          stats={dashboardStats}
+          department="PHARMACY"
+        />
+      </div>
 
-      {/* Main Tabs */}
-      <Tabs defaultValue="stock" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-6">
-          <TabsTrigger value="stock" className="flex items-center space-x-2">
+      {/* แสดงแจ้งเตือนหากมีข้อมูลที่ต้องให้ความสนใจ */}
+      {data.stats.lowStockCount > 0 && (
+        <div className="mb-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-r-lg">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <Package className="h-5 w-5 text-yellow-400" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                <strong>แจ้งเตือน:</strong> มียาสต็อกต่ำ {data.stats.lowStockCount} รายการ ควรสั่งซื้อเพิ่มเติม
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {data.stats.pendingTransfers > 0 && (
+        <div className="mb-4 p-4 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <FileText className="h-5 w-5 text-blue-400" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-blue-700">
+                <strong>รอดำเนินการ:</strong> มีใบเบิกรอการอนุมัติ {data.stats.pendingTransfers} ใบ
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Dashboard Tabs */}
+      <Tabs defaultValue="stock" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:grid-cols-3">
+          <TabsTrigger value="stock" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
-            <span>จัดการสต็อก</span>
+            <span className="hidden sm:inline">จัดการสต็อก</span>
+            <span className="sm:hidden">สต็อก</span>
+            {data.stats.lowStockCount > 0 && (
+              <span className="ml-1 bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                {data.stats.lowStockCount}
+              </span>
+            )}
           </TabsTrigger>
-          <TabsTrigger value="transfers" className="flex items-center space-x-2">
+          <TabsTrigger value="transfers" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            <span>ใบเบิกของ</span>
+            <span className="hidden sm:inline">ใบเบิกของ</span>
+            <span className="sm:hidden">เบิกของ</span>
+            {data.stats.pendingTransfers > 0 && (
+              <span className="ml-1 bg-orange-500 text-white text-xs rounded-full px-2 py-0.5">
+                {data.stats.pendingTransfers}
+              </span>
+            )}
           </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center space-x-2">
+          <TabsTrigger value="history" className="flex items-center gap-2">
             <History className="h-4 w-4" />
-            <span>ประวัติ</span>
+            <span className="hidden sm:inline">ประวัติ</span>
+            <span className="sm:hidden">ประวัติ</span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="stock">
-          <StockManagementTab
-            stocks={stocks}
-            department={user.department}
-            onStockAdjust={handleStockAdjust}
-            onStockDetail={handleStockDetail}
+        <TabsContent value="stock" className="space-y-4">
+          <StockManagementTab 
+            stocks={data.stocks}
+            department="PHARMACY"
           />
         </TabsContent>
 
-        <TabsContent value="transfers">
-          <TransferTab
-            transfers={transfers}
-            department={user.department}
-            onTransferAction={handleTransferAction}
+        <TabsContent value="transfers" className="space-y-4">
+          <TransferTab 
+            transfers={data.transfers}
+            department="PHARMACY"
+            onTransferAction={handleTransferUpdate}
             onViewDetail={setActiveTransfer}
-            onCreateNew={handleCreateTransfer}
           />
         </TabsContent>
 
-        <TabsContent value="history">
-          <HistoryTab
-            transactions={transactions}
-            onExport={handleExportHistory}
+        <TabsContent value="history" className="space-y-4">
+          <HistoryTab 
+            transactions={data.transactions}
           />
         </TabsContent>
       </Tabs>
 
       {/* Transfer Detail Modal */}
-      <TransferDetailModal
-        transfer={activeTransfer}
-        isOpen={!!activeTransfer}
-        onClose={() => setActiveTransfer(null)}
-      />
+      {activeTransfer && (
+        <TransferDetailModal
+          transfer={activeTransfer}
+          isOpen={!!activeTransfer}
+          onClose={() => setActiveTransfer(null)}
+        />
+      )}
+
+      {/* Footer Information */}
+      <div className="mt-8 pt-4 border-t border-gray-200">
+        <div className="flex flex-col sm:flex-row justify-between items-center text-xs text-gray-500">
+          <div>
+            Hospital Pharmacy Management System V3.0
+          </div>
+          <div className="mt-2 sm:mt-0">
+            ระบบอัปเดตข้อมูลแบบเรียลไทม์
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

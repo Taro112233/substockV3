@@ -1,137 +1,194 @@
 // 📄 File: components/modules/stock/stock-card.tsx
 
-'use client'
-
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Stock } from '@/types/dashboard'
-import { 
-  calculateAvailableStock, 
-  isLowStock, 
+import {
+  calculateAvailableStock,
+  isLowStock,
   getStockStatusColor,
-  formatCurrency 
+  formatCurrency,
+  getCategoryColor,
+  getCategoryLabel
 } from '@/lib/utils/dashboard'
-import { AlertTriangle } from 'lucide-react'
+import { Package, AlertTriangle, Edit, Eye, TrendingDown, TrendingUp } from 'lucide-react'
 
 interface StockCardProps {
   stock: Stock
   department: 'PHARMACY' | 'OPD'
-  onAdjust?: (stockId: string) => void
-  onViewDetail?: (stockId: string) => void
+  onAdjust?: (stock: Stock) => void
+  onView?: (stock: Stock) => void
 }
 
-export function StockCard({ stock, department, onAdjust, onViewDetail }: StockCardProps) {
-  const available = calculateAvailableStock(stock)
+export function StockCard({ 
+  stock, 
+  department, 
+  onAdjust, 
+  onView 
+}: StockCardProps) {
+  const availableStock = calculateAvailableStock(stock)
   const lowStock = isLowStock(stock)
-  
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'HIGH_ALERT': return 'destructive'
-      case 'NARCOTIC': return 'destructive'
-      case 'REFER': return 'secondary'
-      case 'REFRIGERATED': return 'default'
-      case 'PSYCHIATRIC': return 'default'
-      case 'FLUID': return 'default'
-      default: return 'outline'
+  const stockPercentage = (stock.totalQuantity / (stock.minimumStock * 2)) * 100
+
+  const handleAdjust = () => {
+    if (onAdjust) {
+      onAdjust(stock)
+    } else {
+      // Default action
+      console.log('Adjust stock for:', stock.drug.name)
     }
   }
 
-  const getCategoryLabel = (category: string) => {
-    switch (category) {
-      case 'HIGH_ALERT': return 'High Alert'
-      case 'NARCOTIC': return 'ยาเสพติด'
-      case 'REFER': return 'ยา Refer'
-      case 'REFRIGERATED': return 'แช่เย็น'
-      case 'PSYCHIATRIC': return 'จิตเวช'
-      case 'FLUID': return 'สารน้ำ'
-      case 'GENERAL': return 'ทั่วไป'
-      default: return category
+  const handleView = () => {
+    if (onView) {
+      onView(stock)
+    } else {
+      // Default action
+      console.log('View stock details for:', stock.drug.name)
     }
   }
-
-  const departmentBadgeConfig = {
-    PHARMACY: { className: 'bg-blue-100 text-blue-800', label: 'Pharmacy Stock' },
-    OPD: { className: 'bg-green-100 text-green-800', label: 'OPD Stock' }
-  }
-
-  const lowStockAction = {
-    PHARMACY: { label: 'เติมสต็อก', color: 'bg-orange-600 hover:bg-orange-700' },
-    OPD: { label: 'เบิกเพิ่ม', color: 'bg-orange-600 hover:bg-orange-700' }
-  }
-
-  const deptBadge = departmentBadgeConfig[department]
-  const action = lowStockAction[department]
 
   return (
-    <Card className={`transition-all hover:shadow-md cursor-pointer ${getStockStatusColor(stock)}`}>
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <div className="flex items-center space-x-2 mb-2">
-              <Badge variant="outline" className="text-xs">
-                {stock.drug.hospitalDrugCode}
-              </Badge>
-              
-              {lowStock && (
-                <Badge variant="destructive" className="text-xs">
-                  <AlertTriangle className="h-3 w-3 mr-1" />
-                  {department === 'PHARMACY' ? 'สต็อกต่ำ' : 'ต้องเบิกเพิ่ม'}
-                </Badge>
-              )}
-              
-              <Badge variant="secondary" className={`text-xs ${deptBadge.className}`}>
-                {deptBadge.label}
-              </Badge>
-              
-              <Badge variant={getCategoryColor(stock.drug.category)} className="text-xs">
-                {getCategoryLabel(stock.drug.category)}
-              </Badge>
+    <Card className={`hover:shadow-md transition-shadow duration-200 ${
+      lowStock ? 'border-orange-200 bg-orange-50/50' : ''
+    }`}>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="space-y-2 flex-1">
+            {/* Drug Code */}
+            <div className="font-mono text-xs text-gray-500">
+              {stock.drug.hospitalDrugCode}
             </div>
             
-            <h3 className="font-semibold text-gray-900 mb-1">{stock.drug.name}</h3>
-            {stock.drug.genericName && (
-              <p className="text-sm text-gray-600 mb-1">{stock.drug.genericName}</p>
-            )}
-            <p className="text-sm text-gray-500">
-              {stock.drug.strength && `${stock.drug.strength} • `}
-              {stock.drug.dosageForm} • {stock.drug.unit}
-            </p>
-          </div>
-          
-          <div className="text-right space-y-1 mx-4">
-            <div className="text-lg font-bold text-gray-900">
-              {available} / {stock.totalQuantity}
-            </div>
-            <div className="text-xs text-gray-500">
-              ใช้งานได้ / ทั้งหมด
-            </div>
-            {stock.reservedQty > 0 && (
-              <div className="text-xs text-orange-600">
-                จอง: {stock.reservedQty}
+            {/* Drug Name */}
+            <h3 className="font-semibold text-sm leading-tight">
+              {stock.drug.name}
+            </h3>
+            
+            {/* Generic Name & Strength */}
+            {(stock.drug.genericName || stock.drug.strength) && (
+              <div className="text-xs text-gray-600 space-y-1">
+                {stock.drug.genericName && (
+                  <div>ชื่อสามัญ: {stock.drug.genericName}</div>
+                )}
+                {stock.drug.strength && (
+                  <div>ความแรง: {stock.drug.strength}</div>
+                )}
               </div>
             )}
           </div>
-          
-          <div className="text-right">
-            <p className="text-lg font-bold text-green-600">
-              {formatCurrency(stock.totalValue)}
-            </p>
-            <p className="text-xs text-gray-500">มูลค่า</p>
-            {lowStock && (
-              <Button 
-                size="sm" 
-                className={`mt-2 ${action.color}`}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onAdjust?.(stock.id)
-                }}
-              >
-                {action.label}
-              </Button>
-            )}
+
+          {/* Category Badge */}
+          <Badge 
+            variant="secondary" 
+            className={`text-xs ${getCategoryColor(stock.drug.category)}`}
+          >
+            {getCategoryLabel(stock.drug.category)}
+          </Badge>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        {/* Stock Status */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">สต็อกปัจจุบัน:</span>
+            <div className="text-right">
+              <span className={`font-bold text-lg ${
+                lowStock ? 'text-orange-600' : 'text-gray-900'
+              }`}>
+                {stock.totalQuantity.toLocaleString()}
+              </span>
+              <span className="text-sm text-gray-500 ml-1">
+                {stock.drug.unit}
+              </span>
+            </div>
+          </div>
+
+          {/* Stock Progress Bar */}
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className={`h-2 rounded-full transition-all duration-300 ${
+                lowStock 
+                  ? 'bg-orange-500' 
+                  : stockPercentage > 75 
+                    ? 'bg-green-500' 
+                    : 'bg-blue-500'
+              }`}
+              style={{ width: `${Math.min(stockPercentage, 100)}%` }}
+            />
+          </div>
+
+          {/* Stock Details */}
+          <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
+            <div>
+              <span>พร้อมใช้:</span>
+              <span className="ml-1 font-medium">{availableStock.toLocaleString()}</span>
+            </div>
+            <div>
+              <span>จองไว้:</span>
+              <span className="ml-1 font-medium">{stock.reservedQty.toLocaleString()}</span>
+            </div>
+            <div>
+              <span>ขั้นต่ำ:</span>
+              <span className="ml-1 font-medium">{stock.minimumStock.toLocaleString()}</span>
+            </div>
+            <div>
+              <span>มูลค่า:</span>
+              <span className="ml-1 font-medium">{formatCurrency(stock.totalValue)}</span>
+            </div>
           </div>
         </div>
+
+        {/* Low Stock Warning */}
+        {lowStock && (
+          <div className="flex items-center gap-2 p-2 bg-orange-100 rounded-lg">
+            <AlertTriangle className="h-4 w-4 text-orange-600 flex-shrink-0" />
+            <span className="text-xs text-orange-700">
+              สต็อกต่ำกว่าขั้นต่ำ ควร{department === 'PHARMACY' ? 'สั่งซื้อ' : 'เบิก'}เพิ่ม
+            </span>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex gap-2 pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleView}
+            className="flex items-center gap-1 flex-1"
+          >
+            <Eye className="h-3 w-3" />
+            ดูรายละเอียด
+          </Button>
+
+          <Button
+            variant={lowStock ? "default" : "outline"}
+            size="sm"
+            onClick={handleAdjust}
+            className="flex items-center gap-1 flex-1"
+          >
+            {lowStock ? (
+              <>
+                <TrendingUp className="h-3 w-3" />
+                {department === 'PHARMACY' ? 'สั่งซื้อ' : 'เบิกเพิ่ม'}
+              </>
+            ) : (
+              <>
+                <Edit className="h-3 w-3" />
+                ปรับสต็อก
+              </>
+            )}
+          </Button>
+        </div>
+
+        {/* Last Updated */}
+        {stock.lastUpdated && (
+          <div className="text-xs text-gray-500 pt-2 border-t">
+            อัปเดตล่าสุด: {new Date(stock.lastUpdated).toLocaleDateString('th-TH')}
+          </div>
+        )}
       </CardContent>
     </Card>
   )

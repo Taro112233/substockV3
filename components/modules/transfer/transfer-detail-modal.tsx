@@ -1,154 +1,232 @@
 // 📄 File: components/modules/transfer/transfer-detail-modal.tsx
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { StatusBadge } from '@/components/modules/transfer/status-badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { StatusBadge } from './status-badge'
 import { Transfer } from '@/types/dashboard'
-import { formatDate } from '@/lib/utils/dashboard'
+import { formatDateTime, getDepartmentLabel } from '@/lib/utils/dashboard'
+import { FileText, Package, User, Calendar, MessageSquare } from 'lucide-react'
 
 interface TransferDetailModalProps {
-  transfer: Transfer | null
+  transfer: Transfer
   isOpen: boolean
   onClose: () => void
 }
 
-export function TransferDetailModal({ 
-  transfer, 
-  isOpen, 
-  onClose 
+export function TransferDetailModal({
+  transfer,
+  isOpen,
+  onClose
 }: TransferDetailModalProps) {
-  if (!isOpen || !transfer) return null
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-        <CardHeader>
-          <div className="flex justify-between items-start">
-            <div>
-              <CardTitle>{transfer.transferNumber}</CardTitle>
-              <CardDescription>
-                รายละเอียดใบเบิกยา
-              </CardDescription>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={onClose}
-            >
-              ✕
-            </Button>
-          </div>
-        </CardHeader>
-        
-        <CardContent>
-          <Tabs defaultValue="request" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="request">ใบเบิก</TabsTrigger>
-              <TabsTrigger value="receipt">ใบรับของ</TabsTrigger>
-            </TabsList>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            รายละเอียดใบเบิก {transfer.transferNumber}
+            <StatusBadge status={transfer.status} />
+          </DialogTitle>
+        </DialogHeader>
 
-            <TabsContent value="request" className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="text-sm text-gray-600">จาก</p>
-                  <p className="font-semibold">
-                    {transfer.fromDept === 'PHARMACY' ? 'คลังยา' : 'แผนก OPD'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">ไป</p>
-                  <p className="font-semibold">
-                    {transfer.toDept === 'PHARMACY' ? 'คลังยา' : 'แผนก OPD'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">สถานะ</p>
-                  <StatusBadge status={transfer.status} size="md" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">ผู้ร้องขอ</p>
-                  <p className="font-semibold">{transfer.requestedBy}</p>
-                </div>
-              </div>
+        <Tabs defaultValue="request" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="request">ใบเบิก</TabsTrigger>
+            <TabsTrigger value="delivery">ใบรับของ</TabsTrigger>
+          </TabsList>
 
-              <div>
-                <h4 className="font-semibold mb-3">รายการยาที่ขอเบิก</h4>
-                <div className="space-y-2">
-                  {transfer.items.map((item) => (
-                    <div key={item.id} className="flex justify-between items-center p-3 border rounded">
-                      <div>
-                        <p className="font-medium">{item.drugCode}</p>
-                        <p className="text-sm text-gray-600">{item.drugName}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold">{item.requestedQty} {item.unit}</p>
-                        <p className="text-xs text-gray-500">ขอเบิก</p>
-                      </div>
+          <TabsContent value="request" className="space-y-4">
+            {/* Transfer Header Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  ข้อมูลการเบิก
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-sm text-gray-500">จาก:</span>
+                    <p className="font-medium">{getDepartmentLabel(transfer.fromDepartment)}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">ไปยัง:</span>
+                    <p className="font-medium">{getDepartmentLabel(transfer.toDepartment)}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">ผู้ขอเบิก:</span>
+                    <p className="font-medium">{transfer.requestedBy.name}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">วันที่ขอ:</span>
+                    <p className="font-medium">{formatDateTime(transfer.requestedAt)}</p>
+                  </div>
+                </div>
+
+                {transfer.notes && (
+                  <div>
+                    <span className="text-sm text-gray-500 flex items-center gap-1">
+                      <MessageSquare className="h-4 w-4" />
+                      หมายเหตุ:
+                    </span>
+                    <p className="mt-1 p-3 bg-gray-50 rounded-lg text-sm">
+                      {transfer.notes}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Items Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  รายการยาที่ขอเบิก ({transfer.items.length} รายการ)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left p-2">รหัสยา</th>
+                        <th className="text-left p-2">ชื่อยา</th>
+                        <th className="text-right p-2">จำนวนขอ</th>
+                        <th className="text-right p-2">หน่วย</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {transfer.items.map((item) => (
+                        <tr key={item.id} className="border-b hover:bg-gray-50">
+                          <td className="p-2 font-mono text-xs">
+                            {item.drug.hospitalDrugCode}
+                          </td>
+                          <td className="p-2">
+                            <div>
+                              <div className="font-medium">{item.drug.name}</div>
+                              {item.drug.strength && (
+                                <div className="text-gray-500 text-xs">{item.drug.strength}</div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-2 text-right font-medium">
+                            {item.requestedQty.toLocaleString()}
+                          </td>
+                          <td className="p-2 text-right">{item.drug.unit}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="delivery" className="space-y-4">
+            {/* Delivery Status */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  สถานะการส่งมอบ
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  {transfer.approvedAt && (
+                    <div>
+                      <span className="text-sm text-gray-500 flex items-center gap-1">
+                        <User className="h-4 w-4" />
+                        ผู้อนุมัติ:
+                      </span>
+                      <p className="font-medium">{transfer.approvedBy?.name || '-'}</p>
+                      <p className="text-xs text-gray-500">{formatDateTime(transfer.approvedAt)}</p>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="receipt" className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="text-sm text-gray-600">วันที่อนุมัติ</p>
-                  <p className="font-semibold">
-                    {transfer.approvedAt ? formatDate(transfer.approvedAt) : '-'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">วันที่ส่ง</p>
-                  <p className="font-semibold">
-                    {transfer.sentAt ? formatDate(transfer.sentAt) : '-'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">วันที่รับ</p>
-                  <p className="font-semibold">
-                    {transfer.receivedAt ? formatDate(transfer.receivedAt) : '-'}
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-semibold mb-3">รายการยาที่ส่ง/รับ</h4>
-                <div className="space-y-2">
-                  {transfer.items.map((item) => (
-                    <div key={item.id} className="p-3 border rounded">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <p className="font-medium">{item.drugCode}</p>
-                          <p className="text-sm text-gray-600">{item.drugName}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-3 gap-2 text-sm">
-                        <div className="text-center">
-                          <p className="text-gray-600">ขอเบิก</p>
-                          <p className="font-semibold">{item.requestedQty}</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-gray-600">อนุมัติ</p>
-                          <p className="font-semibold">{item.approvedQty || '-'}</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-gray-600">ส่ง/รับจริง</p>
-                          <p className="font-semibold">
-                            {item.receivedQty || item.sentQty || '-'}
-                          </p>
-                        </div>
-                      </div>
+                  )}
+                  {transfer.sentAt && (
+                    <div>
+                      <span className="text-sm text-gray-500 flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        วันที่ส่ง:
+                      </span>
+                      <p className="font-medium">{formatDateTime(transfer.sentAt)}</p>
                     </div>
-                  ))}
+                  )}
+                  {transfer.receivedAt && (
+                    <div>
+                      <span className="text-sm text-gray-500 flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        วันที่รับ:
+                      </span>
+                      <p className="font-medium">{formatDateTime(transfer.receivedAt)}</p>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-    </div>
+              </CardContent>
+            </Card>
+
+            {/* Delivery Details Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">รายละเอียดการส่งมอบ</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left p-2">รหัสยา</th>
+                        <th className="text-left p-2">ชื่อยา</th>
+                        <th className="text-right p-2">ขอเบิก</th>
+                        <th className="text-right p-2">อนุมัติ</th>
+                        <th className="text-right p-2">ส่งจริง</th>
+                        <th className="text-right p-2">รับจริง</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {transfer.items.map((item) => (
+                        <tr key={item.id} className="border-b hover:bg-gray-50">
+                          <td className="p-2 font-mono text-xs">
+                            {item.drug.hospitalDrugCode}
+                          </td>
+                          <td className="p-2">
+                            <div>
+                              <div className="font-medium">{item.drug.name}</div>
+                              {item.drug.strength && (
+                                <div className="text-gray-500 text-xs">{item.drug.strength}</div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-2 text-right">
+                            {item.requestedQty.toLocaleString()}
+                          </td>
+                          <td className="p-2 text-right">
+                            {item.approvedQty?.toLocaleString() || '-'}
+                          </td>
+                          <td className="p-2 text-right">
+                            {item.sentQty?.toLocaleString() || '-'}
+                          </td>
+                          <td className="p-2 text-right">
+                            {item.receivedQty?.toLocaleString() || '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
   )
 }

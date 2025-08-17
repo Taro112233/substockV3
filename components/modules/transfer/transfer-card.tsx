@@ -1,145 +1,133 @@
-// 📄 File: components/modules/transfer/transfer-card.tsx
+// 📄 File: lib/utils/dashboard.ts
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { StatusBadge } from '@/components/modules/transfer/status-badge'
-import { Transfer } from '@/types/dashboard'
-import { 
-  getTransferPerspectiveText, 
-  getAvailableActions, 
-  formatDate, 
-  formatCurrency 
-} from '@/lib/utils/dashboard'
-import { ArrowRight, ArrowLeft, Eye } from 'lucide-react'
+import { Transfer, DashboardStats, Transaction } from '@/types/dashboard'
 
-interface TransferCardProps {
-  transfer: Transfer
-  userDepartment: 'PHARMACY' | 'OPD'
-  onAction?: (transferId: string, action: string) => void
-  onViewDetail?: (transfer: Transfer) => void
+export function calculateDashboardStats(
+  stocks: any[], 
+  transfers: Transfer[], 
+  transactions: Transaction[],
+  department: 'PHARMACY' | 'OPD'
+): DashboardStats {
+  return {
+    totalDrugs: stocks.length,
+    totalValue: stocks.reduce((sum, stock) => sum + (stock.totalValue || 0), 0),
+    lowStockItems: stocks.filter(stock => 
+      stock.totalQuantity <= stock.minimumStock
+    ).length,
+    pendingTransfers: transfers.filter(t => t.status === 'PENDING').length,
+    recentTransactions: transactions.length,
+    department
+  }
 }
 
-export function TransferCard({ 
-  transfer, 
-  userDepartment, 
-  onAction, 
-  onViewDetail 
-}: TransferCardProps) {
-  const perspective = getTransferPerspectiveText(transfer, userDepartment)
-  const availableActions = getAvailableActions(transfer, userDepartment)
-  
-  const DirectionIcon = perspective.actionType === 'outgoing' ? ArrowRight : ArrowLeft
-
-  const getActionButton = (action: string) => {
-    const buttonConfigs = {
-      approve: {
-        label: 'อนุมัติ',
-        className: 'bg-green-600 hover:bg-green-700',
-        variant: 'default' as const,
-        icon: undefined
-      },
-      reject: {
-        label: 'ปฏิเสธ',
-        className: '',
-        variant: 'outline' as const,
-        icon: undefined
-      },
-      send: {
-        label: 'ส่งยา',
-        className: 'bg-blue-600 hover:bg-blue-700',
-        variant: 'default' as const,
-        icon: undefined
-      },
-      receive: {
-        label: 'ยืนยันรับยา',
-        className: 'bg-green-600 hover:bg-green-700',
-        variant: 'default' as const,
-        icon: undefined
-      },
-      cancel: {
-        label: 'ยกเลิกการเบิก',
-        className: '',
-        variant: 'outline' as const,
-        icon: undefined
-      },
-      view: {
-        label: 'ดูรายละเอียด',
-        className: '',
-        variant: 'outline' as const,
-        icon: Eye
-      }
+export function getTransferPerspective(
+  transfer: Transfer, 
+  userDept: 'PHARMACY' | 'OPD'
+) {
+  if (userDept === transfer.fromDepartment) {
+    return { 
+      type: 'OUTGOING' as const, 
+      action: 'จ่ายให้',
+      counterpart: transfer.toDepartment 
     }
-
-    const config = buttonConfigs[action as keyof typeof buttonConfigs]
-    if (!config) return null
-
-    const Icon = config.icon
-    
-    return (
-      <Button
-        key={action}
-        size="sm"
-        variant={config.variant}
-        className={config.className}
-        onClick={(e) => {
-          e.stopPropagation()
-          if (action === 'view') {
-            onViewDetail?.(transfer)
-          } else {
-            onAction?.(transfer.id, action)
-          }
-        }}
-      >
-        {Icon && <Icon className="h-4 w-4 mr-1" />}
-        {config.label}
-      </Button>
-    )
+  } else {
+    return { 
+      type: 'INCOMING' as const, 
+      action: 'รับจาก',
+      counterpart: transfer.fromDepartment 
+    }
   }
+}
 
-  return (
-    <Card 
-      className="cursor-pointer hover:shadow-md transition-shadow"
-      onClick={() => onViewDetail?.(transfer)}
-    >
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-base">
-              {transfer.transferNumber}
-            </CardTitle>
-            <CardDescription className="flex items-center mt-1">
-              <DirectionIcon className="h-4 w-4 mx-2" />
-              {perspective.direction} {perspective.counterpart}
-            </CardDescription>
-          </div>
-          <StatusBadge status={transfer.status} />
-        </div>
-      </CardHeader>
-      
-      <CardContent className="pt-0">
-        <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-          <div>
-            <p className="text-gray-600">จำนวนรายการ</p>
-            <p className="font-semibold">{transfer.totalItems} รายการ</p>
-          </div>
-          <div>
-            <p className="text-gray-600">มูลค่า</p>
-            <p className="font-semibold">{formatCurrency(transfer.totalValue)}</p>
-          </div>
-          <div>
-            <p className="text-gray-600">ผู้ร้องขอ</p>
-            <p className="font-semibold">{transfer.requestedBy}</p>
-          </div>
-          <div>
-            <p className="text-gray-600">วันที่ร้องขอ</p>
-            <p className="font-semibold">{formatDate(transfer.requestedAt)}</p>
-          </div>
-        </div>
+export function getTransactionTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    'RECEIVE': 'รับเข้า',
+    'DISPENSE': 'จ่ายออก',
+    'ADJUST_IN': 'ปรับเพิ่ม',
+    'ADJUST_OUT': 'ปรับลด',
+    'TRANSFER_IN': 'โอนเข้า',
+    'TRANSFER_OUT': 'โอนออก',
+    'EXPIRE': 'หมดอายุ',
+    'DAMAGED': 'เสียหาย'
+  }
+  return labels[type] || type
+}
 
-        <div className="flex flex-wrap gap-2">
-          {availableActions.map(action => getActionButton(action))}
-        </div>
-      </CardContent>
-    </Card>
-  )
+export function getTransferStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    'PENDING': 'รอดำเนินการ',
+    'APPROVED': 'อนุมัติแล้ว',
+    'SENT': 'ส่งแล้ว',
+    'RECEIVED': 'รับแล้ว',
+    'CANCELLED': 'ยกเลิก'
+  }
+  return labels[status] || status
+}
+
+export function getPriorityLabel(priority: string): string {
+  const labels: Record<string, string> = {
+    'LOW': 'ต่ำ',
+    'MEDIUM': 'ปกติ',
+    'HIGH': 'สูง',
+    'URGENT': 'เร่งด่วน'
+  }
+  return labels[priority] || priority
+}
+
+export function getDepartmentLabel(department: 'PHARMACY' | 'OPD'): string {
+  const labels = {
+    'PHARMACY': 'เภสัชกรรม',
+    'OPD': 'OPD'
+  }
+  return labels[department]
+}
+
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('th-TH', {
+    style: 'currency',
+    currency: 'THB',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount)
+}
+
+export function formatDateTime(dateString: string): string {
+  const date = new Date(dateString)
+  return new Intl.DateTimeFormat('th-TH', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
+
+export function formatDate(dateString: string): string {
+  const date = new Date(dateString)
+  return new Intl.DateTimeFormat('th-TH', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(date)
+}
+
+export function getStatusColor(status: string): string {
+  const colors: Record<string, string> = {
+    'PENDING': 'bg-yellow-100 text-yellow-800',
+    'APPROVED': 'bg-blue-100 text-blue-800',
+    'SENT': 'bg-purple-100 text-purple-800',
+    'RECEIVED': 'bg-green-100 text-green-800',
+    'CANCELLED': 'bg-red-100 text-red-800'
+  }
+  return colors[status] || 'bg-gray-100 text-gray-800'
+}
+
+export function getPriorityColor(priority: string): string {
+  const colors: Record<string, string> = {
+    'LOW': 'bg-gray-100 text-gray-800',
+    'MEDIUM': 'bg-blue-100 text-blue-800',
+    'HIGH': 'bg-orange-100 text-orange-800',
+    'URGENT': 'bg-red-100 text-red-800'
+  }
+  return colors[priority] || 'bg-gray-100 text-gray-800'
 }

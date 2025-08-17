@@ -55,8 +55,19 @@ Directory structure:
     │   ├── ShowcaseHeader.tsx
     │   ├── ShowcaseNavigation.tsx
     │   ├── modules/
-    │   │   └── stock/
-    │   │       └── stock-card.tsx
+    │   │   ├── dashboard/
+    │   │   │   ├── dashboard-stats.tsx
+    │   │   │   ├── history-tab.tsx
+    │   │   │   ├── stock-management-tab.tsx
+    │   │   │   └── transfer-tab.tsx
+    │   │   ├── stock/
+    │   │   │   └── stock-card.tsx
+    │   │   ├── transaction/
+    │   │   │   └── transaction-item.tsx
+    │   │   └── transfer/
+    │   │       ├── status-badge.tsx
+    │   │       ├── transfer-card.tsx
+    │   │       └── transfer-detail-modal.tsx
     │   ├── sections/
     │   │   ├── ActionsSection.tsx
     │   │   ├── AdvancedPatternsSection.tsx
@@ -120,7 +131,11 @@ Directory structure:
     │   ├── auth-server.ts
     │   ├── auth.ts
     │   ├── prisma.ts
-    │   └── utils.ts
+    │   ├── utils.ts
+    │   ├── services/
+    │   │   └── mock-data.ts
+    │   └── utils/
+    │       └── dashboard.ts
     ├── prisma/
     │   ├── schema.prisma
     │   ├── seed.ts
@@ -131,7 +146,11 @@ Directory structure:
     │   │   ├── transfer.prisma
     │   │   └── user.prisma
     │   └── seeds/
+    │       ├── demo-data.seed.ts
+    │       ├── drug-batches.seed.ts
     │       ├── real-drugs.seed.ts
+    │       ├── stock-transactions.seed.ts
+    │       ├── transfers.seed.ts
     │       └── users.seed.ts
     ├── scripts/
     │   ├── debug-drugs.js
@@ -139,6 +158,7 @@ Directory structure:
     │   └── merge-seeds.js
     └── types/
         ├── cookie.d.ts
+        ├── dashboard.ts
         └── index.ts
 
 # 📌 Project Instructions for Claude: Hospital Pharmacy Stock Management System V3.0

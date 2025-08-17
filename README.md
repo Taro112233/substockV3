@@ -26,6 +26,11 @@ Directory structure:
     │   │   │   │   └── route.ts
     │   │   │   └── register/
     │   │   │       └── route.ts
+    │   │   ├── dashboard/
+    │   │   │   ├── opd/
+    │   │   │   │   └── route.ts
+    │   │   │   └── pharmacy/
+    │   │   │       └── route.ts
     │   │   ├── drugs/
     │   │   │   └── route.ts
     │   │   ├── stock/
@@ -37,6 +42,7 @@ Directory structure:
     │   │   ├── opd/
     │   │   │   └── page.tsx
     │   │   └── pharmacy/
+    │   │       ├── layout.tsx
     │   │       └── page.tsx
     │   ├── login/
     │   │   └── page.tsx
@@ -50,6 +56,7 @@ Directory structure:
     │   ├── BackgroundDecoration.tsx
     │   ├── CookieDebug.tsx
     │   ├── DemoComponents.tsx
+    │   ├── error-boundary.tsx
     │   ├── FloatingActionButton.tsx
     │   ├── ShowcaseFooter.tsx
     │   ├── ShowcaseHeader.tsx
@@ -120,20 +127,27 @@ Directory structure:
     │       ├── table.tsx
     │       ├── tabs.tsx
     │       ├── textarea.tsx
+    │       ├── toast.tsx
+    │       ├── toaster.tsx
     │       ├── toggle-group.tsx
     │       ├── toggle.tsx
     │       └── tooltip.tsx
     ├── data/
     │   └── realDrug.csv
     ├── hooks/
-    │   └── use-mobile.ts
+    │   ├── use-mobile.ts
+    │   └── use-toast.ts
     ├── lib/
     │   ├── auth-server.ts
     │   ├── auth.ts
     │   ├── prisma.ts
     │   ├── utils.ts
+    │   ├── api/
+    │   │   └── dashboard.ts
     │   ├── services/
     │   │   └── mock-data.ts
+    │   ├── types/
+    │   │   └── api.ts
     │   └── utils/
     │       └── dashboard.ts
     ├── prisma/

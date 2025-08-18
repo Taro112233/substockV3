@@ -150,7 +150,7 @@ Directory structure:
     │       ├── toggle.tsx
     │       └── tooltip.tsx
     ├── data/
-    │   └── realDrug.csv
+    │   └── hospital-drugs.csv
     ├── hooks/
     │   ├── use-mobile.ts
     │   └── use-toast.ts
@@ -178,11 +178,9 @@ Directory structure:
     │   │   ├── transfer.prisma
     │   │   └── user.prisma
     │   └── seeds/
-    │       ├── demo-data.seed.ts
-    │       ├── drug-batches.seed.ts
-    │       ├── real-drugs.seed.ts
     │       ├── stock-transactions.seed.ts
     │       ├── transfers.seed.ts
+    │       ├── unified-csv.seed.ts
     │       └── users.seed.ts
     ├── scripts/
     │   ├── debug-drugs.js

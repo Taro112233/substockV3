@@ -16,13 +16,8 @@ enum UserStatus {
   INACTIVE    // ไม่ใช้งาน
 }
 
-enum Role {
-  PHARMACY_MANAGER    // หัวหน้าคลังยา - สิทธิ์เต็ม
-  PHARMACY_STAFF      // เจ้าหน้าที่คลังยา - จัดการสต็อก
-  OPD_MANAGER         // หัวหน้า OPD - สิทธิ์เต็มในแผนก
-  OPD_STAFF           // เจ้าหน้าที่ OPD - เบิกจ่ายพื้นฐาน
-  ADMIN               // ระบบ Admin - อนุมัติผู้ใช้
-}
+// ⭐ ลบ Role enum ออก เพราะไม่ใช้ fixed roles
+// แต่ละ user สามารถทำงานได้ทุก department ตามหน้าที่ใช้งาน
 
 enum TransactionType {
   RECEIVE_EXTERNAL    // รับยาจากภายนอก (ซื้อ/บริจาค)
@@ -40,14 +35,12 @@ enum TransferStatus {
   APPROVED    // กำลังเตรียมจัดส่ง
   PREPARED    // กำลังจัดส่ง (เตรียมของเสร็จ)
   DELIVERED   // จัดส่งสำเร็จ
-  PARTIAL     // รับบางส่วน
   CANCELLED   // ยกเลิก
 }
 
 // ===== DRUG-SPECIFIC ENUMS =====
 enum DosageForm {
   APP    // Applicator
-  BAG    // Bag
   CAP    // Capsule
   CR     // Cream
   DOP    // Drops

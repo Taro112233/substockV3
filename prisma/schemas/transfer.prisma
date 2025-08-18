@@ -6,6 +6,7 @@ model Transfer {
   id                String         @id @default(cuid())
   requisitionNumber String         @unique // เลขที่ใบเบิก (manual input)
   title             String         // ชื่อใบเบิก
+  purpose           String         // วัตถุประสงค์
   
   // Departments & Users
   fromDept          Department     // หน่วยงานที่ขอเบิก (ต้นทาง)
@@ -19,7 +20,6 @@ model Transfer {
   
   // Status & Notes
   status            TransferStatus @default(PENDING)
-  purpose           String         // วัตถุประสงค์
   requestNote       String?        // หมายเหตุการขอ
   approvalNote      String?        // หมายเหตุการอนุมัติ
   
@@ -31,7 +31,6 @@ model Transfer {
   requestedAt       DateTime       @default(now())
   approvedAt        DateTime?
   dispensedAt       DateTime?      // วันที่เตรียมของเสร็จ
-  deliveredAt       DateTime?      // วันที่ส่งของ
   receivedAt        DateTime?      // วันที่รับของ
   
   // Relations
@@ -40,6 +39,7 @@ model Transfer {
   dispenser         User?          @relation("DispenserUser", fields: [dispenserId], references: [id])
   receiver          User?          @relation("ReceiverUser", fields: [receiverId], references: [id])
   items             TransferItem[]
+  stockTransactions StockTransaction[] // ⭐ เพิ่มใหม่
   
   // Indexes สำหรับ Performance
   @@index([status])

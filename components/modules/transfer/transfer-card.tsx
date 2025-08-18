@@ -1,9 +1,12 @@
 // 📄 File: components/modules/transfer/transfer-card.tsx
 
+'use client'
+
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Transfer } from '@/types/dashboard'
+import { useAuth } from '@/hooks/use-auth'
 import {
   FileText,
   Clock,
@@ -11,146 +14,279 @@ import {
   XCircle,
   Eye,
   ArrowRight,
-  Package
+  Package,
+  Truck,
+  AlertTriangle
 } from 'lucide-react'
 
 interface TransferCardProps {
-  transfer: Transfer
-  department: 'PHARMACY' | 'OPD'
-  onAction: (action: string) => void
-  onViewDetail: () => void
+  transfer: {
+    id: string
+    requisitionNumber: string
+    title?: string
+    purpose?: string
+    fromDept: 'PHARMACY' | 'OPD'
+    toDept: 'PHARMACY' | 'OPD'
+    status: 'PENDING' | 'APPROVED' | 'PREPARED' | 'DELIVERED' | 'CANCELLED'
+    totalItems: number
+    totalValue: number
+    requestedAt: string
+    requester: { 
+      firstName: string
+      lastName: string
+      position?: string
+    }
+    items: Array<{
+      id: string
+      requestedQty: number
+      dispensedQty?: number
+      receivedQty?: number
+      drug: { 
+        name: string
+        unit: string
+      }
+    }>
+  }
+  onQuickAction?: (action: string) => void // For simple actions like cancel/reject
 }
 
-export function TransferCard({ 
-  transfer, 
-  department, 
-  onAction, 
-  onViewDetail 
-}: TransferCardProps) {
-  
-  // กำหนดสีสถานะ
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'PENDING':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      case 'APPROVED':
-        return 'bg-blue-100 text-blue-800 border-blue-200'
-      case 'SENT':
-        return 'bg-green-100 text-green-800 border-green-200'
-      case 'RECEIVED':
-        return 'bg-gray-100 text-gray-800 border-gray-200'
-      case 'CANCELLED':
-        return 'bg-red-100 text-red-800 border-red-200'
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200'
+export function TransferCard({ transfer, onQuickAction }: TransferCardProps) {
+  const router = useRouter()
+  const { user } = useAuth()
+
+  // Navigate to detail page
+  const handleViewDetail = () => {
+    router.push(`/transfers/${transfer.id}`)
+  }
+
+  // Navigate to action page
+  const handleActionNavigate = (action: string) => {
+    router.push(`/transfers/${transfer.id}?action=${action}`)
+  }
+
+  // Handle quick actions that don't need navigation
+  const handleQuickAction = (action: string) => {
+    if (onQuickAction) {
+      onQuickAction(action)
     }
   }
 
-  // แปลสถานะเป็นภาษาไทย
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'PENDING':
-        return 'รออนุมัติ'
-      case 'APPROVED':
-        return 'อนุมัติแล้ว'
-      case 'SENT':
-        return 'ส่งแล้ว'
-      case 'RECEIVED':
-        return 'รับแล้ว'
-      case 'CANCELLED':
-        return 'ยกเลิก'
-      default:
-        return status
+  // Get user perspective
+  const getPerspective = () => {
+    if (!user) return { type: 'view', label: 'ดูข้อมูล', action: 'ระหว่าง' }
+    
+    const isRequester = transfer.fromDept === user.department
+    const isReceiver = transfer.toDept === user.department
+    
+    if (isRequester && isReceiver) {
+      return { type: 'internal', label: 'โอนภายใน', action: 'ภายในแผนก' }
+    } else if (isRequester) {
+      return { type: 'outgoing', label: 'เบิกออก', action: 'จ่ายให้' }
+    } else if (isReceiver) {
+      return { type: 'incoming', label: 'รับเข้า', action: 'รับจาก' }
     }
+    
+    return { type: 'view', label: 'ดูข้อมูล', action: 'ระหว่าง' }
   }
 
-  // กำหนด action ที่สามารถทำได้ตามแผนกและสถานะ
+  // Get available actions based on status and perspective
   const getAvailableActions = () => {
-    const actions = []
+    if (!user) return []
+    
+    const perspective = getPerspective()
+    const actions: Array<{
+      label: string
+      action: string
+      variant: 'default' | 'destructive' | 'outline'
+      icon: any
+      type: 'navigate' | 'quick' // navigate = go to action page, quick = immediate action
+    }> = []
 
-    if (transfer.status === 'PENDING') {
-      if (department === 'PHARMACY' && transfer.toDepartment === 'PHARMACY') {
-        // แผนกเภสัชกรรมสามารถอนุมัติใบเบิกที่เข้ามา
-        actions.push({ label: 'อนุมัติ', action: 'approve', variant: 'default' as const })
-        actions.push({ label: 'ปฏิเสธ', action: 'reject', variant: 'destructive' as const })
+    // Actions based on status and perspective
+    if (perspective.type === 'incoming') {
+      // Receiving department (คลังยา) perspective
+      switch (transfer.status) {
+        case 'PENDING':
+          actions.push({
+            label: 'อนุมัติ',
+            action: 'approve',
+            variant: 'default',
+            icon: CheckCircle,
+            type: 'navigate'
+          })
+          actions.push({
+            label: 'ปฏิเสธ',
+            action: 'reject',
+            variant: 'destructive',
+            icon: XCircle,
+            type: 'quick'
+          })
+          break
+        case 'APPROVED':
+          actions.push({
+            label: 'เตรียมจ่าย',
+            action: 'prepare',
+            variant: 'default',
+            icon: Package,
+            type: 'navigate'
+          })
+          break
       }
-    } else if (transfer.status === 'APPROVED') {
-      if (department === 'PHARMACY' && transfer.fromDepartment === 'PHARMACY') {
-        // แผนกเภสัชกรรมสามารถส่งยาที่อนุมัติแล้ว
-        actions.push({ label: 'ส่งยา', action: 'send', variant: 'default' as const })
-      }
-    } else if (transfer.status === 'SENT') {
-      if (department === 'OPD' && transfer.toDepartment === 'OPD') {
-        // แผนก OPD สามารถรับยาที่ส่งมาแล้ว
-        actions.push({ label: 'รับยา', action: 'receive', variant: 'default' as const })
+    } else if (perspective.type === 'outgoing') {
+      // Requesting department (OPD) perspective
+      switch (transfer.status) {
+        case 'PENDING':
+          actions.push({
+            label: 'ยกเลิก',
+            action: 'cancel',
+            variant: 'destructive',
+            icon: XCircle,
+            type: 'quick'
+          })
+          break
+        case 'PREPARED':
+          actions.push({
+            label: 'รับยา',
+            action: 'receive',
+            variant: 'default',
+            icon: CheckCircle,
+            type: 'navigate'
+          })
+          break
+        case 'DELIVERED':
+          // No actions available - completed
+          break
       }
     }
 
     return actions
   }
 
+  // Get status configuration
+  const getStatusConfig = () => {
+    const configs = {
+      'PENDING': { 
+        color: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+        text: 'รออนุมัติ',
+        icon: Clock,
+        description: 'รอแผนกเภสัชกรรมอนุมัติ'
+      },
+      'APPROVED': { 
+        color: 'bg-blue-100 text-blue-700 border-blue-200',
+        text: 'อนุมัติแล้ว',
+        icon: CheckCircle,
+        description: 'รอเตรียมจ่ายยา'
+      },
+      'PREPARED': { 
+        color: 'bg-purple-100 text-purple-700 border-purple-200',
+        text: 'เตรียมจ่ายแล้ว',
+        icon: Package,
+        description: 'พร้อมมารับยา'
+      },
+      'DELIVERED': { 
+        color: 'bg-green-100 text-green-700 border-green-200',
+        text: 'ส่งมอบแล้ว',
+        icon: CheckCircle,
+        description: 'ดำเนินการเสร็จสิ้น'
+      },
+      'CANCELLED': { 
+        color: 'bg-red-100 text-red-700 border-red-200',
+        text: 'ยกเลิก',
+        icon: XCircle,
+        description: 'ใบเบิกถูกยกเลิก'
+      }
+    }
+    return configs[transfer.status] || configs.PENDING
+  }
+
+  const getDepartmentLabel = (dept: string) => {
+    return dept === 'PHARMACY' ? 'เภสัชกรรม' : 'OPD'
+  }
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('th-TH')
+  }
+
+  const perspective = getPerspective()
   const availableActions = getAvailableActions()
+  const statusConfig = getStatusConfig()
+  const StatusIcon = statusConfig.icon
 
   return (
-    <Card className="hover:shadow-md transition-shadow duration-200">
+    <Card className="hover:shadow-md transition-shadow duration-200 border-l-4 border-l-blue-500 cursor-pointer"
+          onClick={handleViewDetail}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            {/* Transfer Number */}
-            <div className="font-mono text-sm text-gray-500">
-              {transfer.transferNumber}
+          <div className="space-y-2 flex-1">
+            {/* Transfer Number & Type */}
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-sm font-medium text-gray-700">
+                {transfer.requisitionNumber}
+              </span>
+              <Badge variant="outline" className="text-xs">
+                {perspective.label}
+              </Badge>
             </div>
             
-            {/* Title/Notes */}
-            <h3 className="font-semibold text-sm leading-tight">
-              {transfer.notes || 'ใบเบิกยา'}
+            {/* Title */}
+            <h3 className="font-semibold text-sm leading-tight text-gray-900">
+              {transfer.title || `ใบเบิกยา - ${perspective.action}`}
             </h3>
             
             {/* Department Flow */}
-            <div className="flex items-center gap-2 text-xs text-gray-600">
-              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">
-                {transfer.fromDepartment === 'PHARMACY' ? 'เภสัชกรรม' : 'OPD'}
+            <div className="flex items-center gap-2 text-xs">
+              <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full font-medium">
+                {getDepartmentLabel(transfer.fromDept)}
               </span>
-              <ArrowRight className="h-3 w-3" />
-              <span className="px-2 py-1 bg-green-100 text-green-700 rounded">
-                {transfer.toDepartment === 'PHARMACY' ? 'เภสัชกรรม' : 'OPD'}
+              <ArrowRight className="h-3 w-3 text-gray-400" />
+              <span className="px-2 py-1 bg-green-50 text-green-700 rounded-full font-medium">
+                {getDepartmentLabel(transfer.toDept)}
               </span>
             </div>
           </div>
 
           {/* Status Badge */}
-          <Badge 
-            className={`text-xs ${getStatusColor(transfer.status)}`}
-          >
-            {getStatusText(transfer.status)}
-          </Badge>
+          <div className="flex flex-col items-end gap-2">
+            <Badge className={`text-xs ${statusConfig.color}`}>
+              <StatusIcon className="h-3 w-3 mr-1" />
+              {statusConfig.text}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
 
       <CardContent className="space-y-4">
         {/* Transfer Details */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">จำนวนรายการ:</span>
-            <span className="font-medium">{transfer.totalItems || transfer.items.length} รายการ</span>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <span className="text-gray-500">จำนวนรายการ:</span>
+            <p className="font-medium">{transfer.totalItems} รายการ</p>
           </div>
           
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">มูลค่า:</span>
-            <span className="font-medium">฿{transfer.totalValue?.toLocaleString() || '0'}</span>
+          <div>
+            <span className="text-gray-500">มูลค่า:</span>
+            <p className="font-medium">฿{transfer.totalValue?.toLocaleString() || '0'}</p>
           </div>
 
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">ผู้เบิก:</span>
-            <span className="font-medium">{transfer.requestedBy.name}</span>
+          <div>
+            <span className="text-gray-500">ผู้เบิก:</span>
+            <p className="font-medium">
+              {transfer.requester.firstName} {transfer.requester.lastName}
+            </p>
           </div>
 
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">วันที่เบิก:</span>
-            <span className="font-medium">
-              {new Date(transfer.requestedAt).toLocaleDateString('th-TH')}
-            </span>
+          <div>
+            <span className="text-gray-500">วันที่เบิก:</span>
+            <p className="font-medium">
+              {formatDateTime(transfer.requestedAt)}
+            </p>
           </div>
+        </div>
+
+        {/* Status Description */}
+        <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+          <AlertTriangle className="h-3 w-3 inline mr-1" />
+          {statusConfig.description}
         </div>
 
         {/* Items Preview */}
@@ -158,10 +294,12 @@ export function TransferCard({
           <div className="border-t pt-3">
             <div className="text-xs text-gray-600 mb-2">รายการยา:</div>
             <div className="space-y-1">
-              {transfer.items.slice(0, 2).map((item) => (
+              {transfer.items.slice(0, 2).map((item, index) => (
                 <div key={item.id} className="flex justify-between text-xs">
                   <span className="truncate flex-1 mr-2">{item.drug.name}</span>
-                  <span className="text-gray-500">{item.requestedQty} {item.drug.unit}</span>
+                  <span className="text-gray-500">
+                    {item.requestedQty.toLocaleString()} {item.drug.unit}
+                  </span>
                 </div>
               ))}
               {transfer.items.length > 2 && (
@@ -174,11 +312,11 @@ export function TransferCard({
         )}
 
         {/* Action Buttons */}
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
           <Button
             variant="outline"
             size="sm"
-            onClick={onViewDetail}
+            onClick={handleViewDetail}
             className="flex items-center gap-1 flex-1"
           >
             <Eye className="h-3 w-3" />
@@ -187,24 +325,35 @@ export function TransferCard({
 
           {availableActions.length > 0 && (
             <div className="flex gap-1">
-              {availableActions.map((action) => (
-                <Button
-                  key={action.action}
-                  variant={action.variant}
-                  size="sm"
-                  onClick={() => onAction(action.action)}
-                  className="text-xs px-3"
-                >
-                  {action.label}
-                </Button>
-              ))}
+              {availableActions.map((action) => {
+                const ActionIcon = action.icon
+                return (
+                  <Button
+                    key={action.action}
+                    variant={action.variant}
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (action.type === 'navigate') {
+                        handleActionNavigate(action.action)
+                      } else {
+                        handleQuickAction(action.action)
+                      }
+                    }}
+                    className="text-xs px-3 flex items-center gap-1"
+                  >
+                    <ActionIcon className="h-3 w-3" />
+                    {action.label}
+                  </Button>
+                )
+              })}
             </div>
           )}
         </div>
 
         {/* Last Updated */}
         <div className="text-xs text-gray-500 pt-2 border-t">
-          อัปเดตล่าสุด: {new Date(transfer.requestedAt).toLocaleString('th-TH')}
+          อัปเดตล่าสุด: {formatDateTime(transfer.requestedAt)}
         </div>
       </CardContent>
     </Card>

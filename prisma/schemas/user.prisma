@@ -1,21 +1,26 @@
 // prisma/schemas/user.prisma
-// ===== 2. USER MANAGEMENT SCHEMA - V3.0 COMPLETE =====
+// ===== 2. USER MANAGEMENT SCHEMA - V3.0 UNIFIED ACCESS =====
 
-// Updated User Management - Unified Hospital Access with All Required Fields
+// Simple User Management - ผู้ใช้สามารถเข้าใช้งานได้ทุกแผนก
+// Context มาจากหน้าที่ใช้งาน ไม่ใช่จาก fixed role/department
 model User {
   id          String     @id @default(cuid())
   username    String     @unique  // ⭐ REQUIRED: For authentication
   password    String     // bcrypt hashed
   firstName   String     // ⭐ REQUIRED: First name
   lastName    String     // ⭐ REQUIRED: Last name  
-  position    String?    // ตำแหน่งงาน (optional)
+  position    String?    // ตำแหน่งงาน (ข้อมูลสำหรับแสดงเท่านั้น)
+  
+  // ⭐ ไม่มี department/role กำหนดตาย เพราะใช้งานได้ทุกแผนก
+  // Context มาจากการเลือกใช้งานในหน้านั้นๆ
+  
   status      UserStatus @default(UNAPPROVED) // ⭐ REQUIRED: User approval status
   isActive    Boolean    @default(true)
   lastLogin   DateTime?  // ⭐ REQUIRED: Track login activity
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   
-  // Relations - จะเชื่อมต่อกับ models อื่นในภายหลัง
+  // Relations - เชื่อมต่อกับ actions ทั้งหมดที่ user ทำได้
   stockTransactions     StockTransaction[]
   transfersRequested    Transfer[] @relation("RequesterUser")
   transfersApproved     Transfer[] @relation("ApproverUser")

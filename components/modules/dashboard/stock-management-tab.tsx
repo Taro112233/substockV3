@@ -278,41 +278,8 @@ export function StockManagementTab({
         </Card>
       </div>
 
-      {/* Low Stock Alert */}
-      {data.stats.lowStockCount > 0 && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0" />
-              <div className="flex-1">
-                <div className="font-medium text-orange-900">
-                  แจ้งเตือนสต็อกต่ำ
-                </div>
-                <div className="text-sm text-orange-700">
-                  มียา {data.stats.lowStockCount} รายการที่มีสต็อกต่ำกว่าระดับขั้นต่ำ 
-                  ควร{department === 'PHARMACY' ? 'สั่งซื้อ' : 'เบิก'}เพิ่มเติม
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-orange-300 text-orange-700 hover:bg-orange-100"
-              >
-                ดูรายการ
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Stock Table */}
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Package className="h-5 w-5 text-gray-600" />
-          <h3 className="text-lg font-semibold text-gray-900">
-            รายการสต็อกยา ({data.stocks.length} รายการ)
-          </h3>
-        </div>
         <StockTable
           stocks={data.stocks}
           department={department}

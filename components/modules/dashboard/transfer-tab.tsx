@@ -1,417 +1,312 @@
 // 📄 File: components/modules/dashboard/transfer-tab.tsx
 
-import { useState } from 'react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { TransferCard } from '@/components/modules/transfer/transfer-card'
 import { Transfer } from '@/types/dashboard'
 import { 
-  getTransferPerspective, 
-  formatDateTime, 
-  getStatusColor, 
-  getDepartmentLabel 
-} from '@/lib/utils/dashboard'
-import { 
-  Plus, 
   FileText, 
-  Package, 
-  Eye, 
-  CheckCircle, 
-  XCircle, 
-  Send, 
-  Clock,
-  ArrowRight
+  Plus, 
+  RefreshCw,
+  AlertCircle,
+  CheckCircle,
+  Clock
 } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
+
+interface TransferData {
+  transfers: Transfer[]
+  stats: {
+    totalTransfers: number
+    pendingTransfers: number
+    approvedTransfers: number
+  }
+}
 
 interface TransferTabProps {
-  transfers: Transfer[]
   department: 'PHARMACY' | 'OPD'
-  onTransferAction: () => void
-  onViewDetail: (transfer: Transfer) => void
+  onViewDetail?: (transfer: Transfer) => void
 }
 
-interface TransferCardProps {
-  transfer: Transfer
-  userDepartment: 'PHARMACY' | 'OPD'
-  onViewDetail: (transfer: Transfer) => void
-  onAction: (action: string, transfer: Transfer) => void
-}
+export function TransferTab({ 
+  department,
+  onViewDetail
+}: TransferTabProps) {
+  const [data, setData] = useState<TransferData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const { toast } = useToast()
 
-// Transfer Card Component
-function TransferCard({ 
-  transfer, 
-  userDepartment, 
-  onViewDetail, 
-  onAction 
-}: TransferCardProps) {
-  const perspective = getTransferPerspective(transfer, userDepartment)
-  
-  // คำนวณจำนวนรายการและมูลค่า
-  const totalItems = transfer.items.length
-  const totalValue = transfer.items.reduce((sum, item) => {
-    const qty = item.receivedQty || item.sentQty || item.approvedQty || item.requestedQty
-    return sum + (qty * 50) // ประมาณราคาเฉลี่ย 50 บาท/หน่วย
-  }, 0)
+  const fetchTransferData = async (showRefreshToast = false) => {
+    try {
+      if (showRefreshToast) {
+        setRefreshing(true)
+      }
 
-  // กำหนด actions ตาม perspective และ status
-  const getAvailableActions = () => {
-    const actions = []
+      const apiEndpoint = department === 'PHARMACY' 
+        ? '/api/transfers/pharmacy' 
+        : '/api/transfers/opd'
 
-    if (perspective.type === 'OUTGOING') {
-      // Pharmacy perspective - ผู้จ่าย
-      if (transfer.status === 'PENDING') {
-        actions.push({ 
-          label: 'อนุมัติ', 
-          action: 'APPROVE', 
-          icon: CheckCircle, 
-          variant: 'default' as const,
-          color: 'text-green-600'
-        })
-        actions.push({ 
-          label: 'ปฏิเสธ', 
-          action: 'REJECT', 
-          icon: XCircle, 
-          variant: 'outline' as const,
-          color: 'text-red-600'
-        })
-      } else if (transfer.status === 'APPROVED') {
-        actions.push({ 
-          label: 'ส่งของ', 
-          action: 'SEND', 
-          icon: Send, 
-          variant: 'default' as const,
-          color: 'text-blue-600'
+      const response = await fetch(apiEndpoint, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store'
+      })
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} - ${response.statusText}`)
+      }
+
+      const result = await response.json()
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch transfer data')
+      }
+
+      setData(result.data)
+
+      if (showRefreshToast) {
+        toast({
+          title: "ข้อมูลใบเบิกได้รับการอัปเดต",
+          description: "ข้อมูลล่าสุดแล้ว",
+          duration: 2000
         })
       }
-    } else {
-      // OPD perspective - ผู้รับ
-      if (transfer.status === 'SENT') {
-        actions.push({ 
-          label: 'รับของ', 
-          action: 'RECEIVE', 
-          icon: Package, 
-          variant: 'default' as const,
-          color: 'text-green-600'
-        })
-      }
-      if (transfer.status === 'PENDING') {
-        actions.push({ 
-          label: 'ยกเลิก', 
-          action: 'CANCEL', 
-          icon: XCircle, 
-          variant: 'outline' as const,
-          color: 'text-red-600'
-        })
-      }
+
+    } catch (error) {
+      console.error('Failed to fetch transfer data:', error)
+      
+      const errorMessage = error instanceof Error ? error.message : "ไม่สามารถโหลดข้อมูลใบเบิกได้"
+      
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: errorMessage,
+        variant: "destructive",
+        duration: 4000
+      })
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
     }
-
-    return actions
   }
 
-  const availableActions = getAvailableActions()
+  useEffect(() => {
+    fetchTransferData()
+  }, [department])
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('th-TH', {
-      style: 'currency',
-      currency: 'THB',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount)
+  const handleRefresh = () => {
+    fetchTransferData(true)
   }
 
-  return (
-    <Card className="hover:shadow-md transition-shadow duration-200">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-lg">
-                {transfer.transferNumber}
-              </h3>
-              <Badge className={getStatusColor(transfer.status)}>
-                {transfer.status === 'PENDING' && 'รอดำเนินการ'}
-                {transfer.status === 'APPROVED' && 'อนุมัติแล้ว'}
-                {transfer.status === 'SENT' && 'ส่งแล้ว'}
-                {transfer.status === 'RECEIVED' && 'รับแล้ว'}
-                {transfer.status === 'CANCELLED' && 'ยกเลิก'}
-              </Badge>
-            </div>
-            
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span className="font-medium">
-                {perspective.action}
-              </span>
-              <ArrowRight className="h-3 w-3" />
-              <span>
-                {getDepartmentLabel(perspective.counterpart)}
-              </span>
-            </div>
-          </div>
+  const handleCreateTransfer = () => {
+    // TODO: เปิด modal สร้างใบเบิกใหม่
+    console.log('Create new transfer')
+  }
 
-          <div className="text-right text-sm text-gray-500">
-            <Clock className="h-4 w-4 inline mr-1" />
-            {formatDateTime(transfer.requestedAt)}
-          </div>
-        </div>
-      </CardHeader>
+  const handleTransferAction = (transfer: Transfer, action: string) => {
+    // TODO: จัดการ action ต่างๆ (อนุมัติ, ปฏิเสธ, ส่ง, รับ)
+    console.log('Transfer action:', action, transfer.transferNumber)
+    
+    toast({
+      title: "ดำเนินการสำเร็จ",
+      description: `${action} ใบเบิก ${transfer.transferNumber} แล้ว`,
+      duration: 2000
+    })
+    
+    // Refresh data after action
+    fetchTransferData()
+  }
 
-      <CardContent className="space-y-4">
-        {/* Transfer Summary */}
-        <div className="grid grid-cols-2 gap-4 text-sm">
+  const handleViewDetail = (transfer: Transfer) => {
+    if (onViewDetail) {
+      onViewDetail(transfer)
+    } else {
+      console.log('View transfer details:', transfer.transferNumber)
+    }
+  }
+
+  // กรณี loading หรือไม่มีข้อมูล
+  if (loading || !data) {
+    return (
+      <div className="space-y-6">
+        {/* Header Actions */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <span className="text-gray-500">รายการ:</span>
-            <span className="ml-2 font-medium">{totalItems} รายการ</span>
-          </div>
-          <div>
-            <span className="text-gray-500">มูลค่า:</span>
-            <span className="ml-2 font-medium">{formatCurrency(totalValue)}</span>
-          </div>
-        </div>
-
-        {/* Requester Info */}
-        <div className="text-sm">
-          <span className="text-gray-500">ผู้ขอ:</span>
-          <span className="ml-2">{transfer.requestedBy.name}</span>
-        </div>
-
-        {/* Notes */}
-        {transfer.notes && (
-          <div className="text-sm">
-            <span className="text-gray-500">หมายเหตุ:</span>
-            <p className="mt-1 text-gray-700 bg-gray-50 p-2 rounded text-xs">
-              {transfer.notes}
+            <h2 className="text-xl font-semibold text-gray-900">
+              จัดการใบเบิกของ - {department === 'PHARMACY' ? 'แผนกเภสัชกรรม' : 'แผนก OPD'}
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              กำลังโหลดข้อมูลใบเบิก...
             </p>
           </div>
-        )}
+        </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap gap-2 pt-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onViewDetail(transfer)}
-            className="flex items-center gap-1"
-          >
-            <Eye className="h-3 w-3" />
-            ดูรายละเอียด
-          </Button>
-
-          {availableActions.map((action) => (
-            <Button
-              key={action.action}
-              variant={action.variant}
-              size="sm"
-              onClick={() => onAction(action.action, transfer)}
-              className={`flex items-center gap-1 ${action.color}`}
-            >
-              <action.icon className="h-3 w-3" />
-              {action.label}
-            </Button>
+        {/* Loading State */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-4">
+                <div className="space-y-3">
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-full"></div>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-// Main Transfer Tab Component
-export function TransferTab({ 
-  transfers, 
-  department, 
-  onTransferAction, 
-  onViewDetail 
-}: TransferTabProps) {
-  const [activeTab, setActiveTab] = useState('all')
-
-  // แยกใบเบิกตาม perspective
-  const outgoingTransfers = transfers.filter(transfer => 
-    transfer.fromDepartment === department
-  )
-  
-  const incomingTransfers = transfers.filter(transfer => 
-    transfer.toDepartment === department
-  )
-
-  const handleAction = async (action: string, transfer: Transfer) => {
-    console.log(`Performing ${action} on transfer ${transfer.id}`)
-    
-    // TODO: Implement actual API calls
-    switch (action) {
-      case 'APPROVE':
-        // await approveTransfer(transfer.id)
-        break
-      case 'REJECT':
-        // await rejectTransfer(transfer.id)
-        break
-      case 'SEND':
-        // await sendTransfer(transfer.id)
-        break
-      case 'RECEIVE':
-        // await receiveTransfer(transfer.id)
-        break
-      case 'CANCEL':
-        // await cancelTransfer(transfer.id)
-        break
-    }
-    
-    onTransferAction()
-  }
-
-  const getDepartmentLabel = (dept: 'PHARMACY' | 'OPD') => {
-    return dept === 'PHARMACY' ? 'เภสัชกรรม' : 'OPD'
-  }
-
-  const getTabLabel = (type: string) => {
-    if (department === 'PHARMACY') {
-      return {
-        'outgoing': 'ใบเบิก (จ่าย)',
-        'incoming': 'ใบเบิก (รับ)',
-        'all': 'ทั้งหมด'
-      }[type]
-    } else {
-      return {
-        'outgoing': 'ใบเบิก (ขอ)',
-        'incoming': 'ใบรับของ',
-        'all': 'ทั้งหมด'
-      }[type]
-    }
-  }
-
-  if (transfers.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
-          ไม่มีใบเบิกในระบบ
-        </h3>
-        <p className="text-gray-600 mb-6">
-          เริ่มต้นสร้างใบเบิกใหม่เพื่อจัดการการโอนยา
-        </p>
-        <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          สร้างใบเบิกใหม่
-        </Button>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header with New Transfer Button */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold">
-          การจัดการใบเบิก - {getDepartmentLabel(department)}
-        </h2>
-        <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          สร้างใบเบิกใหม่
-        </Button>
-      </div>
-
-      {/* Transfer Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="all" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            {getTabLabel('all')} ({transfers.length})
-          </TabsTrigger>
-          <TabsTrigger value="outgoing" className="flex items-center gap-2">
-            <Send className="h-4 w-4" />
-            {getTabLabel('outgoing')} ({outgoingTransfers.length})
-          </TabsTrigger>
-          <TabsTrigger value="incoming" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            {getTabLabel('incoming')} ({incomingTransfers.length})
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all" className="space-y-4">
-          <div className="grid gap-4">
-            {transfers.map((transfer) => (
-              <TransferCard
-                key={transfer.id}
-                transfer={transfer}
-                userDepartment={department}
-                onViewDetail={onViewDetail}
-                onAction={handleAction}
-              />
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="outgoing" className="space-y-4">
-          {outgoingTransfers.length > 0 ? (
-            <div className="grid gap-4">
-              {outgoingTransfers.map((transfer) => (
-                <TransferCard
-                  key={transfer.id}
-                  transfer={transfer}
-                  userDepartment={department}
-                  onViewDetail={onViewDetail}
-                  onAction={handleAction}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <Send className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-600">ไม่มีใบเบิกประเภทนี้</p>
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="incoming" className="space-y-4">
-          {incomingTransfers.length > 0 ? (
-            <div className="grid gap-4">
-              {incomingTransfers.map((transfer) => (
-                <TransferCard
-                  key={transfer.id}
-                  transfer={transfer}
-                  userDepartment={department}
-                  onViewDetail={onViewDetail}
-                  onAction={handleAction}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <Package className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-600">ไม่มีใบเบิกประเภทนี้</p>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-
-      {/* Transfer Statistics */}
-      <div className="border-t pt-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div className="text-center">
-            <div className="font-medium text-lg text-blue-600">
-              {transfers.filter(t => t.status === 'PENDING').length}
-            </div>
-            <div className="text-gray-600">รอดำเนินการ</div>
-          </div>
-          <div className="text-center">
-            <div className="font-medium text-lg text-green-600">
-              {transfers.filter(t => t.status === 'APPROVED').length}
-            </div>
-            <div className="text-gray-600">อนุมัติแล้ว</div>
-          </div>
-          <div className="text-center">
-            <div className="font-medium text-lg text-purple-600">
-              {transfers.filter(t => t.status === 'SENT').length}
-            </div>
-            <div className="text-gray-600">ส่งแล้ว</div>
-          </div>
-          <div className="text-center">
-            <div className="font-medium text-lg text-gray-900">
-              {transfers.filter(t => t.status === 'RECEIVED').length}
-            </div>
-            <div className="text-gray-600">เสร็จสิ้น</div>
-          </div>
+    <div className="space-y-6">
+      {/* Header Actions */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">
+            จัดการใบเบิกของ - {department === 'PHARMACY' ? 'แผนกเภสัชกรรม' : 'แผนก OPD'}
+          </h2>
+          <p className="text-sm text-gray-600 mt-1">
+            ข้อมูลใบเบิกแบบเรียลไทม์ • อัปเดตล่าสุด: {new Date().toLocaleString('th-TH')}
+          </p>
+        </div>
+        
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={refreshing || loading}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            รีเฟรช
+          </Button>
+          
+          <Button
+            size="sm"
+            onClick={handleCreateTransfer}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            สร้างใบเบิกใหม่
+          </Button>
         </div>
       </div>
+
+      {/* Quick Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-blue-600" />
+              <div>
+                <div className="text-2xl font-bold text-blue-900">
+                  {data.stats.totalTransfers.toLocaleString()}
+                </div>
+                <div className="text-sm text-blue-600">ใบเบิกทั้งหมด</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-orange-600" />
+              <div>
+                <div className="text-2xl font-bold text-orange-900">
+                  {data.stats.pendingTransfers.toLocaleString()}
+                </div>
+                <div className="text-sm text-orange-600">รออนุมัติ</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <div>
+                <div className="text-2xl font-bold text-green-900">
+                  {data.stats.approvedTransfers.toLocaleString()}
+                </div>
+                <div className="text-sm text-green-600">อนุมัติแล้ว</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Pending Transfers Alert */}
+      {data.stats.pendingTransfers > 0 && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-orange-600 flex-shrink-0" />
+              <div className="flex-1">
+                <div className="font-medium text-orange-900">
+                  มีใบเบิกรอดำเนินการ
+                </div>
+                <div className="text-sm text-orange-700">
+                  มีใบเบิก {data.stats.pendingTransfers} ใบ ที่รอการอนุมัติ
+                  {department === 'PHARMACY' ? ' กรุณาตรวจสอบและอนุมัติ' : ' รอแผนกเภสัชกรรมอนุมัติ'}
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-orange-300 text-orange-700 hover:bg-orange-100"
+              >
+                ดูรายการ
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Transfer List */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            รายการใบเบิกของ ({data.transfers.length} รายการ)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {data.transfers.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <FileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <div className="text-lg font-medium mb-2">ไม่มีใบเบิกในระบบ</div>
+              <div className="text-sm">เริ่มต้นด้วยการสร้างใบเบิกใหม่</div>
+              <Button 
+                className="mt-4" 
+                onClick={handleCreateTransfer}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                สร้างใบเบิกใหม่
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {data.transfers.map((transfer) => (
+                <TransferCard
+                  key={transfer.id}
+                  transfer={transfer}
+                  department={department}
+                  onAction={(action: string) => handleTransferAction(transfer, action)}
+                  onViewDetail={() => handleViewDetail(transfer)}
+                />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

@@ -1,15 +1,17 @@
 // 📄 File: components/modules/transaction/transaction-item.tsx
 
 import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { Transaction } from '@/types/dashboard'
-import { getTransactionTypeLabel, formatDateTime } from '@/lib/utils/dashboard'
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Package, 
-  AlertTriangle,
+import {
+  TrendingUp,
+  TrendingDown,
+  Package,
+  ArrowUpRight,
+  ArrowDownLeft,
   RefreshCw,
-  ArrowLeftRight 
+  AlertTriangle,
+  Trash2
 } from 'lucide-react'
 
 interface TransactionItemProps {
@@ -17,106 +19,141 @@ interface TransactionItemProps {
 }
 
 export function TransactionItem({ transaction }: TransactionItemProps) {
-  const getTypeIcon = (type: string) => {
+  
+  // กำหนดไอคอนและสีตามประเภท transaction
+  const getTransactionIcon = (type: string) => {
     switch (type) {
       case 'RECEIVE':
-        return <TrendingUp className="h-4 w-4 text-green-600" />
+        return { icon: TrendingUp, color: 'text-green-600' }
       case 'DISPENSE':
-        return <TrendingDown className="h-4 w-4 text-blue-600" />
+        return { icon: TrendingDown, color: 'text-red-600' }
       case 'ADJUST_IN':
-        return <TrendingUp className="h-4 w-4 text-purple-600" />
+        return { icon: ArrowUpRight, color: 'text-blue-600' }
       case 'ADJUST_OUT':
-        return <TrendingDown className="h-4 w-4 text-orange-600" />
+        return { icon: ArrowDownLeft, color: 'text-orange-600' }
       case 'TRANSFER_IN':
-        return <ArrowLeftRight className="h-4 w-4 text-green-600" />
+        return { icon: Package, color: 'text-green-600' }
       case 'TRANSFER_OUT':
-        return <ArrowLeftRight className="h-4 w-4 text-blue-600" />
+        return { icon: Package, color: 'text-red-600' }
       case 'EXPIRE':
-        return <AlertTriangle className="h-4 w-4 text-red-600" />
+        return { icon: AlertTriangle, color: 'text-yellow-600' }
       case 'DAMAGED':
-        return <AlertTriangle className="h-4 w-4 text-red-600" />
+        return { icon: Trash2, color: 'text-red-600' }
       default:
-        return <RefreshCw className="h-4 w-4 text-gray-600" />
+        return { icon: RefreshCw, color: 'text-gray-600' }
     }
   }
 
-  const getQuantityColor = (type: string) => {
-    if (['RECEIVE', 'ADJUST_IN', 'TRANSFER_IN'].includes(type)) {
-      return 'text-green-600'
-    } else if (['DISPENSE', 'ADJUST_OUT', 'TRANSFER_OUT', 'EXPIRE', 'DAMAGED'].includes(type)) {
-      return 'text-red-600'
+  // แปลประเภท transaction เป็นภาษาไทย
+  const getTransactionTypeText = (type: string) => {
+    switch (type) {
+      case 'RECEIVE':
+        return 'รับเข้า'
+      case 'DISPENSE':
+        return 'จ่ายออก'
+      case 'ADJUST_IN':
+        return 'ปรับเพิ่ม'
+      case 'ADJUST_OUT':
+        return 'ปรับลด'
+      case 'TRANSFER_IN':
+        return 'โอนเข้า'
+      case 'TRANSFER_OUT':
+        return 'โอนออก'
+      case 'EXPIRE':
+        return 'หมดอายุ'
+      case 'DAMAGED':
+        return 'เสียหาย'
+      default:
+        return type
     }
-    return 'text-gray-600'
   }
 
-  const formatQuantity = (quantity: number, type: string) => {
-    const prefix = ['RECEIVE', 'ADJUST_IN', 'TRANSFER_IN'].includes(type) ? '+' : '-'
-    return `${prefix}${Math.abs(quantity).toLocaleString()}`
+  // กำหนดสี badge ตามประเภท
+  const getBadgeColor = (type: string) => {
+    switch (type) {
+      case 'RECEIVE':
+      case 'ADJUST_IN':
+      case 'TRANSFER_IN':
+        return 'bg-green-100 text-green-800 border-green-200'
+      case 'DISPENSE':
+      case 'ADJUST_OUT':
+      case 'TRANSFER_OUT':
+      case 'DAMAGED':
+        return 'bg-red-100 text-red-800 border-red-200'
+      case 'EXPIRE':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200'
+    }
   }
+
+  const { icon: Icon, color } = getTransactionIcon(transaction.type)
+  const isIncoming = ['RECEIVE', 'ADJUST_IN', 'TRANSFER_IN'].includes(transaction.type)
 
   return (
-    <Card className="hover:shadow-sm transition-shadow">
+    <Card className="hover:shadow-sm transition-shadow duration-200">
       <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3 flex-1">
-            {/* Icon */}
-            <div className="mt-1">
-              {getTypeIcon(transaction.type)}
+        <div className="flex items-center gap-4">
+          {/* Transaction Icon */}
+          <div className={`p-2 rounded-full bg-gray-50 ${color}`}>
+            <Icon className="h-5 w-5" />
+          </div>
+
+          {/* Transaction Details */}
+          <div className="flex-1 space-y-1">
+            {/* Drug Info */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium text-sm">{transaction.drug.name}</h4>
+                <div className="text-xs text-gray-500">
+                  {transaction.drug.hospitalDrugCode}
+                  {transaction.drug.strength && ` • ${transaction.drug.strength}`}
+                </div>
+              </div>
+              
+              {/* Type Badge */}
+              <Badge 
+                className={`text-xs ${getBadgeColor(transaction.type)}`}
+              >
+                {getTransactionTypeText(transaction.type)}
+              </Badge>
             </div>
 
-            {/* Transaction Details */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h4 className="font-medium text-sm">
-                    {transaction.drug.hospitalDrugCode} - {transaction.drug.name}
-                  </h4>
-                  {transaction.drug.strength && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      {transaction.drug.strength}
-                    </p>
-                  )}
+            {/* Quantity & Stock Info */}
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-4">
+                <div className={`font-medium ${isIncoming ? 'text-green-600' : 'text-red-600'}`}>
+                  {isIncoming ? '+' : ''}{transaction.quantity.toLocaleString()} {transaction.drug.unit}
                 </div>
-
-                <div className="text-right ml-4">
-                  <div className={`font-medium ${getQuantityColor(transaction.type)}`}>
-                    {formatQuantity(transaction.quantity, transaction.type)} {transaction.drug.unit}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {transaction.beforeQty} → {transaction.afterQty}
-                  </div>
+                <div className="text-gray-500 text-xs">
+                  {transaction.beforeQty.toLocaleString()} → {transaction.afterQty.toLocaleString()}
                 </div>
               </div>
 
-              {/* Transaction Type and User */}
-              <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
-                <div className="flex items-center gap-4 text-xs text-gray-600">
-                  <span className="font-medium">
-                    {getTransactionTypeLabel(transaction.type)}
-                  </span>
-                  <span>โดย {transaction.user.name}</span>
-                </div>
-                
-                <div className="text-xs text-gray-500">
-                  {formatDateTime(transaction.createdAt)}
-                </div>
-              </div>
-
-              {/* Reference and Note */}
-              {(transaction.reference || transaction.note) && (
-                <div className="mt-2 text-xs">
-                  {transaction.reference && (
-                    <div className="text-gray-600">
-                      <span className="font-medium">อ้างอิง:</span> {transaction.reference}
-                    </div>
-                  )}
-                  {transaction.note && (
-                    <div className="text-gray-600 mt-1">
-                      <span className="font-medium">หมายเหตุ:</span> {transaction.note}
-                    </div>
-                  )}
+              {/* Cost */}
+              {transaction.totalCost > 0 && (
+                <div className="text-sm text-gray-600">
+                  ฿{transaction.totalCost.toLocaleString()}
                 </div>
               )}
+            </div>
+
+            {/* Reference & Note */}
+            {(transaction.reference || transaction.note) && (
+              <div className="text-xs text-gray-500 space-y-1">
+                {transaction.reference && (
+                  <div>อ้างอิง: {transaction.reference}</div>
+                )}
+                {transaction.note && (
+                  <div>หมายเหตุ: {transaction.note}</div>
+                )}
+              </div>
+            )}
+
+            {/* User & Timestamp */}
+            <div className="flex items-center justify-between text-xs text-gray-500 pt-1 border-t">
+              <div>โดย: {transaction.user.name}</div>
+              <div>{new Date(transaction.createdAt).toLocaleString('th-TH')}</div>
             </div>
           </div>
         </div>

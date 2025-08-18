@@ -1,129 +1,172 @@
-// 📄 File: components/modules/dashboard/stock-management-tab.tsx
+// 📄 File: components/modules/dashboard/stock-management-tab.tsx (Updated with Modal)
 
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { StockTable } from '@/components/modules/stock/stock-table' // ← เปลี่ยนกลับเป็น named import ถ้า StockTable เป็น named export
-import { Stock } from '@/types/dashboard'
-import { 
-  Package, 
-  Plus, 
-  Upload, 
-  Download,
+import { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { StockTable } from "@/components/modules/stock/stock-table";
+import { Stock } from "@/types/dashboard";
+import {
   RefreshCw,
-  AlertTriangle
-} from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+  Plus,
+  Upload,
+  Download,
+  TrendingUp,
+  Package,
+  AlertTriangle,
+} from "lucide-react";
 
 interface StockData {
-  stocks: Stock[]
+  stocks: Stock[];
   stats: {
-    totalDrugs: number
-    totalValue: number
-    lowStockCount: number
-    totalQuantity: number
-  }
+    totalDrugs: number;
+    totalValue: number;
+    lowStockCount: number;
+    totalQuantity: number;
+  };
 }
 
 interface StockManagementTabProps {
-  department: 'PHARMACY' | 'OPD'
+  department: "PHARMACY" | "OPD";
 }
 
-export function StockManagementTab({ 
-  department
-}: StockManagementTabProps) {
-  const [data, setData] = useState<StockData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const { toast } = useToast()
+export function StockManagementTab({ department }: StockManagementTabProps) {
+  const [data, setData] = useState<StockData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchStockData = async (showRefreshToast = false) => {
+  const { toast } = useToast();
+
+  // ดึงข้อมูลสต็อก
+  const fetchStockData = async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+
     try {
-      if (showRefreshToast) {
-        setRefreshing(true)
-      }
+      const endpoint =
+        department === "PHARMACY" ? "/api/stocks/pharmacy" : "/api/stocks/opd";
 
-      const apiEndpoint = department === 'PHARMACY' 
-        ? '/api/stocks/pharmacy' 
-        : '/api/stocks/opd'
-
-      const response = await fetch(apiEndpoint, {
-        method: 'GET',
+      const response = await fetch(endpoint, {
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        cache: 'no-store'
-      })
+        credentials: "include", // ใช้ cookies แทน Authorization header
+      });
 
       if (!response.ok) {
-        throw new Error(`API Error: ${response.status} - ${response.statusText}`)
+        throw new Error("ไม่สามารถโหลดข้อมูลสต็อกได้");
       }
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch stock data')
+        throw new Error(result.error || "เกิดข้อผิดพลาดในการโหลดข้อมูล");
       }
 
-      setData(result.data)
+      setData(result.data);
 
-      if (showRefreshToast) {
+      if (isRefresh) {
         toast({
-          title: "ข้อมูลสต็อกได้รับการอัปเดต",
-          description: "ข้อมูลล่าสุดแล้ว",
-          duration: 2000
-        })
+          title: "อัปเดตข้อมูลสำเร็จ",
+          description: "ข้อมูลสต็อกได้รับการอัปเดตแล้ว",
+          variant: "default",
+        });
       }
-
     } catch (error) {
-      console.error('Failed to fetch stock data:', error)
-      
-      const errorMessage = error instanceof Error ? error.message : "ไม่สามารถโหลดข้อมูลสต็อกได้"
-      
+      console.error("Error fetching stock data:", error);
+
+      const errorMessage =
+        error instanceof Error ? error.message : "ไม่สามารถโหลดข้อมูลสต็อกได้";
+
       toast({
         title: "เกิดข้อผิดพลาด",
         description: errorMessage,
         variant: "destructive",
-        duration: 4000
-      })
+        duration: 4000,
+      });
     } finally {
-      setLoading(false)
-      setRefreshing(false)
+      setLoading(false);
+      setRefreshing(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchStockData()
-  }, [department])
+    fetchStockData();
+  }, [department]);
 
   const handleRefresh = () => {
-    fetchStockData(true)
-  }
+    fetchStockData(true);
+  };
 
   const handleAddStock = () => {
     // TODO: เปิด modal เพิ่มสต็อก
-    console.log('Add new stock')
-  }
+    toast({
+      title: "ฟีเจอร์กำลังพัฒนา",
+      description: "การเพิ่มสต็อกใหม่จะพร้อมใช้งานในเร็วๆ นี้",
+      variant: "default",
+    });
+  };
 
   const handleImportStock = () => {
     // TODO: เปิด dialog import
-    console.log('Import stock data')
-  }
+    toast({
+      title: "ฟีเจอร์กำลังพัฒนา",
+      description: "การ import ข้อมูลสต็อกจะพร้อมใช้งานในเร็วๆ นี้",
+      variant: "default",
+    });
+  };
 
   const handleExportStock = () => {
     // TODO: Export ข้อมูลสต็อก
-    console.log('Export stock data')
-  }
+    toast({
+      title: "ฟีเจอร์กำลังพัฒนา",
+      description: "การ export ข้อมูลสต็อกจะพร้อมใช้งานในเร็วๆ นี้",
+      variant: "default",
+    });
+  };
 
-  const handleAdjustStock = (stock: Stock) => {
-    // TODO: เปิด modal ปรับสต็อก
-    console.log('Adjust stock:', stock.drug.name)
-  }
+  // ฟังก์ชันสำหรับอัปเดตสต็อกเมื่อมีการเปลี่ยนแปลงจาก modal
+  const handleStockUpdate = (updatedStock: Stock) => {
+    if (!data) return;
 
-  const handleViewStock = (stock: Stock) => {
-    // TODO: เปิด modal รายละเอียดสต็อก
-    console.log('View stock details:', stock.drug.name)
-  }
+    // อัปเดตข้อมูลสต็อกใน state
+    const updatedStocks = data.stocks.map((stock) =>
+      stock.id === updatedStock.id ? updatedStock : stock
+    );
+
+    // คำนวณ stats ใหม่
+    const totalValue = updatedStocks.reduce(
+      (sum, stock) => sum + stock.totalValue,
+      0
+    );
+    const lowStockCount = updatedStocks.filter(
+      (stock) => stock.totalQuantity <= stock.minimumStock
+    ).length;
+    const totalQuantity = updatedStocks.reduce(
+      (sum, stock) => sum + stock.totalQuantity,
+      0
+    );
+
+    setData({
+      stocks: updatedStocks,
+      stats: {
+        ...data.stats,
+        totalValue,
+        lowStockCount,
+        totalQuantity,
+      },
+    });
+
+    toast({
+      title: "อัปเดตสำเร็จ",
+      description: `ข้อมูลสต็อก "${updatedStock.drug.name}" ถูกอัปเดตแล้ว`,
+      variant: "default",
+    });
+  };
 
   // กรณี loading หรือไม่มีข้อมูล
   if (loading || !data) {
@@ -133,7 +176,8 @@ export function StockManagementTab({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
-              จัดการสต็อกยา - {department === 'PHARMACY' ? 'แผนกเภสัชกรรม' : 'แผนก OPD'}
+              จัดการสต็อกยา -{" "}
+              {department === "PHARMACY" ? "แผนกเภสัชกรรม" : "แผนก OPD"}
             </h2>
             <p className="text-sm text-gray-600 mt-1">
               กำลังโหลดข้อมูลสต็อกยา...
@@ -144,17 +188,11 @@ export function StockManagementTab({
         {/* Loading State */}
         <Card>
           <CardContent>
-            <StockTable
-              stocks={[]}
-              department={department}
-              loading={true}
-              onAdjust={handleAdjustStock}
-              onView={handleViewStock}
-            />
+            <StockTable stocks={[]} department={department} loading={true} />
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -163,13 +201,15 @@ export function StockManagementTab({
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-xl font-semibold text-gray-900">
-            จัดการสต็อกยา - {department === 'PHARMACY' ? 'แผนกเภสัชกรรม' : 'แผนก OPD'}
+            จัดการสต็อกยา -{" "}
+            {department === "PHARMACY" ? "แผนกเภสัชกรรม" : "แผนก OPD"}
           </h2>
           <p className="text-sm text-gray-600 mt-1">
-            ข้อมูลสต็อกยาแบบเรียลไทม์ • อัปเดตล่าสุด: {new Date().toLocaleString('th-TH')}
+            ข้อมูลสต็อกยาแบบเรียลไทม์ • อัปเดตล่าสุด:{" "}
+            {new Date().toLocaleString("th-TH")}
           </p>
         </div>
-        
+
         <div className="flex gap-2 flex-wrap">
           <Button
             variant="outline"
@@ -178,10 +218,12 @@ export function StockManagementTab({
             disabled={refreshing || loading}
             className="flex items-center gap-2"
           >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            รีเฟรช
+            <RefreshCw
+              className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+            />
+            {refreshing ? "กำลังอัปเดต..." : "รีเฟรช"}
           </Button>
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -191,103 +233,106 @@ export function StockManagementTab({
             <Download className="h-4 w-4" />
             ส่งออก
           </Button>
-          
-          {department === 'PHARMACY' && (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleImportStock}
-                className="flex items-center gap-2"
-              >
-                <Upload className="h-4 w-4" />
-                นำเข้า
-              </Button>
-              
-              <Button
-                size="sm"
-                onClick={handleAddStock}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                เพิ่มยาใหม่
-              </Button>
-            </>
-          )}
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleImportStock}
+            className="flex items-center gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            นำเข้า
+          </Button>
+
+          <Button
+            size="sm"
+            onClick={handleAddStock}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            เพิ่มสต็อก
+          </Button>
         </div>
       </div>
 
-      {/* Quick Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-blue-600" />
+            <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold text-blue-900">
+                <p className="text-sm text-gray-600">รายการยาทั้งหมด</p>
+                <p className="text-2xl font-bold text-gray-900">
                   {data.stats.totalDrugs.toLocaleString()}
-                </div>
-                <div className="text-sm text-blue-600">รายการยา</div>
+                </p>
               </div>
+              <Package className="h-8 w-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-green-600" />
+            <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold text-green-900">
+                <p className="text-sm text-gray-600">จำนวนทั้งหมด</p>
+                <p className="text-2xl font-bold text-green-600">
                   {data.stats.totalQuantity.toLocaleString()}
-                </div>
-                <div className="text-sm text-green-600">จำนวนรวม</div>
+                </p>
               </div>
+              <TrendingUp className="h-8 w-8 text-green-500" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className={`h-5 w-5 ${data.stats.lowStockCount > 0 ? 'text-orange-600' : 'text-gray-400'}`} />
+            <div className="flex items-center justify-between">
               <div>
-                <div className={`text-2xl font-bold ${data.stats.lowStockCount > 0 ? 'text-orange-900' : 'text-gray-900'}`}>
+                <p className="text-sm text-gray-600">สต็อกต่ำ</p>
+                <p
+                  className={`text-2xl font-bold ${
+                    data.stats.lowStockCount > 0
+                      ? "text-red-600"
+                      : "text-gray-400"
+                  }`}
+                >
                   {data.stats.lowStockCount.toLocaleString()}
-                </div>
-                <div className={`text-sm ${data.stats.lowStockCount > 0 ? 'text-orange-600' : 'text-gray-600'}`}>
-                  สต็อกต่ำ
-                </div>
+                </p>
               </div>
+              <AlertTriangle
+                className={`h-8 w-8 ${
+                  data.stats.lowStockCount > 0
+                    ? "text-red-500"
+                    : "text-gray-400"
+                }`}
+              />
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-purple-600" />
+            <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold text-purple-900">
-                  ฿{(data.stats.totalValue / 1000).toFixed(0)}K
-                </div>
-                <div className="text-sm text-purple-600">มูลค่ารวม</div>
+                <p className="text-sm text-gray-600">มูลค่ารวม</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  ฿{data.stats.totalValue.toLocaleString()}
+                </p>
               </div>
+              <div className="text-2xl">💰</div>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Stock Table */}
-      <div className="space-y-4">
-        <StockTable
-          stocks={data.stocks}
-          department={department}
-          loading={false}
-          onAdjust={handleAdjustStock}
-          onView={handleViewStock}
-        />
-      </div>
+      <StockTable
+        stocks={data.stocks}
+        department={department}
+        loading={loading}
+        onUpdate={handleStockUpdate}
+      />
     </div>
-  )
+  );
 }

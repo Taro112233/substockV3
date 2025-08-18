@@ -258,15 +258,6 @@ export function StockDetailModal({
                   {isEditing ? (
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleQuickAdjust(-10)}
-                          disabled={formData.totalQuantity <= 0}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
                         <Input
                           type="number"
                           min="0"
@@ -277,40 +268,6 @@ export function StockDetailModal({
                           }))}
                           className="text-center"
                         />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleQuickAdjust(10)}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleQuickAdjust(-1)}
-                        >
-                          -1
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleQuickAdjust(1)}
-                        >
-                          +1
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleQuickAdjust(5)}
-                        >
-                          +5
-                        </Button>
                       </div>
                     </div>
                   ) : (

@@ -36,6 +36,8 @@ Directory structure:
     │   │   ├── stock/
     │   │   │   └── route.ts
     │   │   ├── stocks/
+    │   │   │   ├── [stockId]/
+    │   │   │   │   └── route.ts
     │   │   │   ├── opd/
     │   │   │   │   └── route.ts
     │   │   │   └── pharmacy/
@@ -82,6 +84,7 @@ Directory structure:
     │   │   │   ├── stock-management-tab.tsx
     │   │   │   └── transfer-tab.tsx
     │   │   ├── stock/
+    │   │   │   ├── stock-detail-modal.tsx
     │   │   │   └── stock-table.tsx
     │   │   ├── transaction/
     │   │   │   └── transaction-item.tsx

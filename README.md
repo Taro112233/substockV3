@@ -35,8 +35,22 @@ Directory structure:
     │   │   │   └── route.ts
     │   │   ├── stock/
     │   │   │   └── route.ts
+    │   │   ├── stocks/
+    │   │   │   ├── opd/
+    │   │   │   │   └── route.ts
+    │   │   │   └── pharmacy/
+    │   │   │       └── route.ts
+    │   │   ├── transactions/
+    │   │   │   ├── opd/
+    │   │   │   │   └── route.ts
+    │   │   │   └── pharmacy/
+    │   │   │       └── route.ts
     │   │   └── transfers/
-    │   │       └── route.ts
+    │   │       ├── route.ts
+    │   │       ├── opd/
+    │   │       │   └── route.ts
+    │   │       └── pharmacy/
+    │   │           └── route.ts
     │   ├── dashboard/
     │   │   ├── page.tsx
     │   │   ├── opd/
@@ -68,7 +82,7 @@ Directory structure:
     │   │   │   ├── stock-management-tab.tsx
     │   │   │   └── transfer-tab.tsx
     │   │   ├── stock/
-    │   │   │   └── stock-card.tsx
+    │   │   │   └── stock-table.tsx
     │   │   ├── transaction/
     │   │   │   └── transaction-item.tsx
     │   │   └── transfer/
@@ -149,7 +163,8 @@ Directory structure:
     │   ├── types/
     │   │   └── api.ts
     │   └── utils/
-    │       └── dashboard.ts
+    │       ├── dashboard.ts
+    │       └── type-guards.ts
     ├── prisma/
     │   ├── schema.prisma
     │   ├── seed.ts

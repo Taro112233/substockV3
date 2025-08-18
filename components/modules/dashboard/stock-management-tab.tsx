@@ -306,23 +306,21 @@ export function StockManagementTab({
       )}
 
       {/* Stock Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Package className="h-5 w-5 text-gray-600" />
+          <h3 className="text-lg font-semibold text-gray-900">
             รายการสต็อกยา ({data.stocks.length} รายการ)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <StockTable
-            stocks={data.stocks}
-            department={department}
-            loading={false}
-            onAdjust={handleAdjustStock}
-            onView={handleViewStock}
-          />
-        </CardContent>
-      </Card>
+          </h3>
+        </div>
+        <StockTable
+          stocks={data.stocks}
+          department={department}
+          loading={false}
+          onAdjust={handleAdjustStock}
+          onView={handleViewStock}
+        />
+      </div>
     </div>
   )
 }

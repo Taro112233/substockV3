@@ -51,10 +51,16 @@ export function StockTable({
 
   // Filter stocks based on search and low stock filter
   const filteredStocks = stocks.filter(stock => {
+    // ป้องกัน undefined/null ใน search
+    const drugName = stock.drug?.name?.toLowerCase() || ''
+    const hospitalCode = stock.drug?.hospitalDrugCode?.toLowerCase() || ''
+    const genericName = stock.drug?.genericName?.toLowerCase() || ''
+    const searchLower = searchTerm.toLowerCase()
+    
     const matchesSearch = 
-      stock.drug.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      stock.drug.hospitalDrugCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (stock.drug.genericName && stock.drug.genericName.toLowerCase().includes(searchTerm.toLowerCase()))
+      drugName.includes(searchLower) ||
+      hospitalCode.includes(searchLower) ||
+      genericName.includes(searchLower)
     
     const matchesLowStock = showLowStockOnly ? isLowStock(stock) : true
     
@@ -135,169 +141,125 @@ export function StockTable({
         </div>
         <Button
           variant={showLowStockOnly ? "default" : "outline"}
+          size="sm"
           onClick={() => setShowLowStockOnly(!showLowStockOnly)}
           className="flex items-center gap-2"
         >
           <Filter className="h-4 w-4" />
           สต็อกต่ำ
-          {showLowStockOnly && (
-            <Badge variant="secondary" className="ml-1">
-              {filteredStocks.filter(s => isLowStock(s)).length}
-            </Badge>
-          )}
         </Button>
       </div>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-blue-50 p-3 rounded-lg">
-          <div className="text-sm text-blue-600">ยาทั้งหมด</div>
-          <div className="text-xl font-bold text-blue-900">{filteredStocks.length}</div>
-        </div>
-        <div className="bg-green-50 p-3 rounded-lg">
-          <div className="text-sm text-green-600">มูลค่ารวม</div>
-          <div className="text-xl font-bold text-green-900">
-            {formatCurrency(filteredStocks.reduce((sum, s) => sum + s.totalValue, 0))}
-          </div>
-        </div>
-        <div className="bg-orange-50 p-3 rounded-lg">
-          <div className="text-sm text-orange-600">สต็อกต่ำ</div>
-          <div className="text-xl font-bold text-orange-900">
-            {filteredStocks.filter(s => isLowStock(s)).length}
-          </div>
-        </div>
-        <div className="bg-purple-50 p-3 rounded-lg">
-          <div className="text-sm text-purple-600">จำนวนรวม</div>
-          <div className="text-xl font-bold text-purple-900">
-            {filteredStocks.reduce((sum, s) => sum + s.totalQuantity, 0).toLocaleString()}
-          </div>
-        </div>
-      </div>
-
-      {/* Stock Table */}
+      {/* Table */}
       <div className="border rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50">
-                <TableHead className="w-[200px]">ชื่อยา</TableHead>
-                <TableHead className="w-[100px]">รูปแบบ</TableHead>
+                <TableHead className="w-[250px]">ชื่อยา</TableHead>
+                <TableHead className="w-[120px]">รูปแบบ</TableHead>
                 <TableHead className="w-[120px]">ความแรง</TableHead>
                 <TableHead className="w-[120px]">ขนาดบรรจุ</TableHead>
                 <TableHead className="w-[120px] text-center">คงเหลือ</TableHead>
-                <TableHead className="w-[140px]">อัปเดตล่าสุด</TableHead>
+                <TableHead className="w-[140px] text-center">อัปเดตล่าสุด</TableHead>
                 <TableHead className="w-[120px] text-center">จัดการ</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredStocks.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                    {searchTerm || showLowStockOnly ? (
-                      <div className="space-y-2">
-                        <Package className="h-8 w-8 mx-auto text-gray-400" />
-                        <div>ไม่พบข้อมูลตามเงื่อนไขที่กำหนด</div>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <Package className="h-8 w-8 mx-auto text-gray-400" />
-                        <div>ไม่มีข้อมูลสต็อกในระบบ</div>
-                      </div>
-                    )}
+                  <TableCell colSpan={7} className="h-24 text-center text-gray-500">
+                    {searchTerm || showLowStockOnly ? 'ไม่พบรายการที่ค้นหา' : 'ไม่มีข้อมูลสต็อก'}
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredStocks.map((stock) => {
-                  const availableStock = calculateAvailableStock(stock)
+                  // ป้องกัน undefined/null values
+                  const availableStock = calculateAvailableStock(stock) || 0
                   const lowStock = isLowStock(stock)
-                  
+                  const categoryColor = getCategoryColor(stock.drug?.category)
+                  const categoryLabel = getCategoryLabel(stock.drug?.category)
+                  const reorderPoint = stock.reorderPoint || stock.minimumStock || 0
+
                   return (
                     <TableRow 
                       key={stock.id} 
-                      className={`hover:bg-gray-50 ${lowStock ? 'bg-orange-50/50' : ''}`}
+                      className="border-b" // ลบ hover:bg-gray-50/50 ออก
                     >
                       {/* ชื่อยา */}
-                      <TableCell className="space-y-1">
-                        <div className="font-medium text-sm">{stock.drug.name}</div>
-                        <div className="text-xs text-gray-500 font-mono">
-                          {stock.drug.hospitalDrugCode}
-                        </div>
-                        {stock.drug.genericName && (
-                          <div className="text-xs text-gray-600">
-                            {stock.drug.genericName}
+                      <TableCell className="font-medium">
+                        <div className="space-y-2">
+                          {/* ชื่อยา */}
+                          <div className="font-medium text-gray-900 leading-tight">
+                            {stock.drug?.name || 'ไม่ระบุชื่อยา'}
                           </div>
-                        )}
-                        <Badge 
-                          variant="secondary" 
-                          className={`text-xs ${getCategoryColor(stock.drug.category)}`}
-                        >
-                          {getCategoryLabel(stock.drug.category)}
-                        </Badge>
+                          
+                          {/* Category Badge + Hospital Drug Code */}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge 
+                              variant="outline" 
+                              className={`text-xs ${categoryColor} shrink-0`}
+                            >
+                              {categoryLabel}
+                            </Badge>
+                            <span className="text-sm text-gray-600 font-mono">
+                              {stock.drug?.hospitalDrugCode || '-'}
+                            </span>
+                          </div>
+                        </div>
                       </TableCell>
 
                       {/* รูปแบบ */}
-                      <TableCell className="text-sm">
-                        {stock.drug.dosageForm}
+                      <TableCell>
+                        <div className="text-sm text-gray-700">
+                          {stock.drug?.dosageForm || '-'}
+                        </div>
                       </TableCell>
 
                       {/* ความแรง */}
-                      <TableCell className="text-sm">
-                        {stock.drug.strength ? (
-                          <div>
-                            {stock.drug.strength}
-                            {stock.drug.unit && (
-                              <span className="text-gray-500 ml-1">
-                                {stock.drug.unit}
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
+                      <TableCell>
+                        <div className="text-sm text-gray-700">
+                          {stock.drug?.strength || ''} {stock.drug?.unit || ''}
+                        </div>
                       </TableCell>
 
                       {/* ขนาดบรรจุ */}
-                      <TableCell className="text-sm">
-                        {stock.drug.packageSize ? (
-                          stock.drug.packageSize
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
+                      <TableCell>
+                        <div className="text-sm text-gray-700">
+                          {stock.drug?.packageSize ? (
+                            <>1 x {stock.drug.packageSize}'s</>
+                          ) : (
+                            '-'
+                          )}
+                        </div>
                       </TableCell>
 
                       {/* คงเหลือ */}
                       <TableCell className="text-center">
                         <div className="space-y-1">
-                          <div className={`font-bold text-lg ${
-                            lowStock ? 'text-orange-600' : 'text-gray-900'
+                          {/* จำนวนคงเหลือ */}
+                          <div className={`font-medium ${
+                            lowStock 
+                              ? 'text-red-600' 
+                              : availableStock > 0 
+                                ? 'text-green-600' 
+                                : 'text-gray-400'
                           }`}>
-                            {stock.totalQuantity.toLocaleString()}
+                            {availableStock.toLocaleString()}
                           </div>
+                          
+                          {/* ขั้นต่ำ */}
                           <div className="text-xs text-gray-500">
-                            พร้อมใช้: {availableStock.toLocaleString()}
-                          </div>
-                          {stock.reservedQty > 0 && (
-                            <div className="text-xs text-yellow-600">
-                              จอง: {stock.reservedQty.toLocaleString()}
-                            </div>
-                          )}
-                          {lowStock && (
-                            <div className="flex items-center justify-center gap-1 text-orange-600">
-                              <AlertTriangle className="h-3 w-3" />
-                              <span className="text-xs">สต็อกต่ำ</span>
-                            </div>
-                          )}
-                          <div className="text-xs text-gray-500">
-                            ขั้นต่ำ: {stock.minimumStock.toLocaleString()}
+                            ขั้นต่ำ: {reorderPoint.toLocaleString()}
                           </div>
                         </div>
                       </TableCell>
 
                       {/* อัปเดตล่าสุด */}
-                      <TableCell className="text-sm">
+                      <TableCell className="text-center">
                         {stock.lastUpdated ? (
                           <div className="space-y-1">
-                            <div>
+                            <div className="text-sm text-gray-700">
                               {new Date(stock.lastUpdated).toLocaleDateString('th-TH', {
                                 year: 'numeric',
                                 month: 'short',
@@ -312,32 +274,33 @@ export function StockTable({
                             </div>
                           </div>
                         ) : (
-                          <span className="text-gray-400">-</span>
+                          <span className="text-gray-400 text-sm">-</span>
                         )}
                       </TableCell>
 
                       {/* จัดการ */}
                       <TableCell>
-                        <div className="flex gap-1 justify-center">
+                        <div className="flex gap-2 justify-center">
+                          {/* ปุ่มแสดงรายละเอียด */}
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleView(stock)}
-                            className="h-8 w-8 p-0"
+                            className="h-8 px-3 text-xs"
                           >
-                            <Eye className="h-3 w-3" />
+                            <Eye className="h-3 w-3 mr-1" />
+                            ดู
                           </Button>
+                          
+                          {/* ปุ่มปรับสต็อก */}
                           <Button
                             variant={lowStock ? "default" : "outline"}
                             size="sm"
                             onClick={() => handleAdjust(stock)}
-                            className="h-8 w-8 p-0"
+                            className="h-8 px-3 text-xs"
                           >
-                            {lowStock ? (
-                              <TrendingUp className="h-3 w-3" />
-                            ) : (
-                              <Edit className="h-3 w-3" />
-                            )}
+                            <Edit className="h-3 w-3 mr-1" />
+                            ปรับ
                           </Button>
                         </div>
                       </TableCell>

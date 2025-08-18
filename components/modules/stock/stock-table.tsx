@@ -179,7 +179,7 @@ export function StockTable({
                   const lowStock = isLowStock(stock)
                   const categoryColor = getCategoryColor(stock.drug?.category)
                   const categoryLabel = getCategoryLabel(stock.drug?.category)
-                  const reorderPoint = stock.reorderPoint || stock.minimumStock || 0
+                  const reorderPoint = stock.minimumStock || 0
 
                   return (
                     <TableRow 
@@ -281,17 +281,6 @@ export function StockTable({
                       {/* จัดการ */}
                       <TableCell>
                         <div className="flex gap-2 justify-center">
-                          {/* ปุ่มแสดงรายละเอียด */}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleView(stock)}
-                            className="h-8 px-3 text-xs"
-                          >
-                            <Eye className="h-3 w-3 mr-1" />
-                            ดู
-                          </Button>
-                          
                           {/* ปุ่มปรับสต็อก */}
                           <Button
                             variant={lowStock ? "default" : "outline"}

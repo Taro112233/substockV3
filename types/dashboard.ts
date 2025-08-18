@@ -12,7 +12,7 @@ export interface DashboardStats {
 
 export interface Stock {
   id: string
-  drugId: string
+  drugId: any
   department: 'PHARMACY' | 'OPD'
   totalQuantity: number
   reservedQty: number
@@ -27,6 +27,9 @@ export interface Stock {
     strength: string
     unit: string
     category: string
+    isActive: boolean
+    notes?: string
+    packageSize?: number
   }
 }
 

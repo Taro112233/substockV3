@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { StockTable } from '@/components/modules/stock/stock-table'
+import { StockTable } from '@/components/modules/stock/stock-table' // ← เปลี่ยนกลับเป็น named import ถ้า StockTable เป็น named export
 import { Stock } from '@/types/dashboard'
 import { 
   Package, 

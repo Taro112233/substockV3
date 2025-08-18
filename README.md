@@ -49,6 +49,10 @@ Directory structure:
     │   │   │       └── route.ts
     │   │   └── transfers/
     │   │       ├── route.ts
+    │   │       ├── [id]/
+    │   │       │   ├── route.ts
+    │   │       │   └── actions/
+    │   │       │       └── route.ts
     │   │       ├── opd/
     │   │       │   └── route.ts
     │   │       └── pharmacy/
@@ -58,7 +62,6 @@ Directory structure:
     │   │   ├── opd/
     │   │   │   └── page.tsx
     │   │   └── pharmacy/
-    │   │       ├── layout.tsx
     │   │       └── page.tsx
     │   ├── login/
     │   │   └── page.tsx
@@ -66,6 +69,11 @@ Directory structure:
     │   │   └── page.tsx
     │   ├── showcase/
     │   │   └── page.tsx
+    │   ├── transfers/
+    │   │   └── [id]/
+    │   │       ├── page.tsx
+    │   │       └── action/
+    │   │           └── page.tsx
     │   └── utils/
     │       └── auth-client.tsx
     ├── components/
@@ -90,8 +98,16 @@ Directory structure:
     │   │   │   └── transaction-item.tsx
     │   │   └── transfer/
     │   │       ├── status-badge.tsx
+    │   │       ├── transfer-actions.tsx
     │   │       ├── transfer-card.tsx
-    │   │       └── transfer-detail-modal.tsx
+    │   │       ├── transfer-delivery-info.tsx
+    │   │       ├── transfer-delivery-tab.tsx
+    │   │       ├── transfer-detail-modal.tsx
+    │   │       ├── transfer-header.tsx
+    │   │       ├── transfer-info-card.tsx
+    │   │       ├── transfer-items-table.tsx
+    │   │       ├── transfer-request-tab.tsx
+    │   │       └── transfer-signatures.tsx
     │   ├── sections/
     │   │   ├── ActionsSection.tsx
     │   │   ├── AdvancedPatternsSection.tsx
@@ -167,6 +183,7 @@ Directory structure:
     │   │   └── api.ts
     │   └── utils/
     │       ├── dashboard.ts
+    │       ├── transfer-status.ts
     │       └── type-guards.ts
     ├── prisma/
     │   ├── schema.prisma
@@ -186,10 +203,14 @@ Directory structure:
     │   ├── debug-drugs.js
     │   ├── merge-schemas.js
     │   └── merge-seeds.js
+    ├── services/
+    │   ├── transfer-action-service.ts
+    │   └── transfer-service.ts
     └── types/
         ├── cookie.d.ts
         ├── dashboard.ts
-        └── index.ts
+        ├── index.ts
+        └── transfer.ts
 
 # 📌 Project Instructions for Claude: Hospital Pharmacy Stock Management System V3.0
 

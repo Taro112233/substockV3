@@ -78,13 +78,13 @@ export function TransferItemsTable({
           </tbody>
           <tfoot>
             <tr className="border-t-2 bg-gray-50">
-              <td colSpan="4" className="p-3 text-right font-medium">
+              <td colSpan={4} className="p-3 text-right font-medium">
                 มูลค่ารวม:
               </td>
               <td className="p-3 text-right font-bold text-lg">
                 {formatCurrency(getTotalValue())}
               </td>
-              <td colSpan="3"></td>
+              <td colSpan={3}></td>
             </tr>
           </tfoot>
         </table>

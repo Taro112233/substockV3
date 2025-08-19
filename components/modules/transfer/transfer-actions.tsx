@@ -5,7 +5,7 @@
 import { Button } from '@/components/ui/button'
 import { getAvailableActions } from '@/lib/utils/transfer-status'
 import type { TransferDetails } from '@/types/transfer'
-import type { AuthUser } from '@/lib/auth'
+import type { AuthUser } from '@/hooks/use-auth'
 
 interface TransferActionsProps {
   transfer: TransferDetails
@@ -24,9 +24,13 @@ export function TransferActions({
 }: TransferActionsProps) {
   if (!user) return null
   
+  // ใน V3.0 system, user ไม่มี fixed department
+  // ใช้ context-based permissions แทน
+  const userDepartment = user.department || 'PHARMACY' // Default fallback
+  
   const availableActions = getAvailableActions(
     transfer.status,
-    user.department,
+    userDepartment,
     transfer.fromDept,
     transfer.toDept
   )

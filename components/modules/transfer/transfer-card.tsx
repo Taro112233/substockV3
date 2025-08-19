@@ -61,7 +61,7 @@ export function TransferCard({ transfer, onQuickAction }: TransferCardProps) {
 
   // Navigate to action page
   const handleActionNavigate = (action: string) => {
-    router.push(`/transfers/${transfer.id}?action=${action}`)
+    router.push(`/transfers/${transfer.id}/action?action=${action}`)
   }
 
   // Handle quick actions that don't need navigation
@@ -71,19 +71,21 @@ export function TransferCard({ transfer, onQuickAction }: TransferCardProps) {
     }
   }
 
-  // Get user perspective
+  // Get user perspective - แก้ไขให้ compatible กับ auth system
   const getPerspective = () => {
     if (!user) return { type: 'view', label: 'ดูข้อมูล', action: 'ระหว่าง' }
     
-    const isRequester = transfer.fromDept === user.department
-    const isReceiver = transfer.toDept === user.department
+    // ใช้ context-based perspective แทน fixed department
+    // ในระบบ V3.0 user สามารถเข้าถึงได้ทุกแผนก
+    const isFromPharmacy = transfer.fromDept === 'PHARMACY'
+    const isToPharmacy = transfer.toDept === 'PHARMACY'
     
-    if (isRequester && isReceiver) {
-      return { type: 'internal', label: 'โอนภายใน', action: 'ภายในแผนก' }
-    } else if (isRequester) {
-      return { type: 'outgoing', label: 'เบิกออก', action: 'จ่ายให้' }
-    } else if (isReceiver) {
-      return { type: 'incoming', label: 'รับเข้า', action: 'รับจาก' }
+    if (isFromPharmacy && !isToPharmacy) {
+      // คลังยา → OPD: ถ้าดูจากมุมคลังยา = จ่ายออก, ถ้าดูจาก OPD = รับเข้า
+      return { type: 'pharmacy_to_opd', label: 'คลังยา → OPD', action: 'จ่ายให้' }
+    } else if (!isFromPharmacy && isToPharmacy) {
+      // OPD → คลังยา: การคืนยา
+      return { type: 'opd_to_pharmacy', label: 'OPD → คลังยา', action: 'คืนยา' }
     }
     
     return { type: 'view', label: 'ดูข้อมูล', action: 'ระหว่าง' }
@@ -102,61 +104,53 @@ export function TransferCard({ transfer, onQuickAction }: TransferCardProps) {
       type: 'navigate' | 'quick' // navigate = go to action page, quick = immediate action
     }> = []
 
-    // Actions based on status and perspective
-    if (perspective.type === 'incoming') {
-      // Receiving department (คลังยา) perspective
-      switch (transfer.status) {
-        case 'PENDING':
-          actions.push({
-            label: 'อนุมัติ',
-            action: 'approve',
-            variant: 'default',
-            icon: CheckCircle,
-            type: 'navigate'
-          })
-          actions.push({
-            label: 'ปฏิเสธ',
-            action: 'reject',
-            variant: 'destructive',
-            icon: XCircle,
-            type: 'quick'
-          })
-          break
-        case 'APPROVED':
-          actions.push({
-            label: 'เตรียมจ่าย',
-            action: 'prepare',
-            variant: 'default',
-            icon: Package,
-            type: 'navigate'
-          })
-          break
-      }
-    } else if (perspective.type === 'outgoing') {
-      // Requesting department (OPD) perspective
-      switch (transfer.status) {
-        case 'PENDING':
-          actions.push({
-            label: 'ยกเลิก',
-            action: 'cancel',
-            variant: 'destructive',
-            icon: XCircle,
-            type: 'quick'
-          })
-          break
-        case 'PREPARED':
-          actions.push({
-            label: 'รับยา',
-            action: 'receive',
-            variant: 'default',
-            icon: CheckCircle,
-            type: 'navigate'
-          })
-          break
-        case 'DELIVERED':
-          // No actions available - completed
-          break
-      }
+    // Actions based on status - สำหรับ V3.0 ให้ user ทุกคนเห็น action ได้
+    // แต่ระบบจะตรวจสอบสิทธิ์ในหน้า action
+    switch (transfer.status) {
+      case 'PENDING':
+        actions.push({
+          label: 'อนุมัติ',
+          action: 'approve',
+          variant: 'default',
+          icon: CheckCircle,
+          type: 'navigate'
+        })
+        actions.push({
+          label: 'ปฏิเสธ',
+          action: 'reject',
+          variant: 'destructive',
+          icon: XCircle,
+          type: 'quick'
+        })
+        actions.push({
+          label: 'ยกเลิก',
+          action: 'cancel',
+          variant: 'destructive',
+          icon: XCircle,
+          type: 'quick'
+        })
+        break
+      case 'APPROVED':
+        actions.push({
+          label: 'เตรียมจ่าย',
+          action: 'prepare',
+          variant: 'default',
+          icon: Package,
+          type: 'navigate'
+        })
+        break
+      case 'PREPARED':
+        actions.push({
+          label: 'รับยา',
+          action: 'receive',
+          variant: 'default',
+          icon: CheckCircle,
+          type: 'navigate'
+        })
+        break
+      case 'DELIVERED':
+        // No actions available - completed
+        break
     }
 
     return actions
@@ -204,7 +198,13 @@ export function TransferCard({ transfer, onQuickAction }: TransferCardProps) {
   }
 
   const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('th-TH')
+    return new Date(dateString).toLocaleDateString('th-TH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
   }
 
   const perspective = getPerspective()
@@ -247,7 +247,7 @@ export function TransferCard({ transfer, onQuickAction }: TransferCardProps) {
 
           {/* Status Badge */}
           <div className="flex flex-col items-end gap-2">
-            <Badge className={`text-xs ${statusConfig.color}`}>
+            <Badge className={`text-xs border ${statusConfig.color}`}>
               <StatusIcon className="h-3 w-3 mr-1" />
               {statusConfig.text}
             </Badge>
@@ -325,7 +325,7 @@ export function TransferCard({ transfer, onQuickAction }: TransferCardProps) {
 
           {availableActions.length > 0 && (
             <div className="flex gap-1">
-              {availableActions.map((action) => {
+              {availableActions.slice(0, 2).map((action) => {
                 const ActionIcon = action.icon
                 return (
                   <Button

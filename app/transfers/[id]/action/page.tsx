@@ -58,13 +58,29 @@ interface ActionFormData {
   }>
 }
 
+// Define valid action types
+type ActionType = 'approve' | 'prepare' | 'receive'
+
+// Define action config type
+interface ActionConfig {
+  title: string
+  description: string
+  icon: any
+  color: string
+  submitLabel: string
+  showQuantityEdit: boolean
+  showBatchInfo?: boolean
+  quantityField: string
+  quantityLabel: string
+}
+
 export default function TransferActionPage({ params }: TransferActionPageProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user } = useAuth()
   const { toast } = useToast()
   
-  const actionType = searchParams.get('type') // approve, prepare, receive
+  const actionType = searchParams.get('type') as ActionType | null
   const [transfer, setTransfer] = useState<any>(null)
   const [formData, setFormData] = useState<ActionFormData>({ items: [] })
   const [loading, setLoading] = useState(true)
@@ -118,8 +134,8 @@ export default function TransferActionPage({ params }: TransferActionPageProps) 
     }
   }
   
-  const getActionConfig = () => {
-    const configs = {
+  const getActionConfig = (): ActionConfig => {
+    const configs: Record<ActionType, ActionConfig> = {
       approve: {
         title: 'อนุมัติใบเบิก',
         description: 'ตรวจสอบและอนุมัติรายการยาที่ขอเบิก',
@@ -152,7 +168,7 @@ export default function TransferActionPage({ params }: TransferActionPageProps) 
         quantityLabel: 'จำนวนรับจริง'
       }
     }
-    return configs[actionType] || configs.approve
+    return configs[actionType || 'approve']
   }
   
   const updateItemQuantity = (itemId: string, field: string, value: number) => {
@@ -190,9 +206,10 @@ export default function TransferActionPage({ params }: TransferActionPageProps) 
       
       // Validate form
       if (actionType === 'prepare') {
-        const hasInvalidBatch = formData.items.some(item => 
-          item.dispensedQty > 0 && (!item.lotNumber || !item.expiryDate)
-        )
+        const hasInvalidBatch = formData.items.some(item => {
+          const dispensedQty = item.dispensedQty || 0
+          return dispensedQty > 0 && (!item.lotNumber || !item.expiryDate)
+        })
         
         if (hasInvalidBatch) {
           toast({
@@ -245,17 +262,19 @@ export default function TransferActionPage({ params }: TransferActionPageProps) 
   }
   
   const getSuccessMessage = () => {
-    const messages = {
+    const messages: Record<ActionType, string> = {
       approve: 'อนุมัติใบเบิกเรียบร้อยแล้ว',
       prepare: 'เตรียมจ่ายยาเรียบร้อยแล้ว',
       receive: 'รับยาและตัดสต็อกเรียบร้อยแล้ว'
     }
-    return messages[actionType] || 'ดำเนินการเรียบร้อยแล้ว'
+    return messages[actionType || 'approve']
   }
   
   const getTotalValue = () => {
+    const actionConfig = getActionConfig()
     return formData.items.reduce((sum, item) => {
-      const qty = item[getActionConfig().quantityField] || 0
+      const fieldValue = item[actionConfig.quantityField as keyof typeof item]
+      const qty = typeof fieldValue === 'number' ? fieldValue : 0
       const price = item.unitPrice || 0
       return sum + (qty * price)
     }, 0)
@@ -426,7 +445,7 @@ export default function TransferActionPage({ params }: TransferActionPageProps) 
                           type="number"
                           min="0"
                           max={item.requestedQty}
-                          value={item[actionConfig.quantityField] || 0}
+                          value={item[actionConfig.quantityField as keyof typeof item] as number || 0}
                           onChange={(e) => updateItemQuantity(
                             item.id, 
                             actionConfig.quantityField, 
@@ -482,7 +501,7 @@ export default function TransferActionPage({ params }: TransferActionPageProps) 
               {actionConfig.showBatchInfo && (
                 <tfoot>
                   <tr className="border-t-2 bg-gray-50">
-                    <td colSpan="7" className="p-3 text-right font-medium">
+                    <td colSpan={7} className="p-3 text-right font-medium">
                       มูลค่ารวม:
                     </td>
                     <td className="p-3 text-right font-bold">

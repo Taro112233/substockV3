@@ -1,42 +1,39 @@
-// 📄 File: app/api/transfers/pharmacy/route.ts
-
+// 1. app/api/transfers/pharmacy/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerUser } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
-import { verifyToken, isUserActive } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('auth-token')?.value
-    
-    if (!token) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    // ตรวจสอบ authentication
+    const user = await getServerUser()
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      )
     }
 
-    const user = await verifyToken(token)
-    
-    if (!user || !isUserActive(user)) {
-      return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 })
-    }
-
-    // Check if user can access pharmacy data
-    const userDepartment = getUserDepartmentFromRole(user)
-    if (userDepartment !== 'PHARMACY' && !isAdmin(user)) {
-      return NextResponse.json({ success: false, error: 'Access denied' }, { status: 403 })
-    }
-
-    console.log(`📋 Fetching pharmacy transfers for ${user.username}`)
-
-    // Fetch transfers relevant to pharmacy
+    // ดึงข้อมูล transfers สำหรับ pharmacy perspective
     const transfers = await prisma.transfer.findMany({
       where: {
         OR: [
-          { fromDept: 'PHARMACY' }, // Outgoing from pharmacy
-          { toDept: 'PHARMACY' }    // Incoming to pharmacy
+          { fromDept: 'PHARMACY' }, // ส่งจากคลังยา
+          { toDept: 'PHARMACY' }    // รับเข้าคลังยา
         ]
       },
       include: {
         requester: {
           select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            position: true
+          }
+        },
+        approver: {
+          select: {
+            id: true,
             firstName: true,
             lastName: true,
             position: true
@@ -46,8 +43,11 @@ export async function GET(request: NextRequest) {
           include: {
             drug: {
               select: {
+                hospitalDrugCode: true,
                 name: true,
-                unit: true
+                strength: true,
+                unit: true,
+                pricePerBox: true
               }
             }
           }
@@ -55,45 +55,71 @@ export async function GET(request: NextRequest) {
       },
       orderBy: {
         requestedAt: 'desc'
-      }
+      },
+      take: 50 // จำกัดผลลัพธ์
     })
 
-    // Calculate stats
+    // คำนวณ stats
     const stats = {
       totalTransfers: transfers.length,
       pendingTransfers: transfers.filter(t => t.status === 'PENDING').length,
-      approvedTransfers: transfers.filter(t => t.status === 'APPROVED').length,
-      preparedTransfers: transfers.filter(t => t.status === 'PREPARED').length,
-      deliveredTransfers: transfers.filter(t => t.status === 'DELIVERED').length,
-      cancelledTransfers: transfers.filter(t => t.status === 'CANCELLED').length,
+      approvedTransfers: transfers.filter(t => t.status === 'APPROVED').length
     }
 
-    console.log(`📊 Pharmacy stats: ${stats.totalTransfers} total, ${stats.pendingTransfers} pending`)
+    // Transform data สำหรับ frontend
+    const transformedTransfers = transfers.map(transfer => ({
+      id: transfer.id,
+      transferNumber: transfer.requisitionNumber,
+      fromDepartment: transfer.fromDept,
+      toDepartment: transfer.toDept,
+      status: transfer.status,
+      priority: 'MEDIUM', // default priority
+      requestedAt: transfer.requestedAt.toISOString(),
+      approvedAt: transfer.approvedAt?.toISOString() || null,
+      sentAt: transfer.dispensedAt?.toISOString() || null,
+      receivedAt: transfer.receivedAt?.toISOString() || null,
+      requestedBy: {
+        id: transfer.requester.id,
+        name: `${transfer.requester.firstName} ${transfer.requester.lastName}`
+      },
+      approvedBy: transfer.approver ? {
+        id: transfer.approver.id,
+        name: `${transfer.approver.firstName} ${transfer.approver.lastName}`
+      } : null,
+      items: transfer.items.map(item => ({
+        id: item.id,
+        drugId: item.drugId,
+        requestedQty: item.requestedQty,
+        approvedQty: item.approvedQty || 0,
+        sentQty: item.dispensedQty || 0,
+        receivedQty: item.receivedQty || 0,
+        drug: {
+          hospitalDrugCode: item.drug.hospitalDrugCode,
+          name: item.drug.name,
+          strength: item.drug.strength || '',
+          unit: item.drug.unit
+        }
+      })),
+      notes: transfer.requestNote || ''
+    }))
 
     return NextResponse.json({
       success: true,
       data: {
-        transfers,
+        transfers: transformedTransfers,
         stats
       }
     })
 
   } catch (error) {
-    console.error('❌ Failed to fetch pharmacy transfers:', error)
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Internal server error' 
-    }, { status: 500 })
+    console.error('Pharmacy transfers API error:', error)
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: 'Failed to fetch transfer data',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    )
   }
-}
-
-function getUserDepartmentFromRole(user: any): 'PHARMACY' | 'OPD' {
-  if (user.role && user.role.includes('PHARMACY')) {
-    return 'PHARMACY'
-  }
-  return 'OPD'
-}
-
-function isAdmin(user: any): boolean {
-  return user.role === 'ADMIN' || user.role === 'PHARMACY_MANAGER'
 }

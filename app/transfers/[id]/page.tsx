@@ -96,9 +96,9 @@ export default function TransferDetailPage({ params }: TransferDetailPageProps) 
   }
   
   const getActionSuccessMessage = (action: string) => {
-    const messages = {
-      'cancel': 'ยกเลิกใบเบิกแล้ว',
-      'reject': 'ปฏิเสธใบเบิกแล้ว',
+    const messages: Record<string, string> = {
+      cancel: 'ยกเลิกใบเบิกแล้ว',
+      reject: 'ปฏิเสธใบเบิกแล้ว',
     }
     return messages[action] || 'ดำเนินการสำเร็จ'
   }

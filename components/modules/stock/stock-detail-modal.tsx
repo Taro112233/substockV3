@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
@@ -36,8 +35,9 @@ import {
   X,
   Eye,
   Edit3,
-  Plus,
-  Minus
+  DollarSign,
+  FileText,
+  User
 } from 'lucide-react'
 
 interface StockDetailModalProps {
@@ -51,6 +51,77 @@ interface StockUpdateData {
   totalQuantity: number
   minimumStock: number
   adjustmentReason: string
+}
+
+// Helper functions
+const getStockStatusIcon = (stock: Stock) => {
+  const availableStock = calculateAvailableStock(stock)
+  const lowStock = isLowStock(stock)
+  
+  if (lowStock) {
+    return <AlertTriangle className="h-5 w-5 text-red-600" />
+  } else if (availableStock > stock.minimumStock * 2) {
+    return <TrendingUp className="h-5 w-5 text-green-600" />
+  } else {
+    return <TrendingDown className="h-5 w-5 text-orange-600" />
+  }
+}
+
+const getStockStatusInfo = (stock: Stock) => {
+  const availableStock = calculateAvailableStock(stock)
+  const lowStock = isLowStock(stock)
+  
+  if (lowStock) {
+    return {
+      label: 'สต็อกต่ำ',
+      color: 'bg-red-100 text-red-800 border-red-200',
+      description: 'สต็อกคงเหลือต่ำกว่าจำนวนขั้นต่ำที่กำหนด ควรเติมสต็อก'
+    }
+  } else if (availableStock > stock.minimumStock * 2) {
+    return {
+      label: 'สต็อกเพียงพอ',
+      color: 'bg-green-100 text-green-800 border-green-200',
+      description: 'สต็อกคงเหลือเพียงพอสำหรับการใช้งาน'
+    }
+  } else {
+    return {
+      label: 'สต็อกปานกลาง',
+      color: 'bg-orange-100 text-orange-800 border-orange-200',
+      description: 'สต็อกคงเหลือใกล้จำนวนขั้นต่ำ ควรติดตามและวางแผนเติมสต็อก'
+    }
+  }
+}
+
+const getCategoryColor = (category: string) => {
+  const colors = {
+    'HIGH_ALERT': 'bg-red-100 text-red-800 border-red-200',
+    'NARCOTIC': 'bg-purple-100 text-purple-800 border-purple-200',
+    'REFRIGERATED': 'bg-blue-100 text-blue-800 border-blue-200',
+    'PSYCHIATRIC': 'bg-indigo-100 text-indigo-800 border-indigo-200',
+    'FLUID': 'bg-cyan-100 text-cyan-800 border-cyan-200',
+    'GENERAL': 'bg-gray-100 text-gray-800 border-gray-200'
+  }
+  return colors[category as keyof typeof colors] || colors.GENERAL
+}
+
+const getCategoryLabel = (category: string) => {
+  const labels = {
+    'HIGH_ALERT': 'ยาเสี่ยงสูง',
+    'NARCOTIC': 'ยาเสพติด',
+    'REFRIGERATED': 'ยาแช่เย็น',
+    'PSYCHIATRIC': 'ยาจิตเวช',
+    'FLUID': 'สารน้ำ',
+    'GENERAL': 'ยาทั่วไป'
+  }
+  return labels[category as keyof typeof labels] || category
+}
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('th-TH', {
+    style: 'currency',
+    currency: 'THB',
+    minimumFractionDigits: 2
+  }).format(amount)
 }
 
 export function StockDetailModal({ 
@@ -85,6 +156,7 @@ export function StockDetailModal({
 
   const availableStock = calculateAvailableStock(stock)
   const lowStock = isLowStock(stock)
+  const stockStatusInfo = getStockStatusInfo(stock)
   const categoryColor = getCategoryColor(stock.drug.category)
   const categoryLabel = getCategoryLabel(stock.drug.category)
 
@@ -99,13 +171,6 @@ export function StockDetailModal({
       minimumStock: stock.minimumStock,
       adjustmentReason: ''
     })
-  }
-
-  const handleQuickAdjust = (amount: number) => {
-    setFormData(prev => ({
-      ...prev,
-      totalQuantity: Math.max(0, prev.totalQuantity + amount)
-    }))
   }
 
   const handleSave = async () => {
@@ -125,7 +190,7 @@ export function StockDetailModal({
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // ใช้ cookies แทน Authorization header
+        credentials: 'include',
         body: JSON.stringify({
           totalQuantity: formData.totalQuantity,
           minimumStock: formData.minimumStock,
@@ -164,7 +229,7 @@ export function StockDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
@@ -173,6 +238,24 @@ export function StockDetailModal({
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Stock Status Card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {getStockStatusIcon(stock)}
+                  <span>สถานะสต็อก</span>
+                </div>
+                <Badge className={stockStatusInfo.color}>
+                  {stockStatusInfo.label}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">{stockStatusInfo.description}</p>
+            </CardContent>
+          </Card>
+
           {/* Drug Information Card */}
           <Card>
             <CardHeader className="pb-3">
@@ -186,54 +269,60 @@ export function StockDetailModal({
             <CardContent className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-sm text-gray-600 flex items-center gap-1">
+                  <label className="text-sm text-gray-600 flex items-center gap-1">
                     <Pill className="h-4 w-4" />
                     ชื่อยา
-                  </Label>
+                  </label>
                   <p className="font-medium">{stock.drug.name}</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm text-gray-600 flex items-center gap-1">
+                  <label className="text-sm text-gray-600 flex items-center gap-1">
                     <Hash className="h-4 w-4" />
                     รหัสยา
-                  </Label>
+                  </label>
                   <p className="font-mono text-sm">{stock.drug.hospitalDrugCode}</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm text-gray-600">ชื่อสามัญ</Label>
+                  <label className="text-sm text-gray-600">ชื่อสามัญ</label>
                   <p className="text-sm">{stock.drug.genericName || '-'}</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm text-gray-600">รูปแบบ</Label>
+                  <label className="text-sm text-gray-600">รูปแบบ</label>
                   <p className="text-sm">{stock.drug.dosageForm}</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm text-gray-600">ความแรง</Label>
+                  <label className="text-sm text-gray-600">ความแรง</label>
                   <p className="text-sm">{stock.drug.strength} {stock.drug.unit}</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm text-gray-600 flex items-center gap-1">
-                    <Building className="h-4 w-4" />
-                    แผนก
-                  </Label>
-                  <Badge variant="outline">
-                    {stock.department === 'PHARMACY' ? 'แผนกเภสัชกรรม' : 'แผนก OPD'}
-                  </Badge>
+                  <label className="text-sm text-gray-600">ขนาดบรรจุ</label>
+                  <p className="text-sm">{stock.drug.packageSize || '-'}</p>
                 </div>
+              </div>
+
+              {/* Department */}
+              <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                <label className="text-sm text-gray-600 flex items-center gap-1">
+                  <Building className="h-4 w-4" />
+                  แผนก
+                </label>
+                <p className="text-sm mt-1">
+                  {stock.department === 'PHARMACY' ? 'แผนกเภสัชกรรม' : 'แผนก OPD'}
+                </p>
               </div>
             </CardContent>
           </Card>
 
-          {/* Stock Information Card */}
+          {/* Stock Details Card */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center justify-between">
-                <span>ข้อมูลสต็อก</span>
+                <span>รายละเอียดสต็อก</span>
                 {!isEditing && (
                   <Button 
                     variant="outline" 
@@ -248,28 +337,24 @@ export function StockDetailModal({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Stock Quantities */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* จำนวนคงเหลือ */}
                 <div className="space-y-2">
-                  <Label className="text-sm text-gray-600">
+                  <label className="text-sm text-gray-600">
                     จำนวนคงเหลือ
                     {lowStock && <AlertTriangle className="inline h-4 w-4 ml-1 text-red-500" />}
-                  </Label>
+                  </label>
                   {isEditing ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          min="0"
-                          value={formData.totalQuantity}
-                          onChange={(e) => setFormData(prev => ({
-                            ...prev,
-                            totalQuantity: Math.max(0, parseInt(e.target.value) || 0)
-                          }))}
-                          className="text-center"
-                        />
-                      </div>
-                    </div>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={formData.totalQuantity}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        totalQuantity: Math.max(0, parseInt(e.target.value) || 0)
+                      }))}
+                      className="text-center"
+                    />
                   ) : (
                     <p className={`text-2xl font-bold ${
                       lowStock ? 'text-red-600' : 'text-green-600'
@@ -279,17 +364,15 @@ export function StockDetailModal({
                   )}
                 </div>
 
-                {/* จำนวนจอง */}
                 <div className="space-y-2">
-                  <Label className="text-sm text-gray-600">จำนวนจอง</Label>
+                  <label className="text-sm text-gray-600">จำนวนจอง</label>
                   <p className="text-xl font-medium text-orange-600">
                     {stock.reservedQty.toLocaleString()}
                   </p>
                 </div>
 
-                {/* จำนวนที่ใช้ได้ */}
                 <div className="space-y-2">
-                  <Label className="text-sm text-gray-600">จำนวนที่ใช้ได้</Label>
+                  <label className="text-sm text-gray-600">จำนวนที่ใช้ได้</label>
                   <p className="text-xl font-medium text-blue-600">
                     {availableStock.toLocaleString()}
                   </p>
@@ -298,62 +381,47 @@ export function StockDetailModal({
 
               <Separator />
 
-              {/* Minimum Stock */}
-              <div className="space-y-2">
-                <Label className="text-sm text-gray-600">จำนวนขั้นต่ำ</Label>
-                {isEditing ? (
-                  <Input
-                    type="number"
-                    min="0"
-                    value={formData.minimumStock}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      minimumStock: Math.max(0, parseInt(e.target.value) || 0)
-                    }))}
-                    className="max-w-xs"
-                  />
-                ) : (
-                  <p className="text-lg font-medium">
-                    {stock.minimumStock.toLocaleString()}
-                  </p>
-                )}
-              </div>
-
-              {/* มูลค่าสต็อก */}
-              <div className="space-y-2">
-                <Label className="text-sm text-gray-600">มูลค่าสต็อก</Label>
-                <p className="text-lg font-medium text-green-600">
-                  {formatCurrency(stock.totalValue)}
-                </p>
-              </div>
-
-              {/* วันที่อัปเดตล่าสุด */}
-              <div className="space-y-2">
-                <Label className="text-sm text-gray-600 flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  อัปเดตล่าสุด
-                </Label>
-                <p className="text-sm text-gray-700">
-                  {stock.lastUpdated ? (
-                    new Date(stock.lastUpdated).toLocaleString('th-TH', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })
+              {/* Minimum Stock and Value */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-600">จำนวนขั้นต่ำ</label>
+                  {isEditing ? (
+                    <Input
+                      type="number"
+                      min="0"
+                      value={formData.minimumStock}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        minimumStock: Math.max(0, parseInt(e.target.value) || 0)
+                      }))}
+                    />
                   ) : (
-                    '-'
+                    <p className="text-lg font-medium">
+                      {stock.minimumStock.toLocaleString()}
+                    </p>
                   )}
-                </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-600 flex items-center gap-1">
+                    <DollarSign className="h-4 w-4" />
+                    มูลค่าสต็อก
+                  </label>
+                  <p className="text-lg font-bold text-green-600">
+                    {formatCurrency(stock.totalValue)}
+                  </p>
+                </div>
               </div>
 
-              {/* Adjustment Reason */}
+              <Separator />
+
+              {/* Adjustment Reason for Editing */}
               {isEditing && (
                 <div className="space-y-2">
-                  <Label className="text-sm text-gray-600">
+                  <label className="text-sm text-gray-600 flex items-center gap-1">
+                    <FileText className="h-4 w-4" />
                     เหตุผลในการปรับสต็อก *
-                  </Label>
+                  </label>
                   <Textarea
                     value={formData.adjustmentReason}
                     onChange={(e) => setFormData(prev => ({
@@ -365,6 +433,28 @@ export function StockDetailModal({
                   />
                 </div>
               )}
+
+              {/* Last Updated */}
+              <div className="space-y-2">
+                <label className="text-sm text-gray-600 flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  อัปเดตล่าสุด
+                </label>
+                <p className="text-sm">
+                  {stock.lastUpdated ? (
+                    new Date(stock.lastUpdated).toLocaleString('th-TH', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit'
+                    })
+                  ) : (
+                    '-'
+                  )}
+                </p>
+              </div>
             </CardContent>
           </Card>
 
@@ -396,7 +486,7 @@ export function StockDetailModal({
                 onClick={onClose}
                 className="flex items-center gap-2"
               >
-                <Eye className="h-4 w-4" />
+                <X className="h-4 w-4" />
                 ปิด
               </Button>
             )}

@@ -31,15 +31,6 @@ export default function MainDashboard() {
               <p className="text-sm text-gray-500">ตำแหน่ง: {user.position}</p>
             )}
           </div>
-          
-          <div className="flex items-center justify-center space-x-2">
-            <Badge variant="outline" className="px-3 py-1">
-              Hospital Pharmacy V3.0
-            </Badge>
-            <Badge variant="secondary" className="px-3 py-1">
-              Single Hospital System
-            </Badge>
-          </div>
         </div>
       </div>
 
@@ -128,63 +119,6 @@ export default function MainDashboard() {
             </CardContent>
           </Card>
         </div>
-      </div>
-
-      {/* Quick Stats Overview */}
-      <div className="max-w-4xl mx-auto">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
-          ภาพรวมระบบ
-        </h3>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-blue-600">2</div>
-              <div className="text-sm text-gray-600">แผนก</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-green-600">0</div>
-              <div className="text-sm text-gray-600">ยาทั้งหมด</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-orange-600">0</div>
-              <div className="text-sm text-gray-600">ใบเบิกรอดำเนินการ</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-red-600">0</div>
-              <div className="text-sm text-gray-600">ยาใกล้หมด</div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* System Info */}
-      <div className="max-w-2xl mx-auto">
-        <Card>
-          <CardContent className="p-6 text-center">
-            <h4 className="font-semibold text-gray-900 mb-2">
-              Hospital Pharmacy Management System V3.0
-            </h4>
-            <p className="text-sm text-gray-600 mb-4">
-              ระบบจัดการสต็อกยาโรงพยาบาลแบบครบวงจร สำหรับโรงพยาบาลเดียว 2 แผนก
-            </p>
-            <div className="flex justify-center space-x-4 text-xs text-gray-500">
-              <span>✅ Mobile-First Design</span>
-              <span>✅ Real-time Stock</span>
-              <span>✅ Department Isolation</span>
-              <span>✅ Transfer Workflow</span>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )

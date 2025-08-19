@@ -603,13 +603,6 @@ export function HistoryTab({
                           <div className="text-xs text-gray-600">
                             โดย: {transaction.user.firstName} {transaction.user.lastName}
                           </div>
-                          
-                          {/* Reference & Transfer */}
-                          {transaction.reference && (
-                            <div className="text-xs text-gray-500 font-mono">
-                              อ้างอิง: {transaction.reference}
-                            </div>
-                          )}
                         </div>
                       </TableCell>
 

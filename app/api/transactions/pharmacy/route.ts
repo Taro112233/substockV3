@@ -34,13 +34,8 @@ export async function GET(request: NextRequest) {
             firstName: true,
             lastName: true
           }
-        },
-        transfer: {
-          select: {
-            id: true,
-            requisitionNumber: true
-          }
         }
+        // ⭐ ลบ transfer include ออกชั่วคราวจนกว่าจะ migrate DB
       },
       orderBy: {
         createdAt: 'desc'
@@ -59,7 +54,7 @@ export async function GET(request: NextRequest) {
     }).length
 
     // แปลงข้อมูลให้ตรงกับ interface
-    const mappedTransactions = transactions.map(transaction => ({
+    const mappedTransactions = transactions.map((transaction: any) => ({
       id: transaction.id,
       type: transaction.type,
       quantity: transaction.quantity,
@@ -85,10 +80,7 @@ export async function GET(request: NextRequest) {
         firstName: transaction.user.firstName,
         lastName: transaction.user.lastName
       },
-      transfer: transaction.transfer ? {
-        id: transaction.transfer.id,
-        requisitionNumber: transaction.transfer.requisitionNumber
-      } : null
+      transfer: null // ⭐ ตั้งเป็น null ชั่วคราวจนกว่าจะ migrate DB
     }))
 
     const responseData = {

@@ -92,38 +92,6 @@ const getStockStatusInfo = (stock: Stock) => {
   }
 }
 
-const getCategoryColor = (category: string) => {
-  const colors = {
-    'HIGH_ALERT': 'bg-red-100 text-red-800 border-red-200',
-    'NARCOTIC': 'bg-purple-100 text-purple-800 border-purple-200',
-    'REFRIGERATED': 'bg-blue-100 text-blue-800 border-blue-200',
-    'PSYCHIATRIC': 'bg-indigo-100 text-indigo-800 border-indigo-200',
-    'FLUID': 'bg-cyan-100 text-cyan-800 border-cyan-200',
-    'GENERAL': 'bg-gray-100 text-gray-800 border-gray-200'
-  }
-  return colors[category as keyof typeof colors] || colors.GENERAL
-}
-
-const getCategoryLabel = (category: string) => {
-  const labels = {
-    'HIGH_ALERT': 'ยาเสี่ยงสูง',
-    'NARCOTIC': 'ยาเสพติด',
-    'REFRIGERATED': 'ยาแช่เย็น',
-    'PSYCHIATRIC': 'ยาจิตเวช',
-    'FLUID': 'สารน้ำ',
-    'GENERAL': 'ยาทั่วไป'
-  }
-  return labels[category as keyof typeof labels] || category
-}
-
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('th-TH', {
-    style: 'currency',
-    currency: 'THB',
-    minimumFractionDigits: 2
-  }).format(amount)
-}
-
 export function StockDetailModal({ 
   stock, 
   isOpen, 

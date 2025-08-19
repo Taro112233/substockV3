@@ -69,6 +69,7 @@ export interface TransferItem {
     name: string
     strength: string
     unit: string
+    pricePerBox: number // ← เพิ่ม pricePerBox
   }
 }
 

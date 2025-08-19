@@ -610,12 +610,6 @@ export function HistoryTab({
                               อ้างอิง: {transaction.reference}
                             </div>
                           )}
-                          
-                          {transaction.transfer && (
-                            <div className="text-xs text-blue-600 font-mono">
-                              ใบโอน: {transaction.transfer.requisitionNumber}
-                            </div>
-                          )}
                         </div>
                       </TableCell>
 

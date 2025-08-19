@@ -19,8 +19,12 @@ export async function GET(request: NextRequest) {
               select: {
                 hospitalDrugCode: true,
                 name: true,
+                genericName: true,
+                dosageForm: true,
                 strength: true,
-                unit: true
+                unit: true,
+                packageSize: true,
+                category: true
               }
             }
           }
@@ -30,22 +34,28 @@ export async function GET(request: NextRequest) {
             firstName: true,
             lastName: true
           }
+        },
+        transfer: {
+          select: {
+            id: true,
+            requisitionNumber: true
+          }
         }
       },
       orderBy: {
         createdAt: 'desc'
       },
-      take: 50 // แสดง 50 รายการล่าสุด
+      take: 100 // แสดง 100 รายการล่าสุด
     })
 
     // คำนวณสถิติ
     const totalTransactions = transactions.length
+    const totalValue = transactions.reduce((sum, transaction) => sum + Math.abs(transaction.totalCost), 0)
     const recentTransactions = transactions.filter(transaction => {
       const transactionDate = new Date(transaction.createdAt)
-      const today = new Date()
-      const diffTime = Math.abs(today.getTime() - transactionDate.getTime())
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-      return diffDays <= 7 // ภายใน 7 วันที่ผ่านมา
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      return transactionDate >= sevenDaysAgo
     }).length
 
     // แปลงข้อมูลให้ตรงกับ interface
@@ -59,22 +69,33 @@ export async function GET(request: NextRequest) {
       totalCost: transaction.totalCost,
       reference: transaction.reference || '',
       note: transaction.note || '',
+      batchNumber: transaction.batchNumber || '',
       createdAt: transaction.createdAt.toISOString(),
       drug: {
         hospitalDrugCode: transaction.stock.drug.hospitalDrugCode,
         name: transaction.stock.drug.name,
+        genericName: transaction.stock.drug.genericName || '',
+        dosageForm: transaction.stock.drug.dosageForm,
         strength: transaction.stock.drug.strength || '',
-        unit: transaction.stock.drug.unit
+        unit: transaction.stock.drug.unit,
+        packageSize: transaction.stock.drug.packageSize || '',
+        category: transaction.stock.drug.category
       },
       user: {
-        name: `${transaction.user.firstName} ${transaction.user.lastName}`
-      }
+        firstName: transaction.user.firstName,
+        lastName: transaction.user.lastName
+      },
+      transfer: transaction.transfer ? {
+        id: transaction.transfer.id,
+        requisitionNumber: transaction.transfer.requisitionNumber
+      } : null
     }))
 
     const responseData = {
       transactions: mappedTransactions,
       stats: {
         totalTransactions,
+        totalValue,
         recentTransactions
       }
     }

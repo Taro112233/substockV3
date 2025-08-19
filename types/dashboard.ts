@@ -10,25 +10,26 @@ export interface DashboardStats {
   department: 'PHARMACY' | 'OPD'
 }
 
+// Stock interface (existing)
 export interface Stock {
   id: string
-  drugId: any
+  drugId: string
   department: 'PHARMACY' | 'OPD'
   totalQuantity: number
   reservedQty: number
   minimumStock: number
   totalValue: number
-  lastUpdated?: string
+  lastUpdated: string
   drug: {
     hospitalDrugCode: string
     name: string
-    genericName: string
+    genericName?: string
     dosageForm: string
-    strength: string
+    strength?: string
     unit: string
-    category: string
     packageSize?: string
-    pricePerBox: number     // ← เพิ่ม pricePerBox
+    pricePerBox: number
+    category: string
     isActive: boolean
     notes?: string
   }
@@ -75,24 +76,34 @@ export interface TransferItem {
 
 export interface Transaction {
   id: string
-  type: 'RECEIVE' | 'DISPENSE' | 'ADJUST_IN' | 'ADJUST_OUT' | 'TRANSFER_IN' | 'TRANSFER_OUT' | 'EXPIRE' | 'DAMAGED'
+  type: 'RECEIVE_EXTERNAL' | 'DISPENSE_EXTERNAL' | 'TRANSFER_OUT' | 'TRANSFER_IN' | 'ADJUST_INCREASE' | 'ADJUST_DECREASE' | 'RESERVE' | 'UNRESERVE'
   quantity: number
   beforeQty: number
   afterQty: number
   unitCost: number
   totalCost: number
-  reference: string
-  note: string
+  reference?: string
+  note?: string
+  batchNumber?: string
   createdAt: string
   drug: {
     hospitalDrugCode: string
     name: string
-    strength: string
+    genericName?: string
+    dosageForm: string
+    strength?: string
     unit: string
+    packageSize?: string
+    category: string
   }
   user: {
-    name: string
+    firstName: string
+    lastName: string
   }
+  transfer?: {
+    id: string
+    requisitionNumber: string
+  } | null
 }
 
 // Component Props Types

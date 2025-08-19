@@ -1,17 +1,44 @@
-// 📄 File: components/modules/dashboard/history-tab.tsx
+// 📄 File: components/modules/dashboard/history-tab.tsx (Updated with Stock-like Table)
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { TransactionItem } from '@/components/modules/transaction/transaction-item'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Transaction } from '@/types/dashboard'
+import { TransactionDetailModal } from '@/components/modules/transaction/transaction-detail-modal'
 import { 
   History, 
   RefreshCw,
   Download,
   Filter,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Search,
+  Calendar,
+  Package,
+  ArrowRight,
+  ArrowLeft,
+  RotateCcw,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Eye
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
@@ -19,6 +46,7 @@ interface TransactionData {
   transactions: Transaction[]
   stats: {
     totalTransactions: number
+    totalValue: number
     recentTransactions: number
   }
 }
@@ -27,12 +55,92 @@ interface HistoryTabProps {
   department: 'PHARMACY' | 'OPD'
 }
 
+// Helper functions
+const getTransactionTypeIcon = (type: string) => {
+  switch (type) {
+    case 'RECEIVE_EXTERNAL':
+    case 'TRANSFER_IN':
+    case 'ADJUST_INCREASE':
+    case 'UNRESERVE':
+      return <TrendingUp className="h-4 w-4 text-green-600" />
+    case 'DISPENSE_EXTERNAL':
+    case 'TRANSFER_OUT':
+    case 'ADJUST_DECREASE':
+    case 'RESERVE':
+      return <TrendingDown className="h-4 w-4 text-red-600" />
+    default:
+      return <RotateCcw className="h-4 w-4 text-blue-600" />
+  }
+}
+
+const getTransactionTypeBadge = (type: string) => {
+  const config = {
+    'RECEIVE_EXTERNAL': { label: 'รับเข้า', color: 'bg-green-100 text-green-800 border-green-200' },
+    'DISPENSE_EXTERNAL': { label: 'จ่ายออก', color: 'bg-red-100 text-red-800 border-red-200' },
+    'TRANSFER_IN': { label: 'โอนเข้า', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+    'TRANSFER_OUT': { label: 'โอนออก', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+    'ADJUST_INCREASE': { label: 'ปรับเพิ่ม', color: 'bg-green-100 text-green-800 border-green-200' },
+    'ADJUST_DECREASE': { label: 'ปรับลด', color: 'bg-red-100 text-red-800 border-red-200' },
+    'RESERVE': { label: 'จอง', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+    'UNRESERVE': { label: 'ยกเลิกจอง', color: 'bg-gray-100 text-gray-800 border-gray-200' },
+  }
+  
+  const typeConfig = config[type as keyof typeof config] || { 
+    label: type, 
+    color: 'bg-gray-100 text-gray-800 border-gray-200' 
+  }
+  
+  return (
+    <Badge variant="outline" className={`text-xs ${typeConfig.color}`}>
+      {typeConfig.label}
+    </Badge>
+  )
+}
+
+const formatTransactionAmount = (type: string, quantity: number) => {
+  const isIncoming = ['RECEIVE_EXTERNAL', 'TRANSFER_IN', 'ADJUST_INCREASE', 'UNRESERVE'].includes(type)
+  return (
+    <span className={`font-medium ${isIncoming ? 'text-green-600' : 'text-red-600'}`}>
+      {isIncoming ? '+' : '-'}{Math.abs(quantity).toLocaleString()}
+    </span>
+  )
+}
+
+const getCategoryColor = (category: string) => {
+  const colors = {
+    'HIGH_ALERT': 'bg-red-100 text-red-800 border-red-200',
+    'NARCOTIC': 'bg-purple-100 text-purple-800 border-purple-200',
+    'REFRIGERATED': 'bg-blue-100 text-blue-800 border-blue-200',
+    'PSYCHIATRIC': 'bg-indigo-100 text-indigo-800 border-indigo-200',
+    'FLUID': 'bg-cyan-100 text-cyan-800 border-cyan-200',
+    'GENERAL': 'bg-gray-100 text-gray-800 border-gray-200'
+  }
+  return colors[category as keyof typeof colors] || colors.GENERAL
+}
+
+const getCategoryLabel = (category: string) => {
+  const labels = {
+    'HIGH_ALERT': 'ยาเสี่ยงสูง',
+    'NARCOTIC': 'ยาเสพติด',
+    'REFRIGERATED': 'ยาแช่เย็น',
+    'PSYCHIATRIC': 'ยาจิตเวช',
+    'FLUID': 'สารน้ำ',
+    'GENERAL': 'ยาทั่วไป'
+  }
+  return labels[category as keyof typeof labels] || category
+}
+
 export function HistoryTab({ 
   department
 }: HistoryTabProps) {
   const [data, setData] = useState<TransactionData | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [typeFilter, setTypeFilter] = useState<string>('all')
+  const [dateFilter, setDateFilter] = useState<string>('all')
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const { toast } = useToast()
 
   const fetchTransactionData = async (showRefreshToast = false) => {
@@ -50,6 +158,7 @@ export function HistoryTab({
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         cache: 'no-store'
       })
 
@@ -99,20 +208,71 @@ export function HistoryTab({
   }
 
   const handleExport = () => {
-    // TODO: Export ประวัติการเคลื่อนไหว
-    console.log('Export transaction history')
+    toast({
+      title: "ฟีเจอร์กำลังพัฒนา",
+      description: "การส่งออกประวัติจะพร้อมใช้งานในเร็วๆ นี้",
+      variant: "default"
+    })
   }
 
-  const handleFilter = () => {
-    // TODO: เปิด dialog กรองข้อมูล
-    console.log('Filter transactions')
+  const clearFilters = () => {
+    setSearchTerm('')
+    setTypeFilter('all')
+    setDateFilter('all')
   }
 
-  // กรณี loading หรือไม่มีข้อมูล
+  const handleViewTransaction = (transaction: Transaction) => {
+    setSelectedTransaction(transaction)
+    setIsModalOpen(true)
+  }
+
+  const handleModalClose = () => {
+    setIsModalOpen(false)
+    setSelectedTransaction(null)
+  }
+
+  // Filter transactions
+  const filteredTransactions = data?.transactions?.filter(transaction => {
+    // Search filter
+    const searchLower = searchTerm.toLowerCase()
+    const matchesSearch = !searchTerm || 
+      transaction.drug?.name?.toLowerCase().includes(searchLower) ||
+      transaction.drug?.hospitalDrugCode?.toLowerCase().includes(searchLower) ||
+      transaction.drug?.genericName?.toLowerCase().includes(searchLower) ||
+      transaction.reference?.toLowerCase().includes(searchLower) ||
+      transaction.note?.toLowerCase().includes(searchLower)
+
+    // Type filter
+    const matchesType = typeFilter === 'all' || transaction.type === typeFilter
+
+    // Date filter
+    let matchesDate = true
+    if (dateFilter !== 'all' && transaction.createdAt) {
+      const transactionDate = new Date(transaction.createdAt)
+      const now = new Date()
+      switch (dateFilter) {
+        case 'today':
+          matchesDate = transactionDate.toDateString() === now.toDateString()
+          break
+        case 'week':
+          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+          matchesDate = transactionDate >= weekAgo
+          break
+        case 'month':
+          const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+          matchesDate = transactionDate >= monthAgo
+          break
+      }
+    }
+
+    return matchesSearch && matchesType && matchesDate
+  }) || []
+
+  // Loading state
   if (loading || !data) {
     return (
       <div className="space-y-6">
-        {/* Header Actions */}
+        {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
@@ -124,33 +284,54 @@ export function HistoryTab({
           </div>
         </div>
 
-        {/* Loading State */}
-        <div className="space-y-4">
-          {[...Array(8)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                  <div className="w-20 h-4 bg-gray-200 rounded"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        {/* Loading Table */}
+        <div className="border rounded-lg">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ชื่อยา</TableHead>
+                <TableHead>รูปแบบ</TableHead>
+                <TableHead>ความแรง</TableHead>
+                <TableHead>ขนาดบรรจุ</TableHead>
+                <TableHead>ประเภท</TableHead>
+                <TableHead>จำนวน</TableHead>
+                <TableHead>วันเวลา</TableHead>
+                <TableHead>ดู</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[...Array(8)].map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse" /></TableCell>
+                  <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse" /></TableCell>
+                  <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse" /></TableCell>
+                  <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse" /></TableCell>
+                  <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse" /></TableCell>
+                  <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse" /></TableCell>
+                  <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse" /></TableCell>
+                  <TableCell><div className="h-8 bg-gray-200 rounded animate-pulse" /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </div>
     )
   }
 
-  // คำนวณสถิติเพิ่มเติม
-  const inTransactions = data.transactions.filter(t => 
-    ['RECEIVE', 'ADJUST_IN', 'TRANSFER_IN'].includes(t.type)
+  // Calculate stats from filtered data
+  const filteredInTransactions = filteredTransactions.filter(t => 
+    ['RECEIVE_EXTERNAL', 'ADJUST_INCREASE', 'TRANSFER_IN', 'UNRESERVE'].includes(t.type)
   )
-  const outTransactions = data.transactions.filter(t => 
-    ['DISPENSE', 'ADJUST_OUT', 'TRANSFER_OUT', 'EXPIRE', 'DAMAGED'].includes(t.type)
+  const filteredOutTransactions = filteredTransactions.filter(t => 
+    ['DISPENSE_EXTERNAL', 'ADJUST_DECREASE', 'TRANSFER_OUT', 'RESERVE'].includes(t.type)
+  )
+  
+  // Calculate recent transactions from filtered data (last 7 days)
+  const sevenDaysAgo = new Date()
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+  const filteredRecentTransactions = filteredTransactions.filter(t => 
+    t.createdAt && new Date(t.createdAt) >= sevenDaysAgo
   )
 
   return (
@@ -181,11 +362,11 @@ export function HistoryTab({
           <Button
             variant="outline"
             size="sm"
-            onClick={handleFilter}
+            onClick={clearFilters}
             className="flex items-center gap-2"
           >
             <Filter className="h-4 w-4" />
-            กรอง
+            ล้างตัวกรอง
           </Button>
           
           <Button
@@ -208,9 +389,11 @@ export function HistoryTab({
               <History className="h-5 w-5 text-blue-600" />
               <div>
                 <div className="text-2xl font-bold text-blue-900">
-                  {data.stats.totalTransactions.toLocaleString()}
+                  {filteredTransactions.length.toLocaleString()}
                 </div>
-                <div className="text-sm text-blue-600">รายการทั้งหมด</div>
+                <div className="text-sm text-blue-600">
+                  {searchTerm || typeFilter !== 'all' || dateFilter !== 'all' ? 'ที่กรองแล้ว' : 'รายการทั้งหมด'}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -222,7 +405,7 @@ export function HistoryTab({
               <TrendingUp className="h-5 w-5 text-green-600" />
               <div>
                 <div className="text-2xl font-bold text-green-900">
-                  {inTransactions.length.toLocaleString()}
+                  {filteredInTransactions.length.toLocaleString()}
                 </div>
                 <div className="text-sm text-green-600">รับเข้า</div>
               </div>
@@ -236,7 +419,7 @@ export function HistoryTab({
               <TrendingDown className="h-5 w-5 text-red-600" />
               <div>
                 <div className="text-2xl font-bold text-red-900">
-                  {outTransactions.length.toLocaleString()}
+                  {filteredOutTransactions.length.toLocaleString()}
                 </div>
                 <div className="text-sm text-red-600">จ่ายออก</div>
               </div>
@@ -250,7 +433,7 @@ export function HistoryTab({
               <History className="h-5 w-5 text-purple-600" />
               <div>
                 <div className="text-2xl font-bold text-purple-900">
-                  {data.stats.recentTransactions.toLocaleString()}
+                  {filteredRecentTransactions.length.toLocaleString()}
                 </div>
                 <div className="text-sm text-purple-600">7 วันที่ผ่านมา</div>
               </div>
@@ -259,33 +442,281 @@ export function HistoryTab({
         </Card>
       </div>
 
-      {/* Transaction History */}
-      <div>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <History className="h-5 w-5" />
-            ประวัติการเคลื่อนไหว ({data.transactions.length} รายการล่าสุด)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {data.transactions.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <History className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-              <div className="text-lg font-medium mb-2">ไม่มีประวัติการเคลื่อนไหว</div>
-              <div className="text-sm">ยังไม่มีการบันทึกการเคลื่อนไหวสต็อกในระบบ</div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {data.transactions.map((transaction) => (
-                <TransactionItem
-                  key={transaction.id}
-                  transaction={transaction}
-                />
-              ))}
-            </div>
-          )}
-        </CardContent>
+      {/* Filter Bar */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        {/* Search */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="ค้นหา (ชื่อยา, รหัส, ชื่อสามัญ, เอกสารอ้างอิง)..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+
+        {/* Type Filter */}
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="ประเภทการเคลื่อนไหว" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">ทุกประเภท</SelectItem>
+            <SelectItem value="RECEIVE_EXTERNAL">รับเข้า</SelectItem>
+            <SelectItem value="DISPENSE_EXTERNAL">จ่ายออก</SelectItem>
+            <SelectItem value="TRANSFER_IN">โอนเข้า</SelectItem>
+            <SelectItem value="TRANSFER_OUT">โอนออก</SelectItem>
+            <SelectItem value="ADJUST_INCREASE">ปรับเพิ่ม</SelectItem>
+            <SelectItem value="ADJUST_DECREASE">ปรับลด</SelectItem>
+            <SelectItem value="RESERVE">จอง</SelectItem>
+            <SelectItem value="UNRESERVE">ยกเลิกจอง</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Date Filter */}
+        <Select value={dateFilter} onValueChange={setDateFilter}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="ช่วงเวลา" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">ทั้งหมด</SelectItem>
+            <SelectItem value="today">วันนี้</SelectItem>
+            <SelectItem value="week">7 วันที่ผ่านมา</SelectItem>
+            <SelectItem value="month">30 วันที่ผ่านมา</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
+
+      {/* Transaction Table */}
+      <div className="border rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-50">
+                <TableHead className="w-[250px]">ชื่อยา</TableHead>
+                <TableHead className="w-[120px]">รูปแบบ</TableHead>
+                <TableHead className="w-[120px]">ความแรง</TableHead>
+                <TableHead className="w-[120px]">ขนาดบรรจุ</TableHead>
+                <TableHead className="w-[140px]">ประเภท</TableHead>
+                <TableHead className="w-[120px] text-center">จำนวน</TableHead>
+                <TableHead className="w-[140px] text-center">วันเวลา</TableHead>
+                <TableHead className="w-[80px] text-center">ดู</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredTransactions.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="h-24 text-center text-gray-500">
+                    {searchTerm || typeFilter !== 'all' || dateFilter !== 'all' ? (
+                      <div>
+                        <History className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                        <div>ไม่พบรายการที่ตรงกับเงื่อนไขการค้นหา</div>
+                        <Button variant="link" size="sm" onClick={clearFilters} className="mt-2">
+                          ล้างตัวกรอง
+                        </Button>
+                      </div>
+                    ) : (
+                      <div>
+                        <History className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                        <div>ไม่มีประวัติการเคลื่อนไหว</div>
+                        <div className="text-sm text-gray-400">ยังไม่มีการบันทึกการเคลื่อนไหวสต็อกในระบบ</div>
+                      </div>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredTransactions.map((transaction) => {
+                  const categoryColor = getCategoryColor(transaction.drug?.category)
+                  const categoryLabel = getCategoryLabel(transaction.drug?.category)
+
+                  return (
+                    <TableRow 
+                      key={transaction.id} 
+                      className="border-b hover:bg-gray-50/50 cursor-pointer"
+                      onClick={() => handleViewTransaction(transaction)}
+                    >
+                      {/* ชื่อยา */}
+                      <TableCell className="font-medium">
+                        <div className="space-y-2">
+                          {/* ชื่อยา */}
+                          <div className="font-medium text-gray-900 leading-tight">
+                            {transaction.drug?.name || 'ยาไม่ระบุ'}
+                          </div>
+                          
+                          {/* Category Badge + Hospital Drug Code */}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge 
+                              variant="outline" 
+                              className={`text-xs ${categoryColor} shrink-0`}
+                            >
+                              {categoryLabel}
+                            </Badge>
+                            <span className="text-sm text-gray-600 font-mono">
+                              {transaction.drug?.hospitalDrugCode || '-'}
+                            </span>
+                          </div>
+                          
+                          {/* Batch Number */}
+                          {transaction.batchNumber && (
+                            <div className="text-xs text-gray-500">
+                              LOT: {transaction.batchNumber}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      {/* รูปแบบ */}
+                      <TableCell>
+                        <div className="text-sm text-gray-700">
+                          {transaction.drug?.dosageForm || '-'}
+                        </div>
+                      </TableCell>
+
+                      {/* ความแรง */}
+                      <TableCell>
+                        <div className="text-sm text-gray-700">
+                          {transaction.drug?.strength || ''} {transaction.drug?.unit || ''}
+                        </div>
+                      </TableCell>
+
+                      {/* ขนาดบรรจุ */}
+                      <TableCell>
+                        <div className="text-sm text-gray-700">
+                          {transaction.drug?.packageSize ? (
+                            <>1 x {transaction.drug.packageSize}'s</>
+                          ) : (
+                            '-'
+                          )}
+                        </div>
+                      </TableCell>
+
+                      {/* ประเภท */}
+                      <TableCell>
+                        <div className="space-y-1">
+                          {/* Transaction Type Badge */}
+                          <div className="flex items-center gap-1">
+                            {getTransactionTypeIcon(transaction.type)}
+                            {getTransactionTypeBadge(transaction.type)}
+                          </div>
+                          
+                          {/* ผู้ทำรายการ */}
+                          <div className="text-xs text-gray-600">
+                            โดย: {transaction.user.firstName} {transaction.user.lastName}
+                          </div>
+                          
+                          {/* Reference & Transfer */}
+                          {transaction.reference && (
+                            <div className="text-xs text-gray-500 font-mono">
+                              อ้างอิง: {transaction.reference}
+                            </div>
+                          )}
+                          
+                          {transaction.transfer && (
+                            <div className="text-xs text-blue-600 font-mono">
+                              ใบโอน: {transaction.transfer.requisitionNumber}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      {/* จำนวน */}
+                      <TableCell className="text-center">
+                        <div className="space-y-1">
+                          {/* จำนวนและทิศทาง */}
+                          <div className="flex items-center justify-center gap-1">
+                            {getTransactionTypeIcon(transaction.type)}
+                            {formatTransactionAmount(transaction.type, transaction.quantity)}
+                          </div>
+                          
+                          {/* Before → After */}
+                          <div className="text-xs text-gray-500">
+                            {transaction.beforeQty.toLocaleString()} → {transaction.afterQty.toLocaleString()}
+                          </div>
+
+                          {/* มูลค่า */}
+                          <div className="text-xs text-gray-500 font-mono">
+                            ฿{Math.abs(transaction.totalCost).toLocaleString()}
+                          </div>
+                        </div>
+                      </TableCell>
+
+                      {/* วันเวลา */}
+                      <TableCell className="text-center">
+                        {transaction.createdAt ? (
+                          <div className="space-y-1">
+                            <div className="text-sm text-gray-700">
+                              {new Date(transaction.createdAt).toLocaleDateString('th-TH', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {new Date(transaction.createdAt).toLocaleTimeString('th-TH', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </TableCell>
+
+                      {/* ดู */}
+                      <TableCell>
+                        <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => handleViewTransaction(transaction)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      {/* Footer Info */}
+      {filteredTransactions.length > 0 && (
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-gray-500">
+          <div>
+            แสดง {filteredTransactions.length} รายการจากทั้งหมด {data.transactions.length} รายการ
+            {searchTerm && ` | ค้นหา: "${searchTerm}"`}
+            {typeFilter !== 'all' && ` | ประเภท: ${typeFilter}`}
+            {dateFilter !== 'all' && ` | ช่วงเวลา: ${dateFilter}`}
+          </div>
+          <div className="flex items-center gap-4 text-xs">
+            <div className="flex items-center gap-1">
+              <TrendingUp className="w-3 h-3 text-green-500" />
+              <span>รับเข้า</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <TrendingDown className="w-3 h-3 text-red-500" />
+              <span>จ่ายออก</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <RotateCcw className="w-3 h-3 text-blue-500" />
+              <span>ปรับสต็อก</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transaction Detail Modal */}
+      <TransactionDetailModal
+        transaction={selectedTransaction}
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+      />
     </div>
   )
 }

@@ -64,6 +64,7 @@ export interface TransferItem {
   sentQty: number
   receivedQty: number
   drug: {
+    pricePerBox: number
     hospitalDrugCode: string
     name: string
     strength: string

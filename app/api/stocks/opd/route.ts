@@ -1,4 +1,4 @@
-// 📄 File: app/api/stocks/opd/route.ts
+// 📄 File: app/api/stocks/opd/route.ts (Fixed)
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
@@ -20,7 +20,10 @@ export async function GET(request: NextRequest) {
             strength: true,
             unit: true,
             packageSize: true,
-            category: true
+            pricePerBox: true,  // ← เพิ่ม pricePerBox
+            category: true,
+            isActive: true,     // ← เพิ่ม isActive
+            notes: true         // ← เพิ่ม notes
           }
         }
       },
@@ -56,7 +59,10 @@ export async function GET(request: NextRequest) {
         strength: stock.drug.strength || '',
         unit: stock.drug.unit,
         packageSize: stock.drug.packageSize || '',
-        category: stock.drug.category
+        pricePerBox: stock.drug.pricePerBox, // ← เพิ่ม pricePerBox
+        category: stock.drug.category,
+        isActive: stock.drug.isActive,
+        notes: stock.drug.notes || ''
       }
     }))
 

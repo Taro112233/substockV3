@@ -1,4 +1,4 @@
-// 📄 File: types/dashboard.ts
+// 📄 File: types/dashboard.ts (Updated with pricePerBox)
 // Fixed Dashboard Types - ตรงกับ database schema
 
 export interface DashboardStats {
@@ -27,9 +27,10 @@ export interface Stock {
     strength: string
     unit: string
     category: string
+    packageSize?: string
+    pricePerBox: number     // ← เพิ่ม pricePerBox
     isActive: boolean
     notes?: string
-    packageSize?: number
   }
 }
 
@@ -64,7 +65,6 @@ export interface TransferItem {
   sentQty: number
   receivedQty: number
   drug: {
-    pricePerBox: number
     hospitalDrugCode: string
     name: string
     strength: string

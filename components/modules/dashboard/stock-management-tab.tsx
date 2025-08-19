@@ -1,4 +1,4 @@
-// 📄 File: components/modules/dashboard/stock-management-tab.tsx (Updated with Modal)
+// 📄 File: components/modules/dashboard/stock-management-tab.tsx (Updated)
 
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,7 +11,6 @@ import {
   Plus,
   Upload,
   Download,
-  TrendingUp,
   Package,
   AlertTriangle,
 } from "lucide-react";
@@ -22,7 +21,6 @@ interface StockData {
     totalDrugs: number;
     totalValue: number;
     lowStockCount: number;
-    totalQuantity: number;
   };
 }
 
@@ -129,6 +127,17 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
     });
   };
 
+  // ฟังก์ชันสำหรับคำนวณมูลค่ารวมใหม่ (totalQuantity × pricePerBox)
+  const calculateTotalValue = () => {
+    if (!data || !data.stocks) return 0;
+    
+    return data.stocks.reduce((sum, stock) => {
+      const quantity = stock.totalQuantity || 0;
+      const pricePerBox = stock.drug?.pricePerBox || 0;
+      return sum + (quantity * pricePerBox);
+    }, 0);
+  };
+
   // ฟังก์ชันสำหรับอัปเดตสต็อกเมื่อมีการเปลี่ยนแปลงจาก modal
   const handleStockUpdate = (updatedStock: Stock) => {
     if (!data) return;
@@ -139,25 +148,22 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
     );
 
     // คำนวณ stats ใหม่
-    const totalValue = updatedStocks.reduce(
-      (sum, stock) => sum + stock.totalValue,
-      0
-    );
+    const newTotalValue = updatedStocks.reduce((sum, stock) => {
+      const quantity = stock.totalQuantity || 0;
+      const pricePerBox = stock.drug?.pricePerBox || 0;
+      return sum + (quantity * pricePerBox);
+    }, 0);
+
     const lowStockCount = updatedStocks.filter(
       (stock) => stock.totalQuantity <= stock.minimumStock
     ).length;
-    const totalQuantity = updatedStocks.reduce(
-      (sum, stock) => sum + stock.totalQuantity,
-      0
-    );
 
     setData({
       stocks: updatedStocks,
       stats: {
         ...data.stats,
-        totalValue,
+        totalValue: newTotalValue,
         lowStockCount,
-        totalQuantity,
       },
     });
 
@@ -194,6 +200,9 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
       </div>
     );
   }
+
+  // คำนวณมูลค่ารวมแบบใหม่
+  const totalValueCalculated = calculateTotalValue();
 
   return (
     <div className="space-y-6">
@@ -255,8 +264,8 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
         </div>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Statistics Cards - ลบ card จำนวนทั้งหมดออก */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -267,20 +276,6 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
                 </p>
               </div>
               <Package className="h-8 w-8 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">จำนวนทั้งหมด</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {data.stats.totalQuantity.toLocaleString()}
-                </p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-green-500" />
             </div>
           </CardContent>
         </Card>
@@ -317,7 +312,10 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
               <div>
                 <p className="text-sm text-gray-600">มูลค่ารวม</p>
                 <p className="text-2xl font-bold text-purple-600">
-                  ฿{data.stats.totalValue.toLocaleString()}
+                  ฿{totalValueCalculated.toLocaleString()}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  คำนวณจาก: จำนวนคงเหลือ × ราคาต่อกล่อง
                 </p>
               </div>
               <div className="text-2xl">💰</div>

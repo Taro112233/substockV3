@@ -294,7 +294,7 @@ export function TransferTab({
       </div>
 
       {/* Transfer List */}
-      <Card>
+      <div>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -353,7 +353,7 @@ export function TransferTab({
             </div>
           )}
         </CardContent>
-      </Card>
+      </div>
     </div>
   )
 }

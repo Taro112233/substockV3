@@ -260,7 +260,7 @@ export function HistoryTab({
       </div>
 
       {/* Transaction History */}
-      <Card>
+      <div>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <History className="h-5 w-5" />
@@ -285,7 +285,7 @@ export function HistoryTab({
             </div>
           )}
         </CardContent>
-      </Card>
+      </div>
     </div>
   )
 }

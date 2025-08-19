@@ -1,6 +1,6 @@
 // This file is auto-generated. Do not edit manually.
 // Edit files in prisma/schemas/ directory instead.
-// Last generated: 2025-08-19T04:36:15.340Z
+// Last generated: 2025-08-19T05:24:34.866Z
 // Hospital Pharmacy Stock Management System V3.0
 
 generator client {
@@ -60,6 +60,7 @@ enum TransferStatus {
 // ===== DRUG-SPECIFIC ENUMS =====
 enum DosageForm {
   APP    // Applicator
+  BAG    // Bag
   CAP    // Capsule
   CR     // Cream
   DOP    // Drops

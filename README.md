@@ -107,7 +107,8 @@ Directory structure:
     │   │       ├── transfer-info-card.tsx
     │   │       ├── transfer-items-table.tsx
     │   │       ├── transfer-request-tab.tsx
-    │   │       └── transfer-signatures.tsx
+    │   │       ├── transfer-signatures.tsx
+    │   │       └── workflow-progress.tsx
     │   ├── sections/
     │   │   ├── ActionsSection.tsx
     │   │   ├── AdvancedPatternsSection.tsx
@@ -168,6 +169,7 @@ Directory structure:
     ├── data/
     │   └── hospital-drugs.csv
     ├── hooks/
+    │   ├── use-auth.ts
     │   ├── use-mobile.ts
     │   └── use-toast.ts
     ├── lib/

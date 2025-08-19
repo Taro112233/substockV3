@@ -1,11 +1,56 @@
-// 📄 File: lib/api/dashboard.ts
+// lib/api/dashboard.ts - Fixed TypeScript errors
 // Client-side API utilities สำหรับ Dashboard
 
 import { ApiResponse, DashboardApiData, StockUpdateRequest, TransferActionRequest } from '@/lib/types/api'
+import type { Stock as DashboardStock, Transfer, Transaction } from '@/types/dashboard'
+import type { TransferDetails } from '@/types/transfer'
+
+// Enhanced request body types
+export interface CreateTransferRequest {
+  fromDepartment: 'PHARMACY' | 'OPD'
+  toDepartment: 'PHARMACY' | 'OPD'
+  title: string
+  purpose: string
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
+  requestNote?: string
+  items: {
+    drugId: string
+    requestedQty: number
+    note?: string
+  }[]
+}
+
+export interface TransactionHistoryResponse {
+  transactions: Transaction[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
+export interface StockDetailResponse {
+  stock: DashboardStock
+  recentTransactions: Transaction[]
+  batchInfo?: {
+    id: string
+    lotNumber: string
+    expiryDate: string
+    quantity: number
+    manufacturer?: string
+  }[]
+}
+
+export interface TransferActionResponse {
+  success: boolean
+  message: string
+  transfer: Transfer
+}
 
 export interface FetchOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
-  body?: any
+  body?: Record<string, unknown> | CreateTransferRequest | StockUpdateRequest | TransferActionRequest
   headers?: Record<string, string>
   cache?: RequestCache
 }
@@ -28,6 +73,7 @@ class DashboardApiClient {
         ...headers,
       },
       cache,
+      credentials: 'include', // ใช้ cookies สำหรับ authentication
     }
 
     if (body && method !== 'GET') {
@@ -58,39 +104,73 @@ class DashboardApiClient {
   }
 
   // Stock Management APIs
-  async updateStock(data: StockUpdateRequest): Promise<ApiResponse<any>> {
-    return this.request('/stock/update', {
+  async updateStock(data: StockUpdateRequest): Promise<ApiResponse<StockDetailResponse>> {
+    return this.request<StockDetailResponse>('/stock/update', {
       method: 'POST',
       body: data
     })
   }
 
-  async getStockDetail(stockId: string): Promise<ApiResponse<any>> {
-    return this.request(`/stock/${stockId}`)
+  async getStockDetail(stockId: string): Promise<ApiResponse<StockDetailResponse>> {
+    return this.request<StockDetailResponse>(`/stock/${stockId}`)
   }
 
   // Transfer Management APIs
-  async performTransferAction(data: TransferActionRequest): Promise<ApiResponse<any>> {
-    return this.request('/transfer/action', {
+  async performTransferAction(data: TransferActionRequest): Promise<ApiResponse<TransferActionResponse>> {
+    return this.request<TransferActionResponse>('/transfer/action', {
       method: 'POST',
       body: data
     })
   }
 
-  async getTransferDetail(transferId: string): Promise<ApiResponse<any>> {
-    return this.request(`/transfer/${transferId}`)
+  async getTransferDetail(transferId: string): Promise<ApiResponse<TransferDetails>> {
+    return this.request<TransferDetails>(`/transfer/${transferId}`)
   }
 
-  async createTransfer(data: any): Promise<ApiResponse<any>> {
-    return this.request('/transfer/create', {
+  async createTransfer(data: CreateTransferRequest): Promise<ApiResponse<TransferDetails>> {
+    return this.request<TransferDetails>('/transfer/create', {
       method: 'POST',
       body: data
     })
   }
 
   // Transaction History APIs
-  async getTransactionHistory(department: 'PHARMACY' | 'OPD', page = 1, limit = 50): Promise<ApiResponse<any>> {
-    return this.request(`/transactions?department=${department}&page=${page}&limit=${limit}`)
+  async getTransactionHistory(
+    department: 'PHARMACY' | 'OPD', 
+    page = 1, 
+    limit = 50
+  ): Promise<ApiResponse<TransactionHistoryResponse>> {
+    return this.request<TransactionHistoryResponse>(
+      `/transactions?department=${department}&page=${page}&limit=${limit}`
+    )
+  }
+
+  // Bulk operations APIs
+  async bulkStockUpdate(data: {
+    updates: StockUpdateRequest[]
+    reason: string
+  }): Promise<ApiResponse<{ updated: number; failed: number }>> {
+    return this.request('/stock/bulk-update', {
+      method: 'POST',
+      body: data
+    })
+  }
+
+  // Search APIs
+  async searchDrugs(query: string, department?: 'PHARMACY' | 'OPD'): Promise<ApiResponse<{
+    drugs: Array<{
+      id: string
+      hospitalDrugCode: string
+      name: string
+      genericName?: string
+      unit: string
+      currentStock: number
+    }>
+  }>> {
+    const params = new URLSearchParams({ q: query })
+    if (department) params.append('department', department)
+    
+    return this.request(`/search/drugs?${params.toString()}`)
   }
 }
 
@@ -160,6 +240,107 @@ export function useDashboardData(department: 'PHARMACY' | 'OPD') {
   }
 }
 
+// Enhanced Stock Management Hook
+export function useStockOperations() {
+  const { toast } = useToast()
+
+  const updateStock = useCallback(async (data: StockUpdateRequest) => {
+    try {
+      const response = await dashboardApi.updateStock(data)
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to update stock')
+      }
+
+      toast({
+        title: "ปรับสต็อกสำเร็จ",
+        description: "ข้อมูลสต็อกได้รับการอัปเดตแล้ว",
+        duration: 3000
+      })
+
+      return response.data
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Update failed'
+      
+      toast({
+        title: "เกิดข้อผิดพลาดในการปรับสต็อก",
+        description: errorMessage,
+        variant: "destructive",
+        duration: 4000
+      })
+      
+      throw error
+    }
+  }, [toast])
+
+  return { updateStock }
+}
+
+// Transfer Operations Hook
+export function useTransferOperations() {
+  const { toast } = useToast()
+
+  const performAction = useCallback(async (data: TransferActionRequest) => {
+    try {
+      const response = await dashboardApi.performTransferAction(data)
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Action failed')
+      }
+
+      toast({
+        title: "ดำเนินการสำเร็จ",
+        description: "การดำเนินการได้รับการบันทึกแล้ว",
+        duration: 3000
+      })
+
+      return response.data
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Action failed'
+      
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: errorMessage,
+        variant: "destructive",
+        duration: 4000
+      })
+      
+      throw error
+    }
+  }, [toast])
+
+  const createTransfer = useCallback(async (data: CreateTransferRequest) => {
+    try {
+      const response = await dashboardApi.createTransfer(data)
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to create transfer')
+      }
+
+      toast({
+        title: "สร้างใบเบิกสำเร็จ",
+        description: "ใบเบิกได้รับการสร้างแล้ว",
+        duration: 3000
+      })
+
+      return response.data
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Creation failed'
+      
+      toast({
+        title: "เกิดข้อผิดพลาดในการสร้างใบเบิก",
+        description: errorMessage,
+        variant: "destructive",
+        duration: 4000
+      })
+      
+      throw error
+    }
+  }, [toast])
+
+  return { performAction, createTransfer }
+}
+
 // Utility Functions
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('th-TH', {
@@ -192,14 +373,14 @@ export function formatDate(dateString: string): string {
 
 export function getTransactionTypeLabel(type: string): string {
   const labels: Record<string, string> = {
-    'RECEIVE': 'รับเข้า',
-    'DISPENSE': 'จ่ายออก',
-    'ADJUST_IN': 'ปรับเพิ่ม',
-    'ADJUST_OUT': 'ปรับลด',
+    'RECEIVE_EXTERNAL': 'รับเข้า',
+    'DISPENSE_EXTERNAL': 'จ่ายออก',
+    'ADJUST_INCREASE': 'ปรับเพิ่ม',
+    'ADJUST_DECREASE': 'ปรับลด',
     'TRANSFER_IN': 'โอนเข้า',
     'TRANSFER_OUT': 'โอนออก',
-    'EXPIRE': 'หมดอายุ',
-    'DAMAGED': 'เสียหาย'
+    'RESERVE': 'จองยา',
+    'UNRESERVE': 'ยกเลิกจอง'
   }
   return labels[type] || type
 }
@@ -208,8 +389,8 @@ export function getTransferStatusLabel(status: string): string {
   const labels: Record<string, string> = {
     'PENDING': 'รอดำเนินการ',
     'APPROVED': 'อนุมัติแล้ว',
-    'SENT': 'ส่งแล้ว',
-    'RECEIVED': 'รับแล้ว',
+    'PREPARED': 'เตรียมจ่ายแล้ว',
+    'DELIVERED': 'ส่งมอบแล้ว',
     'CANCELLED': 'ยกเลิก'
   }
   return labels[status] || status

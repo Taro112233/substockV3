@@ -33,11 +33,9 @@ import {
   Pill,
   Save,
   X,
-  Eye,
   Edit3,
   DollarSign,
-  FileText,
-  User
+  FileText
 } from 'lucide-react'
 
 interface StockDetailModalProps {

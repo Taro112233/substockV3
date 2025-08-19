@@ -1,4 +1,4 @@
-// 📄 File: components/modules/stock/stock-table.tsx (Updated)
+// 📄 File: components/modules/stock/stock-table.tsx (Fixed)
 
 import {
   Table,
@@ -15,29 +15,17 @@ import { Stock } from '@/types/dashboard'
 import {
   calculateAvailableStock,
   isLowStock,
-  formatCurrency,
   getCategoryColor,
   getCategoryLabel
 } from '@/lib/utils/dashboard'
 import { 
-  Package, 
   AlertTriangle, 
-  Edit, 
-  Eye, 
-  TrendingDown, 
-  TrendingUp, 
+  Edit,
   Search,
-  Filter,
-  MoreHorizontal
+  Filter
 } from 'lucide-react'
 import { useState } from 'react'
 import { StockDetailModal } from './stock-detail-modal'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 
 interface StockTableProps {
   stocks: Stock[]
@@ -49,10 +37,8 @@ interface StockTableProps {
 }
 
 export function StockTable({ 
-  stocks, 
-  department, 
+  stocks,
   onAdjust, 
-  onView,
   onUpdate,
   loading = false 
 }: StockTableProps) {
@@ -258,7 +244,7 @@ export function StockTable({
                         <TableCell>
                           <div className="text-sm text-gray-700">
                             {stock.drug?.packageSize ? (
-                              <>1 x {stock.drug.packageSize}'s</>
+                              <>1 x {stock.drug.packageSize}&apos;s</>
                             ) : (
                               '-'
                             )}

@@ -1,6 +1,6 @@
 // This file is auto-generated. Do not edit manually.
 // Edit files in prisma/schemas/ directory instead.
-// Last generated: 2025-08-19T05:24:34.866Z
+// Last generated: 2025-08-19T16:08:32.900Z
 // Hospital Pharmacy Stock Management System V3.0
 
 generator client {

@@ -1,7 +1,9 @@
-// 📄 File: app/api/drugs/route.ts
+
+// 📄 File: app/api/drugs/route.ts (Fixed)
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,8 +12,8 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category')
     const isActive = searchParams.get('isActive')
 
-    // Build where clause
-    const where: any = {}
+    // Build where clause with proper Prisma types
+    const where: Prisma.DrugWhereInput = {}
 
     if (search) {
       where.OR = [
@@ -22,7 +24,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (category) {
-      where.category = category
+      where.category = category as any // Category enum from Prisma
     }
 
     if (isActive !== null) {

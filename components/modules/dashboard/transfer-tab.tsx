@@ -1,6 +1,6 @@
-// 📄 File: components/modules/dashboard/transfer-tab.tsx - Fixed
+// 📄 File: components/modules/dashboard/transfer-tab.tsx (Fixed)
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TransferCard } from '@/components/modules/transfer/transfer-card'
@@ -29,16 +29,18 @@ interface TransferTabProps {
   onViewDetail?: (transfer: Transfer) => void
 }
 
+// Define specific transfer status type to fix TypeScript error
+type TransferStatus = 'PENDING' | 'APPROVED' | 'PREPARED' | 'DELIVERED' | 'CANCELLED'
+
 export function TransferTab({ 
-  department,
-  onViewDetail
+  department
 }: TransferTabProps) {
   const [data, setData] = useState<TransferData | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const { toast } = useToast()
 
-  const fetchTransferData = async (showRefreshToast = false) => {
+  const fetchTransferData = useCallback(async (showRefreshToast = false) => {
     try {
       if (showRefreshToast) {
         setRefreshing(true)
@@ -131,11 +133,11 @@ export function TransferTab({
       setLoading(false)
       setRefreshing(false)
     }
-  }
+  }, [department, toast]) // Add dependencies to useCallback
 
   useEffect(() => {
     fetchTransferData()
-  }, [department])
+  }, [fetchTransferData]) // Use fetchTransferData in dependency array
 
   const handleCreateTransfer = () => {
     // Navigate to create transfer page
@@ -327,7 +329,7 @@ export function TransferTab({
                     title: `ใบเบิกยา ${transfer.transferNumber}`,
                     fromDept: transfer.fromDepartment,
                     toDept: transfer.toDepartment,
-                    status: transfer.status as any,
+                    status: transfer.status as TransferStatus, // Fix TypeScript error with specific type
                     totalItems: transfer.items?.length || 0,
                     totalValue: transfer.items?.reduce((sum, item) => 
                       sum + (item.requestedQty * (item.drug?.pricePerBox || 0)), 0) || 0,

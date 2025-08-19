@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DashboardStats } from '@/types/dashboard'
-import { Package, AlertTriangle, FileText, Activity, TrendingUp } from 'lucide-react'
+import { Package, AlertTriangle, FileText, TrendingUp } from 'lucide-react'
 
 interface DashboardStatsProps {
   stats: DashboardStats

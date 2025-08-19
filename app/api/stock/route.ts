@@ -1,15 +1,16 @@
-// 📄 File: app/api/stock/route.ts
+// 📄 File: app/api/stock/route.ts (Fixed)
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { Prisma, Department } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
-    const department = searchParams.get('department') as 'PHARMACY' | 'OPD' | null
+    const department = searchParams.get('department') as Department | null
 
-    // Build where clause
-    const where: any = {}
+    // Build where clause with proper Prisma types
+    const where: Prisma.StockWhereInput = {}
     if (department) {
       where.department = department
     }

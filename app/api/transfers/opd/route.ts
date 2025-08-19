@@ -1,9 +1,11 @@
-// 2. app/api/transfers/opd/route.ts
-import { NextRequest, NextResponse } from 'next/server'
+// 📄 File: app/api/transfers/opd/route.ts
+
+import { NextResponse } from 'next/server'
 import { getServerUser } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
+import { Department, TransferStatus } from '@prisma/client'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // ตรวจสอบ authentication
     const user = await getServerUser()
@@ -18,8 +20,8 @@ export async function GET(request: NextRequest) {
     const transfers = await prisma.transfer.findMany({
       where: {
         OR: [
-          { fromDept: 'OPD' }, // ส่งจาก OPD
-          { toDept: 'OPD' }    // รับเข้า OPD
+          { fromDept: Department.OPD }, // ส่งจาก OPD
+          { toDept: Department.OPD }    // รับเข้า OPD
         ]
       },
       include: {
@@ -62,18 +64,18 @@ export async function GET(request: NextRequest) {
     // คำนวณ stats
     const stats = {
       totalTransfers: transfers.length,
-      pendingTransfers: transfers.filter(t => t.status === 'PENDING').length,
-      approvedTransfers: transfers.filter(t => t.status === 'APPROVED').length
+      pendingTransfers: transfers.filter(t => t.status === TransferStatus.PENDING).length,
+      approvedTransfers: transfers.filter(t => t.status === TransferStatus.APPROVED).length
     }
 
-    // Transform data (same as pharmacy)
+    // Transform data with proper typing
     const transformedTransfers = transfers.map(transfer => ({
       id: transfer.id,
       transferNumber: transfer.requisitionNumber,
       fromDepartment: transfer.fromDept,
       toDepartment: transfer.toDept,
       status: transfer.status,
-      priority: 'MEDIUM',
+      priority: 'MEDIUM' as const,
       requestedAt: transfer.requestedAt.toISOString(),
       approvedAt: transfer.approvedAt?.toISOString() || null,
       sentAt: transfer.dispensedAt?.toISOString() || null,

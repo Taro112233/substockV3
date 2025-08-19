@@ -16,13 +16,11 @@ import {
   TrendingUp, 
   TrendingDown,
   Calendar,
-  Building,
   Hash,
   Pill,
   User,
   FileText,
   DollarSign,
-  Eye,
   X,
   ArrowRight,
   RotateCcw

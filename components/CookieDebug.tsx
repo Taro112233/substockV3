@@ -1,4 +1,5 @@
-// components/CookieDebug.tsx - เพื่อตรวจสอบ cookies
+// 📄 File: components/CookieDebug.tsx (Fixed)
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,9 +13,21 @@ interface CookieInfo {
   exists: boolean;
 }
 
+interface AuthStatusData {
+  status: number | string;
+  success: boolean;
+  data?: {
+    user?: {
+      fullName: string;
+      username: string;
+    }
+  };
+  error?: string;
+}
+
 export function CookieDebug() {
   const [cookies, setCookies] = useState<CookieInfo[]>([]);
-  const [authStatus, setAuthStatus] = useState<any>(null);
+  const [authStatus, setAuthStatus] = useState<AuthStatusData | null>(null);
   
   const checkCookies = () => {
     if (typeof document !== 'undefined') {

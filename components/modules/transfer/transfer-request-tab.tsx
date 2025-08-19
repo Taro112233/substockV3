@@ -7,7 +7,7 @@ import { TransferInfoCard } from './transfer-info-card'
 import { TransferSignatures } from './transfer-signatures'
 import { TransferItemsTable } from './transfer-items-table'
 import type { TransferDetails } from '@/types/transfer'
-import { FileText, Package } from 'lucide-react'
+import { Package } from 'lucide-react'
 
 interface TransferRequestTabProps {
   transfer: TransferDetails

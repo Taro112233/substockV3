@@ -2,24 +2,20 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyToken, isUserActive } from '@/lib/auth'
+import { getServerUser } from '@/lib/auth-server'
+import type { JWTUser } from '@/lib/auth-server'
+import { Department } from '@prisma/client'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    // ดึง token จาก cookie (middleware จะส่งมาให้แล้วถ้า valid)
-    const token = request.cookies.get('auth-token')?.value
+    // ใช้ getServerUser จาก auth-server แทนการ verify token เอง
+    const user = await getServerUser()
     
-    if (!token) {
+    if (!user) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const user = await verifyToken(token)
-    
-    if (!user || !isUserActive(user)) {
-      return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 })
     }
 
     console.log(`🔍 Transfer detail request by: ${user.username} (${user.userId})`)
@@ -89,7 +85,7 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Transfer not found' }, { status: 404 })
     }
 
-    // Check permissions - ใช้ department จาก JWT payload
+    // Check permissions - ใช้ type-safe functions
     const userDepartment = getUserDepartmentFromRole(user)
     const canView = (
       transfer.fromDept === userDepartment ||
@@ -117,15 +113,23 @@ export async function GET(
   }
 }
 
-// Helper functions
-function getUserDepartmentFromRole(user: any): 'PHARMACY' | 'OPD' {
-  // สมมติว่า role บอกได้ว่าอยู่แผนกไหน
-  if (user.role && user.role.includes('PHARMACY')) {
-    return 'PHARMACY'
+// Helper functions with proper typing
+function getUserDepartmentFromRole(user: JWTUser): Department {
+  // ในระบบ V3.0 ไม่มี fixed department ใน user profile
+  // แต่เพื่อความเข้ากันได้ เราจะใช้ logic เดิม
+  // จริงๆ แล้วควรส่ง department context มาจาก frontend
+  
+  // สมมติว่า position บอกได้ว่าอยู่แผนกไหน
+  if (user.position && user.position.includes('คลัง')) {
+    return Department.PHARMACY
   }
-  return 'OPD'
+  return Department.OPD
 }
 
-function isAdmin(user: any): boolean {
-  return user.role === 'ADMIN' || user.role === 'PHARMACY_MANAGER'
+function isAdmin(user: JWTUser): boolean {
+  // ใน V3.0 ไม่มี role แต่ใช้ position แทน
+  return user.position === 'ผู้จัดการ' || 
+         user.position === 'หัวหน้าแผนก' ||
+         user.position?.includes('ผู้จัดการ') ||
+         false
 }

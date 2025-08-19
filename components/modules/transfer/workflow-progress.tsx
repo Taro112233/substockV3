@@ -1,9 +1,10 @@
-// components/modules/transfer/workflow-progress.tsx
+// 📄 File: components/modules/transfer/workflow-progress.tsx (Fixed)
+
 'use client';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle, Clock, Package, Truck, XCircle } from 'lucide-react';
+import { CheckCircle, Clock, Package, Truck, XCircle, type LucideIcon } from 'lucide-react';
 import type { TransferDetails } from '@/types/transfer';
 
 interface WorkflowProgressProps {
@@ -15,7 +16,7 @@ type StepType = 'requested' | 'approved' | 'prepared' | 'delivered' | 'cancelled
 
 // Define step config interface
 interface StepConfig {
-  icon: any
+  icon: LucideIcon
   label: string
   timestamp?: string
   user?: { firstName: string; lastName: string } | null

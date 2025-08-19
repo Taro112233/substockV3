@@ -1,25 +1,27 @@
 // 📄 File: app/api/transfers/[id]/actions/route.ts
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma, updateStockAfterTransfer } from '@/lib/prisma'
-import { verifyToken, isUserActive } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import { getServerUser } from '@/lib/auth-server'
 import { transferActionService } from '@/services/transfer-action-service'
+import type { JWTUser } from '@/lib/auth-server'
+import { Department } from '@prisma/client'
+
+// Define proper interface for user with department context
+interface UserWithDepartment extends JWTUser {
+  department: Department
+}
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const token = request.cookies.get('auth-token')?.value
+    // ใช้ getServerUser แทนการ verify token เอง
+    const user = await getServerUser()
     
-    if (!token) {
+    if (!user) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const user = await verifyToken(token)
-    
-    if (!user || !isUserActive(user)) {
-      return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 })
     }
 
     const body = await request.json()
@@ -44,7 +46,7 @@ export async function POST(
     }
 
     // เพิ่ม department info ให้ user
-    const userWithDept = {
+    const userWithDept: UserWithDepartment = {
       ...user,
       department: getUserDepartmentFromRole(user)
     }
@@ -88,9 +90,14 @@ export async function POST(
   }
 }
 
-function getUserDepartmentFromRole(user: any): 'PHARMACY' | 'OPD' {
-  if (user.role && user.role.includes('PHARMACY')) {
-    return 'PHARMACY'
+function getUserDepartmentFromRole(user: JWTUser): Department {
+  // ในระบบ V3.0 ไม่มี fixed department ใน user profile
+  // แต่เพื่อความเข้ากันได้ เราจะใช้ logic เดิม
+  // จริงๆ แล้วควรส่ง department context มาจาก frontend
+  
+  // สมมติว่า position บอกได้ว่าอยู่แผนกไหน
+  if (user.position && user.position.includes('คลัง')) {
+    return Department.PHARMACY
   }
-  return 'OPD'
+  return Department.OPD
 }

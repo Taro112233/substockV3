@@ -1,5 +1,5 @@
 // lib/utils/transfer-status.ts
-import { CheckCircle, Clock, Package, Truck, XCircle } from 'lucide-react';
+import { CheckCircle, Clock, Package, XCircle, type LucideIcon } from 'lucide-react';
 
 // Define TransferStatusType locally to avoid conflicts
 export type TransferStatusType = 'PENDING' | 'APPROVED' | 'PREPARED' | 'DELIVERED' | 'CANCELLED';
@@ -8,14 +8,14 @@ export interface TransferActionConfig {
   label: string;
   action: string;
   variant: 'default' | 'destructive' | 'outline';
-  icon: any;
+  icon: LucideIcon;
   type: 'navigate' | 'quick';
 }
 
 export interface StatusConfig {
   color: string;
   text: string;
-  icon: any;
+  icon: LucideIcon;
   description: string;
 }
 
@@ -153,4 +153,45 @@ export function getDepartmentLabel(dept: 'PHARMACY' | 'OPD'): string {
 export function getStatusBadgeClass(status: TransferStatusType): string {
   const config = getStatusConfig(status);
   return `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${config.color}`;
+}
+
+// Helper function สำหรับ mapping status เป็น priority level
+export function getStatusPriority(status: TransferStatusType): number {
+  const priorityMap: Record<TransferStatusType, number> = {
+    'PENDING': 1,     // ลำดับความสำคัญสูงสุด
+    'APPROVED': 2,
+    'PREPARED': 3,
+    'DELIVERED': 4,
+    'CANCELLED': 5    // ลำดับความสำคัญต่ำสุด
+  };
+  
+  return priorityMap[status] || 999;
+}
+
+// Helper function สำหรับเช็คว่า action สามารถทำได้หรือไม่
+export function canPerformAction(
+  action: string,
+  status: TransferStatusType,
+  userDepartment: 'PHARMACY' | 'OPD',
+  fromDept: 'PHARMACY' | 'OPD',
+  toDept: 'PHARMACY' | 'OPD'
+): boolean {
+  const availableActions = getAvailableActions(status, userDepartment, fromDept, toDept);
+  return availableActions.some(a => a.action === action);
+}
+
+// Helper function สำหรับ status transition validation
+export function isValidStatusTransition(
+  currentStatus: TransferStatusType,
+  newStatus: TransferStatusType
+): boolean {
+  const validTransitions: Record<TransferStatusType, TransferStatusType[]> = {
+    'PENDING': ['APPROVED', 'CANCELLED'],
+    'APPROVED': ['PREPARED', 'CANCELLED'],
+    'PREPARED': ['DELIVERED', 'CANCELLED'],
+    'DELIVERED': [], // Terminal state
+    'CANCELLED': []  // Terminal state
+  };
+  
+  return validTransitions[currentStatus]?.includes(newStatus) || false;
 }

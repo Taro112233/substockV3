@@ -3,14 +3,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+import { Prisma, Department, TransferStatus } from '@prisma/client'
+
+// Define proper types for better type safety using Prisma types
+interface TransferItem {
+  drugId: string
+  requestedQty: number
+  unitPrice?: number
+  itemNote?: string
+}
+
+interface CreateTransferRequest {
+  requisitionNumber: string
+  title: string
+  fromDept: Department
+  toDept: Department
+  purpose: string
+  requestNote?: string
+  items: TransferItem[]
+  requesterId: string
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
-    const department = searchParams.get('department') as 'PHARMACY' | 'OPD' | null
-    const status = searchParams.get('status')
+    const department = searchParams.get('department') as Department | null
+    const status = searchParams.get('status') as TransferStatus | null
 
-    // Build where clause
-    const where: any = {}
+    // Use Prisma-generated types for where clause
+    const where: Prisma.TransferWhereInput = {}
     
     if (department) {
       // Show transfers related to the department
@@ -21,7 +42,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (status) {
-      where.status = status
+      where.status = status as TransferStatus
     }
 
     const transfers = await prisma.transfer.findMany({
@@ -92,7 +113,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body: CreateTransferRequest = await request.json()
     const { 
       requisitionNumber, 
       title, 
@@ -133,7 +154,7 @@ export async function POST(request: NextRequest) {
 
     // Calculate totals
     const totalItems = items.length
-    const totalValue = items.reduce((sum: number, item: any) => 
+    const totalValue = items.reduce((sum: number, item: TransferItem) => 
       sum + (item.requestedQty * (item.unitPrice || 0)), 0
     )
 
@@ -150,7 +171,7 @@ export async function POST(request: NextRequest) {
         totalItems,
         totalValue,
         items: {
-          create: items.map((item: any) => ({
+          create: items.map((item: TransferItem) => ({
             drugId: item.drugId,
             requestedQty: item.requestedQty,
             unitPrice: item.unitPrice || 0,

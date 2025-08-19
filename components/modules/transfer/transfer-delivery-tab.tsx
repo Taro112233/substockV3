@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TransferDeliveryInfo } from './transfer-delivery-info'
 import { TransferItemsTable } from './transfer-items-table'
 import type { TransferDetails } from '@/types/transfer'
-import { Package, Truck } from 'lucide-react'
+import { Truck } from 'lucide-react'
 
 interface TransferDeliveryTabProps {
   transfer: TransferDetails

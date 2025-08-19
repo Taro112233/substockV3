@@ -1,10 +1,10 @@
-// 📄 File: components/modules/transfer/transfer-header.tsx
+// 📄 File: components/modules/transfer/transfer-header.tsx (Fixed)
 
 'use client'
 
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, type LucideIcon } from 'lucide-react'
 import type { TransferDetails } from '@/types/transfer'
 
 interface TransferHeaderProps {
@@ -12,7 +12,7 @@ interface TransferHeaderProps {
   statusConfig: {
     text: string
     color: string
-    icon: any
+    icon: LucideIcon
   }
   onBack: () => void
 }

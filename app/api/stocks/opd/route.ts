@@ -1,9 +1,9 @@
 // 📄 File: app/api/stocks/opd/route.ts (Fixed)
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // ดึงข้อมูลสต็อกของแผนก OPD
     const stocks = await prisma.stock.findMany({

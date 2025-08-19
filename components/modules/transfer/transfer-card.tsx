@@ -1,4 +1,4 @@
-// 📄 File: components/modules/transfer/transfer-card.tsx
+// 📄 File: components/modules/transfer/transfer-card.tsx (Fixed)
 
 'use client'
 
@@ -8,15 +8,14 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/hooks/use-auth'
 import {
-  FileText,
   Clock,
   CheckCircle,
   XCircle,
   Eye,
   ArrowRight,
   Package,
-  Truck,
-  AlertTriangle
+  AlertTriangle,
+  type LucideIcon
 } from 'lucide-react'
 
 interface TransferCardProps {
@@ -48,6 +47,14 @@ interface TransferCardProps {
     }>
   }
   onQuickAction?: (action: string) => void // For simple actions like cancel/reject
+}
+
+interface TransferAction {
+  label: string
+  action: string
+  variant: 'default' | 'destructive' | 'outline'
+  icon: LucideIcon
+  type: 'navigate' | 'quick' // navigate = go to action page, quick = immediate action
 }
 
 export function TransferCard({ transfer, onQuickAction }: TransferCardProps) {
@@ -92,17 +99,10 @@ export function TransferCard({ transfer, onQuickAction }: TransferCardProps) {
   }
 
   // Get available actions based on status and perspective
-  const getAvailableActions = () => {
+  const getAvailableActions = (): TransferAction[] => {
     if (!user) return []
     
-    const perspective = getPerspective()
-    const actions: Array<{
-      label: string
-      action: string
-      variant: 'default' | 'destructive' | 'outline'
-      icon: any
-      type: 'navigate' | 'quick' // navigate = go to action page, quick = immediate action
-    }> = []
+    const actions: TransferAction[] = []
 
     // Actions based on status - สำหรับ V3.0 ให้ user ทุกคนเห็น action ได้
     // แต่ระบบจะตรวจสอบสิทธิ์ในหน้า action
@@ -294,7 +294,7 @@ export function TransferCard({ transfer, onQuickAction }: TransferCardProps) {
           <div className="border-t pt-3">
             <div className="text-xs text-gray-600 mb-2">รายการยา:</div>
             <div className="space-y-1">
-              {transfer.items.slice(0, 2).map((item, index) => (
+              {transfer.items.slice(0, 2).map((item) => (
                 <div key={item.id} className="flex justify-between text-xs">
                   <span className="truncate flex-1 mr-2">{item.drug.name}</span>
                   <span className="text-gray-500">

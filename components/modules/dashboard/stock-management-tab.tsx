@@ -1,6 +1,6 @@
-// 📄 File: components/modules/dashboard/stock-management-tab.tsx (Updated)
+// 📄 File: components/modules/dashboard/stock-management-tab.tsx (Fixed)
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -35,8 +35,8 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
 
   const { toast } = useToast();
 
-  // ดึงข้อมูลสต็อก
-  const fetchStockData = async (isRefresh = false) => {
+  // ดึงข้อมูลสต็อก - wrapped with useCallback to fix hook dependency warning
+  const fetchStockData = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
     } else {
@@ -90,11 +90,11 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [department, toast]); // Add dependencies to useCallback
 
   useEffect(() => {
     fetchStockData();
-  }, [department]);
+  }, [fetchStockData]); // Use fetchStockData in dependency array
 
   const handleRefresh = () => {
     fetchStockData(true);

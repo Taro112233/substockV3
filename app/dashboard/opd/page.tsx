@@ -9,8 +9,7 @@ import { TransferTab } from '@/components/modules/dashboard/transfer-tab'
 import { HistoryTab } from '@/components/modules/dashboard/history-tab'
 import { TransferDetailModal } from '@/components/modules/transfer/transfer-detail-modal'
 import { Transfer } from '@/types/dashboard'
-import { Package, FileText, History, RefreshCw } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Package, FileText, History } from 'lucide-react'
 
 export default function OpdDashboard() {
   const [activeTransfer, setActiveTransfer] = useState<Transfer | null>(null)

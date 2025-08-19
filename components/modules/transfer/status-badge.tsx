@@ -6,8 +6,7 @@ import {
   Clock, 
   CheckCircle, 
   ArrowRight, 
-  XCircle, 
-  AlertTriangle 
+  XCircle
 } from 'lucide-react'
 
 interface StatusBadgeProps {

@@ -1,6 +1,6 @@
-// 📄 File: components/modules/dashboard/history-tab.tsx (Updated with Stock-like Table)
+// 📄 File: components/modules/dashboard/history-tab.tsx (Fixed)
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -30,14 +30,7 @@ import {
   TrendingUp,
   TrendingDown,
   Search,
-  Calendar,
-  Package,
-  ArrowRight,
-  ArrowLeft,
   RotateCcw,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
   Eye
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
@@ -143,7 +136,7 @@ export function HistoryTab({
   const [isModalOpen, setIsModalOpen] = useState(false)
   const { toast } = useToast()
 
-  const fetchTransactionData = async (showRefreshToast = false) => {
+  const fetchTransactionData = useCallback(async (showRefreshToast = false) => {
     try {
       if (showRefreshToast) {
         setRefreshing(true)
@@ -197,11 +190,11 @@ export function HistoryTab({
       setLoading(false)
       setRefreshing(false)
     }
-  }
+  }, [department, toast]) // Add dependencies to useCallback
 
   useEffect(() => {
     fetchTransactionData()
-  }, [department])
+  }, [fetchTransactionData]) // Use fetchTransactionData in dependency array
 
   const handleRefresh = () => {
     fetchTransactionData(true)
@@ -583,7 +576,7 @@ export function HistoryTab({
                       <TableCell>
                         <div className="text-sm text-gray-700">
                           {transaction.drug?.packageSize ? (
-                            <>1 x {transaction.drug.packageSize}'s</>
+                            <>1 x {transaction.drug.packageSize}&apos;s</>
                           ) : (
                             '-'
                           )}

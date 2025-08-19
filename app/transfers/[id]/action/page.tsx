@@ -1,22 +1,21 @@
-// 📄 File: app/transfers/[id]/action/page.tsx
+// 📄 File: app/transfers/[id]/action/page.tsx (Fixed)
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useAuth } from '@/hooks/use-auth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { useToast } from '@/hooks/use-toast'
+import type { TransferDetails } from '@/types/transfer'
+import type { LucideIcon } from 'lucide-react'
 import {
   ArrowLeft,
   CheckCircle,
-  XCircle,
   Package,
   AlertTriangle,
   Save,
@@ -65,7 +64,7 @@ type ActionType = 'approve' | 'prepare' | 'receive'
 interface ActionConfig {
   title: string
   description: string
-  icon: any
+  icon: LucideIcon
   color: string
   submitLabel: string
   showQuantityEdit: boolean
@@ -77,20 +76,15 @@ interface ActionConfig {
 export default function TransferActionPage({ params }: TransferActionPageProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user } = useAuth()
   const { toast } = useToast()
   
   const actionType = searchParams.get('type') as ActionType | null
-  const [transfer, setTransfer] = useState<any>(null)
+  const [transfer, setTransfer] = useState<TransferDetails | null>(null)
   const [formData, setFormData] = useState<ActionFormData>({ items: [] })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   
-  useEffect(() => {
-    fetchTransferDetails()
-  }, [params.id])
-  
-  const fetchTransferDetails = async () => {
+  const fetchTransferDetails = useCallback(async () => {
     try {
       const response = await fetch(`/api/transfers/${params.id}`)
       
@@ -109,7 +103,7 @@ export default function TransferActionPage({ params }: TransferActionPageProps) 
       // Initialize form data
       setFormData({
         note: '',
-        items: result.data.items.map((item: any) => ({
+        items: result.data.items.map((item: TransferDetails['items'][0]) => ({
           ...item,
           approvedQty: item.approvedQty || item.requestedQty,
           dispensedQty: item.dispensedQty || 0,
@@ -132,7 +126,11 @@ export default function TransferActionPage({ params }: TransferActionPageProps) 
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id, toast, router])
+  
+  useEffect(() => {
+    fetchTransferDetails()
+  }, [fetchTransferDetails])
   
   const getActionConfig = (): ActionConfig => {
     const configs: Record<ActionType, ActionConfig> = {
@@ -224,6 +222,7 @@ export default function TransferActionPage({ params }: TransferActionPageProps) 
       const response = await fetch(`/api/transfers/${params.id}/actions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           action: actionType,
           note: formData.note,
@@ -422,7 +421,7 @@ export default function TransferActionPage({ params }: TransferActionPageProps) 
                 </tr>
               </thead>
               <tbody>
-                {formData.items.map((item, index) => (
+                {formData.items.map((item) => (
                   <tr key={item.id} className="border-b hover:bg-gray-50">
                     <td className="p-3 font-mono text-xs">
                       {item.drug.hospitalDrugCode}

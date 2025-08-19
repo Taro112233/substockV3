@@ -1,12 +1,12 @@
-// 📄 File: app/transfers/[id]/page.tsx
+
+// 📄 File: app/transfers/[id]/page.tsx (Fixed)
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
 import { TransferRequestTab } from '@/components/modules/transfer/transfer-request-tab'
@@ -40,11 +40,7 @@ export default function TransferDetailPage({ params }: TransferDetailPageProps) 
   // Get active tab from URL params or default to 'request'
   const activeTab = searchParams.get('tab') || 'request'
   
-  useEffect(() => {
-    fetchTransferDetails()
-  }, [params.id])
-  
-  const fetchTransferDetails = async () => {
+  const fetchTransferDetails = useCallback(async () => {
     try {
       setLoading(true)
       const result = await transferService.getTransferDetails(params.id)
@@ -60,7 +56,11 @@ export default function TransferDetailPage({ params }: TransferDetailPageProps) 
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id, toast, router])
+  
+  useEffect(() => {
+    fetchTransferDetails()
+  }, [fetchTransferDetails])
   
   const handleQuickAction = async (action: string) => {
     if (!transfer) return

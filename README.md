@@ -198,6 +198,7 @@ Directory structure:
     │   │   └── user.prisma
     │   └── seeds/
     │       ├── stock-transactions.seed.ts
+    │       ├── transfers-with-transactions.seed.ts
     │       ├── transfers.seed.ts
     │       ├── unified-csv.seed.ts
     │       └── users.seed.ts
@@ -213,6 +214,7 @@ Directory structure:
         ├── dashboard.ts
         ├── index.ts
         └── transfer.ts
+
 
 # 📌 Project Instructions for Claude: Hospital Pharmacy Stock Management System V3.0
 

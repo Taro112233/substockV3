@@ -14,7 +14,19 @@ Directory structure:
     │   ├── globals.css
     │   ├── layout.tsx
     │   ├── page.tsx
+    │   ├── admin/
+    │   │   ├── layout.tsx
+    │   │   └── users/
+    │   │       └── page.tsx
     │   ├── api/
+    │   │   ├── admin/
+    │   │   │   └── users/
+    │   │   │       ├── route.ts
+    │   │   │       ├── [userId]/
+    │   │   │       │   └── status/
+    │   │   │       │       └── route.ts
+    │   │   │       └── stats/
+    │   │   │           └── route.ts
     │   │   ├── arcjet/
     │   │   │   └── route.ts
     │   │   ├── auth/
@@ -65,6 +77,8 @@ Directory structure:
     │   │       └── page.tsx
     │   ├── login/
     │   │   └── page.tsx
+    │   ├── pending-approval/
+    │   │   └── page.tsx
     │   ├── register/
     │   │   └── page.tsx
     │   ├── transfers/
@@ -76,8 +90,12 @@ Directory structure:
     │       └── auth-client.tsx
     ├── components/
     │   ├── CookieDebug.tsx
+    │   ├── DashboardNavigation.tsx
     │   ├── DemoComponents.tsx
     │   ├── error-boundary.tsx
+    │   ├── MobileAdminNav.tsx
+    │   ├── admin/
+    │   │   └── UserManagementButton.tsx
     │   ├── modules/
     │   │   ├── dashboard/
     │   │   │   ├── dashboard-stats.tsx
@@ -112,7 +130,6 @@ Directory structure:
     │       ├── badge.tsx
     │       ├── breadcrumb.tsx
     │       ├── button.tsx
-    │       ├── calendar.tsx
     │       ├── card.tsx
     │       ├── carousel.tsx
     │       ├── chart.tsx
@@ -151,13 +168,16 @@ Directory structure:
     │       ├── toaster.tsx
     │       ├── toggle-group.tsx
     │       ├── toggle.tsx
-    │       └── tooltip.tsx
+    │       ├── tooltip.tsx
+    │       └── navigation/
+    │           └── AdminNav.tsx
     ├── data/
     │   └── hospital-drugs.csv
     ├── hooks/
     │   ├── use-auth.ts
     │   ├── use-mobile.ts
-    │   └── use-toast.ts
+    │   ├── use-toast.ts
+    │   └── useUserManagement.ts
     ├── lib/
     │   ├── auth-server.ts
     │   ├── auth.ts
@@ -165,8 +185,6 @@ Directory structure:
     │   ├── utils.ts
     │   ├── api/
     │   │   └── dashboard.ts
-    │   ├── services/
-    │   │   └── mock-data.ts
     │   ├── types/
     │   │   └── api.ts
     │   └── utils/
@@ -175,7 +193,6 @@ Directory structure:
     │       └── type-guards.ts
     ├── prisma/
     │   ├── schema.prisma
-    │   ├── seed.ts
     │   ├── schemas/
     │   │   ├── base.prisma
     │   │   ├── drug.prisma

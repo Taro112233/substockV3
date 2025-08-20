@@ -79,6 +79,7 @@ Directory structure:
     ├── components/
     │   ├── BackgroundDecoration.tsx
     │   ├── CookieDebug.tsx
+    │   ├── DemoComponents.tsx
     │   ├── error-boundary.tsx
     │   ├── FloatingActionButton.tsx
     │   ├── ShowcaseFooter.tsx

@@ -1,8 +1,8 @@
-// app/api/auth/logout/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+// 📄 File: app/api/auth/logout/route.ts (Fixed ESLint warnings)
+import { NextResponse } from 'next/server'; // ✅ ลบ NextRequest ที่ไม่ได้ใช้
 import { serialize } from 'cookie';
 
-export async function POST(req: NextRequest) {
+export async function POST() { // ✅ ลบ req parameter ที่ไม่ได้ใช้
   try {
     // สร้าง cookie ที่หมดอายุเพื่อลบ token
     const expiredCookie = serialize('auth-token', '', {
@@ -31,6 +31,6 @@ export async function POST(req: NextRequest) {
 }
 
 // GET method สำหรับ logout ผ่าน URL (optional)
-export async function GET(req: NextRequest) {
-  return POST(req);
+export async function GET() { // ✅ ลบ req parameter
+  return POST(); // ✅ ไม่ต้องส่ง req parameter
 }

@@ -1,8 +1,8 @@
-// app/api/auth/me/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+// 📄 File: app/api/auth/me/route.ts (Fixed ESLint warnings)
+import { NextResponse } from 'next/server'; // ✅ ลบ NextRequest ที่ไม่ได้ใช้
 import { getServerUser } from '@/lib/auth-server';
 
-export async function GET(req: NextRequest) {
+export async function GET() { // ✅ ลบ req parameter ที่ไม่ได้ใช้
   try {
     const user = await getServerUser();
     

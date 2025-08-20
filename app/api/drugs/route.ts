@@ -1,9 +1,8 @@
-
-// 📄 File: app/api/drugs/route.ts (Fixed)
+// 📄 File: app/api/drugs/route.ts (Fixed TypeScript errors)
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { Prisma } from '@prisma/client'
+import { Prisma, DrugCategory } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,7 +23,15 @@ export async function GET(request: NextRequest) {
     }
 
     if (category) {
-      where.category = category as any // Category enum from Prisma
+      // ✅ Fixed: Type-safe category validation
+      const validCategories: DrugCategory[] = [
+        'REFER', 'HIGH_ALERT', 'NARCOTIC', 'REFRIGERATED', 
+        'PSYCHIATRIC', 'FLUID', 'GENERAL'
+      ]
+      
+      if (validCategories.includes(category as DrugCategory)) {
+        where.category = category as DrugCategory
+      }
     }
 
     if (isActive !== null) {

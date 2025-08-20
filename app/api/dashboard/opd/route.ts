@@ -1,9 +1,10 @@
-// 📄 File: app/api/dashboard/opd/route.ts
-import { NextRequest, NextResponse } from 'next/server'
+// 📄 File: app/api/dashboard/opd/route.ts (Fixed ESLint warnings)
+
+import { NextResponse } from 'next/server' // ✅ Fixed: ลบ NextRequest ที่ไม่ได้ใช้
 import { prisma } from '@/lib/prisma'
 import { Department } from '@prisma/client'
 
-export async function GET(request: NextRequest) {
+export async function GET() { // ✅ Fixed: ลบ request parameter ที่ไม่ได้ใช้
   try {
     const department = Department.OPD
 

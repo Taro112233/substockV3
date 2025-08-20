@@ -79,7 +79,6 @@ Directory structure:
     ├── components/
     │   ├── BackgroundDecoration.tsx
     │   ├── CookieDebug.tsx
-    │   ├── DemoComponents.tsx
     │   ├── error-boundary.tsx
     │   ├── FloatingActionButton.tsx
     │   ├── ShowcaseFooter.tsx
@@ -95,6 +94,7 @@ Directory structure:
     │   │   │   ├── stock-detail-modal.tsx
     │   │   │   └── stock-table.tsx
     │   │   ├── transaction/
+    │   │   │   ├── transaction-detail-modal.tsx
     │   │   │   └── transaction-item.tsx
     │   │   └── transfer/
     │   │       ├── status-badge.tsx

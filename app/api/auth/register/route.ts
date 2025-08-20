@@ -1,4 +1,4 @@
-// app/api/auth/register/route.ts - Updated to use Jose
+// 📄 File: app/api/auth/register/route.ts (Fixed TypeScript errors)
 import { PrismaClient } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -9,6 +9,12 @@ import {
 } from '@/lib/auth';
 
 const prisma = new PrismaClient();
+
+// ✅ Fixed: Type-safe error details interface
+interface ZodErrorDetail {
+  field: string;
+  message: string;
+}
 
 // Validation schema
 const registerSchema = z.object({
@@ -119,7 +125,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { 
           error: 'Invalid input data', 
-          details: error.issues.map((e: any) => ({
+          details: error.issues.map((e): ZodErrorDetail => ({ // ✅ Fixed: Type-safe mapping
             field: e.path.join('.'),
             message: e.message
           }))

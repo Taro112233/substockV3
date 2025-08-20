@@ -77,8 +77,6 @@ Directory structure:
     │   │       └── page.tsx
     │   ├── login/
     │   │   └── page.tsx
-    │   ├── pending-approval/
-    │   │   └── page.tsx
     │   ├── register/
     │   │   └── page.tsx
     │   ├── transfers/

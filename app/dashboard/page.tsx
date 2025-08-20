@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Package, Hospital, ArrowRight, Users, Settings } from 'lucide-react'
+import { Package, Hospital, ArrowRight, Users, LogOut } from 'lucide-react'
 
 export default function MainDashboard() {
   const router = useRouter()
@@ -13,6 +13,34 @@ export default function MainDashboard() {
     firstName: 'สมชาย',
     lastName: 'เภสัชกร',
     position: 'เภสัชกรรมคลินิก'
+  }
+
+  const handleLogout = async () => {
+    try {
+      // Call logout API to clear HTTP-only cookies
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include' // รวม cookies ในการเรียก API
+      })
+      
+      if (response.ok) {
+        // Clear any client-side storage (if exists)
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        sessionStorage.clear()
+        
+        // Redirect to login
+        router.push('/login')
+      } else {
+        console.error('Logout failed')
+        // Force redirect anyway for security
+        router.push('/login')
+      }
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Force redirect anyway for security
+      router.push('/login')
+    }
   }
 
   return (
@@ -42,10 +70,10 @@ export default function MainDashboard() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => router.push('/settings')}
+              onClick={handleLogout}
             >
-              <Settings className="h-4 w-4 mr-2" />
-              ตั้งค่า
+              <LogOut className="h-4 w-4 mr-2" />
+              ออกจากระบบ
             </Button>
           </div>
         </div>
@@ -153,11 +181,11 @@ export default function MainDashboard() {
           
           <Button
             variant="outline"
-            onClick={() => router.push('/settings')}
+            onClick={handleLogout}
             className="w-full justify-start"
           >
-            <Settings className="h-4 w-4 mr-3" />
-            ตั้งค่าระบบ
+            <LogOut className="h-4 w-4 mr-3" />
+            ออกจากระบบ
           </Button>
         </div>
       </div>

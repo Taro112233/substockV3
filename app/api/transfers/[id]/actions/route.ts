@@ -1,4 +1,4 @@
-// 📄 File: app/api/transfers/[id]/actions/route.ts
+// 📄 File: app/api/transfers/[id]/actions/route.ts (FIXED FOR NEXT.JS 15)
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
@@ -7,16 +7,43 @@ import { transferActionService } from '@/services/transfer-action-service'
 import type { JWTUser } from '@/lib/auth-server'
 import { Department } from '@prisma/client'
 
-// Define proper interface for user with department context
+// ✅ FIX: RouteContext interface สำหรับ Next.js 15
+interface RouteContext {
+  params: Promise<{ id: string }>
+}
+
+// ✅ FIX: UserWithDepartment interface (ลบ duplicate)
 interface UserWithDepartment extends JWTUser {
   department: Department
 }
 
+// ✅ FIX: Helper function สำหรับเพิ่ม department context
+function addDepartmentContext(user: JWTUser): UserWithDepartment {
+  // V3.0: กำหนด department จาก position
+  let department: Department = Department.OPD // default
+  
+  if (user.position) {
+    if (user.position.includes('คลัง') || user.position.includes('Pharmacy')) {
+      department = Department.PHARMACY
+    } else if (user.position.includes('OPD') || user.position.includes('ผู้ป่วยนอก')) {
+      department = Department.OPD
+    }
+  }
+  
+  return {
+    ...user,
+    department
+  }
+}
+
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext // ✅ ใช้ RouteContext แทน inline type
 ) {
   try {
+    // ✅ FIX: await params สำหรับ Next.js 15
+    const { id } = await context.params
+
     // ใช้ getServerUser แทนการ verify token เอง
     const user = await getServerUser()
     
@@ -27,11 +54,11 @@ export async function POST(
     const body = await request.json()
     const { action, note, items } = body
 
-    console.log(`🎬 Transfer action: ${action} by ${user.username} on transfer ${params.id}`)
+    console.log(`🎬 Transfer action: ${action} by ${user.username} on transfer ${id}`)
 
     // Fetch current transfer
     const transfer = await prisma.transfer.findUnique({
-      where: { id: params.id },
+      where: { id }, // ✅ ใช้ id ที่ await แล้ว
       include: {
         items: {
           include: {
@@ -46,10 +73,7 @@ export async function POST(
     }
 
     // เพิ่ม department info ให้ user
-    const userWithDept: UserWithDepartment = {
-      ...user,
-      department: getUserDepartmentFromRole(user)
-    }
+    const userWithDept = addDepartmentContext(user)
 
     let updatedTransfer
 
@@ -88,16 +112,4 @@ export async function POST(
       error: error instanceof Error ? error.message : 'Internal server error' 
     }, { status: 500 })
   }
-}
-
-function getUserDepartmentFromRole(user: JWTUser): Department {
-  // ในระบบ V3.0 ไม่มี fixed department ใน user profile
-  // แต่เพื่อความเข้ากันได้ เราจะใช้ logic เดิม
-  // จริงๆ แล้วควรส่ง department context มาจาก frontend
-  
-  // สมมติว่า position บอกได้ว่าอยู่แผนกไหน
-  if (user.position && user.position.includes('คลัง')) {
-    return Department.PHARMACY
-  }
-  return Department.OPD
 }

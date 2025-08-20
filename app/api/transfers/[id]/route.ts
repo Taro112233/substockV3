@@ -1,4 +1,4 @@
-// 📄 File: app/api/transfers/[id]/route.ts
+// 📄 File: app/api/transfers/[id]/route.ts (FIXED FOR NEXT.JS 15)
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
@@ -6,11 +6,36 @@ import { getServerUser } from '@/lib/auth-server'
 import type { JWTUser } from '@/lib/auth-server'
 import { Department } from '@prisma/client'
 
+// ✅ FIX: RouteContext interface สำหรับ Next.js 15
+interface RouteContext {
+  params: Promise<{ id: string }>
+}
+
+// ✅ Helper functions for department and permission checks
+function getUserDepartmentFromRole(user: JWTUser): Department {
+  // V3.0: กำหนด department จาก position
+  if (user.position && user.position.includes('คลัง')) {
+    return Department.PHARMACY
+  }
+  return Department.OPD
+}
+
+function isAdmin(user: JWTUser): boolean {
+  return user.position === 'ผู้จัดการ' || 
+         user.position === 'หัวหน้าแผนก' ||
+         user.position?.includes('ผู้จัดการ') ||
+         user.position?.includes('หัวหน้า') ||
+         false
+}
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext // ✅ ใช้ RouteContext แทน inline type
 ) {
   try {
+    // ✅ FIX: await params สำหรับ Next.js 15
+    const { id } = await context.params
+
     // ใช้ getServerUser จาก auth-server แทนการ verify token เอง
     const user = await getServerUser()
     
@@ -22,7 +47,7 @@ export async function GET(
 
     // Fetch transfer details
     const transfer = await prisma.transfer.findUnique({
-      where: { id: params.id },
+      where: { id }, // ✅ ใช้ id ที่ await แล้ว
       include: {
         requester: {
           select: {
@@ -111,25 +136,4 @@ export async function GET(
       error: 'Internal server error' 
     }, { status: 500 })
   }
-}
-
-// Helper functions with proper typing
-function getUserDepartmentFromRole(user: JWTUser): Department {
-  // ในระบบ V3.0 ไม่มี fixed department ใน user profile
-  // แต่เพื่อความเข้ากันได้ เราจะใช้ logic เดิม
-  // จริงๆ แล้วควรส่ง department context มาจาก frontend
-  
-  // สมมติว่า position บอกได้ว่าอยู่แผนกไหน
-  if (user.position && user.position.includes('คลัง')) {
-    return Department.PHARMACY
-  }
-  return Department.OPD
-}
-
-function isAdmin(user: JWTUser): boolean {
-  // ใน V3.0 ไม่มี role แต่ใช้ position แทน
-  return user.position === 'ผู้จัดการ' || 
-         user.position === 'หัวหน้าแผนก' ||
-         user.position?.includes('ผู้จัดการ') ||
-         false
 }

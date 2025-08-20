@@ -1,8 +1,8 @@
-// 📄 File: app/api/stocks/[stockId]/route.ts (ALL ERRORS FIXED)
+// 📄 File: app/api/stocks/[stockId]/route.ts (FIXED FOR NEXT.JS 15)
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyToken } from '@/lib/auth' // ใช้ verifyToken ที่มีอยู่แล้ว
+import { verifyToken } from '@/lib/auth'
 import { z } from 'zod'
 
 // Schema สำหรับ validation
@@ -13,13 +13,21 @@ const updateStockSchema = z.object({
   department: z.enum(['PHARMACY', 'OPD'])
 })
 
+// ✅ FIX: เปลี่ยน params type ให้ตรงกับ Next.js 15
+interface RouteContext {
+  params: Promise<{ stockId: string }>
+}
+
 // GET - ดึงข้อมูลสต็อกเฉพาะรายการ
 export async function GET(
   request: NextRequest,
-  { params }: { params: { stockId: string } }
+  context: RouteContext // ✅ ใช้ RouteContext แทน inline type
 ) {
   try {
-    // Verify authentication - ใช้ verifyToken ที่มีอยู่
+    // ✅ FIX: await params สำหรับ Next.js 15
+    const { stockId } = await context.params
+
+    // Verify authentication
     const token = request.headers.get('authorization')?.replace('Bearer ', '') || 
                   request.cookies.get('auth-token')?.value;
     
@@ -27,14 +35,12 @@ export async function GET(
       return NextResponse.json({ error: 'ไม่พบ token การเข้าสู่ระบบ' }, { status: 401 })
     }
 
-    const decoded = await verifyToken(token) // ใช้ verifyToken แทน verifyJWT
+    const decoded = await verifyToken(token)
     if (!decoded) {
       return NextResponse.json({ error: 'Token ไม่ถูกต้อง' }, { status: 401 })
     }
 
-    const { stockId } = params
-
-    // ดึงข้อมูลสต็อก - แก้ไข user select fields
+    // ดึงข้อมูลสต็อก
     const stock = await prisma.stock.findUnique({
       where: { id: stockId },
       include: {
@@ -56,7 +62,7 @@ export async function GET(
           include: {
             user: {
               select: { 
-                firstName: true,   // แก้ไข: ใช้ firstName และ lastName แทน name
+                firstName: true,
                 lastName: true 
               }
             }
@@ -86,10 +92,13 @@ export async function GET(
 // PATCH - อัปเดตข้อมูลสต็อก
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { stockId: string } }
+  context: RouteContext // ✅ ใช้ RouteContext แทน inline type
 ) {
   try {
-    // Verify authentication - ใช้ verifyToken ที่มีอยู่
+    // ✅ FIX: await params สำหรับ Next.js 15
+    const { stockId } = await context.params
+
+    // Verify authentication
     const token = request.headers.get('authorization')?.replace('Bearer ', '') || 
                   request.cookies.get('auth-token')?.value;
     
@@ -97,12 +106,11 @@ export async function PATCH(
       return NextResponse.json({ error: 'ไม่พบ token การเข้าสู่ระบบ' }, { status: 401 })
     }
 
-    const decoded = await verifyToken(token) // ใช้ verifyToken แทน verifyJWT
+    const decoded = await verifyToken(token)
     if (!decoded) {
       return NextResponse.json({ error: 'Token ไม่ถูกต้อง' }, { status: 401 })
     }
 
-    const { stockId } = params
     const body = await request.json()
 
     // Validate input data
@@ -137,7 +145,7 @@ export async function PATCH(
           totalQuantity,
           minimumStock,
           lastUpdated: new Date(),
-          // คำนวณมูลค่าใหม่ถ้าจำนวนเปลี่ยน (ใช้ราคาเดิม)
+          // คำนวณมูลค่าใหม่ถ้าจำนวนเปลี่ยน
           ...(quantityChange !== 0 && {
             totalValue: (currentStock.totalValue / Math.max(currentStock.totalQuantity, 1)) * totalQuantity
           })
@@ -184,7 +192,7 @@ export async function PATCH(
           data: {
             stockId: currentStock.id,
             userId: decoded.userId,
-            type: 'ADJUST_INCREASE', // ใช้เป็น placeholder สำหรับ minimum stock change
+            type: 'ADJUST_INCREASE',
             quantity: 0,
             beforeQty: currentStock.totalQuantity,
             afterQty: totalQuantity,
@@ -211,12 +219,12 @@ export async function PATCH(
   } catch (error) {
     console.error('Update stock error:', error)
     
-    // Handle validation errors - แก้ไข ZodError handling
+    // Handle validation errors
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { 
           error: 'ข้อมูลไม่ถูกต้อง',
-          details: error.issues.map((issue) => issue.message).join(', ') // แก้ไข: ใช้ issues แทน errors
+          details: error.issues.map((issue) => issue.message).join(', ')
         },
         { status: 400 }
       )
@@ -229,13 +237,16 @@ export async function PATCH(
   }
 }
 
-// DELETE - ลบข้อมูลสต็อก (เฉพาะ Manager)
+// DELETE - ลบข้อมูลสต็อก
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { stockId: string } }
+  context: RouteContext // ✅ ใช้ RouteContext แทน inline type
 ) {
   try {
-    // Verify authentication - ใช้ verifyToken ที่มีอยู่
+    // ✅ FIX: await params สำหรับ Next.js 15
+    const { stockId } = await context.params
+
+    // Verify authentication
     const token = request.headers.get('authorization')?.replace('Bearer ', '') || 
                   request.cookies.get('auth-token')?.value;
     
@@ -243,12 +254,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'ไม่พบ token การเข้าสู่ระบบ' }, { status: 401 })
     }
 
-    const decoded = await verifyToken(token) // ใช้ verifyToken แทน verifyJWT
+    const decoded = await verifyToken(token)
     if (!decoded) {
       return NextResponse.json({ error: 'Token ไม่ถูกต้อง' }, { status: 401 })
     }
-
-    const { stockId } = params
 
     // ตรวจสอบว่ามีข้อมูลสต็อกอยู่หรือไม่
     const existingStock = await prisma.stock.findUnique({

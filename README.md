@@ -216,7 +216,6 @@ Directory structure:
         ├── index.ts
         └── transfer.ts
 
-
 # 📌 Project Instructions for Claude: Hospital Pharmacy Stock Management System V3.0
 
 **Project Name:** Hospital Pharmacy Stock Management System  
@@ -244,7 +243,7 @@ Directory structure:
 ใช้สถาปัตยกรรมโรงพยาบาลเดียว แยกข้อมูลระดับแผนก (Department-level separation) ผ่าน Prisma ORM ระบบจัดการผู้ใช้แยกตามแผนกและบทบาท โครงสร้างฐานข้อมูลที่เรียบง่ายแต่มีประสิทธิภาพ
 
 ### Technology Stack (Free Tier)
-**Frontend/Backend:** Next.js 14+ พร้อม TypeScript สำหรับ type safety และประสิทธิภาพ  
+**Frontend/Backend:** Next.js 15+ พร้อม TypeScript สำหรับ type safety และประสิทธิภาพ  
 **UI Framework:** TailwindCSS + Shadcn/UI สำหรับการออกแบบ mobile-first ที่สวยงาม  
 **Backend API:** Next.js API Routes + Prisma ORM สำหรับการจัดการข้อมูลที่ปลอดภัย  
 **Database:** PostgreSQL (Supabase Free) สำหรับความเสถียรและประสิทธิภาพ  
@@ -352,7 +351,7 @@ Directory structure:
 
 ### Day 1: Foundation & Setup
 **Morning (4 hours):**
-- [ ] สร้าง Next.js 14 project พร้อม TypeScript
+- [ ] สร้าง Next.js 15 project พร้อม TypeScript
 - [ ] Setup TailwindCSS + Shadcn/UI components
 - [ ] Configure PWA manifest และ service worker
 - [ ] Setup Supabase project และ database

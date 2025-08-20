@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Hospital, Eye, EyeOff, CheckCircle, Clock } from 'lucide-react';
+import { Loader2, Hospital, Eye, EyeOff, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
 type RegisterFormData = {
@@ -95,20 +95,19 @@ export default function RegisterPage() {
       });
       
       if (result.success) {
-        if (result.requiresApproval) {
-          setSuccess({
-            show: true,
-            requiresApproval: true,
-            message: 'สมัครสมาชิกสำเร็จ! กรุณารอการอนุมัติจากผู้ดูแลระบบ'
-          });
-        } else {
-          setSuccess({
-            show: true,
-            requiresApproval: false,
-            message: 'สมัครสมาชิกสำเร็จ! กำลังเข้าสู่ระบบ...'
-          });
-          toast('สมัครสมาชิกสำเร็จ!');
-        }
+        // ⭐ ทุกกรณีจะเป็น UNAPPROVED และต้องรออนุมัติ
+        setSuccess({
+          show: true,
+          requiresApproval: true,
+          message: 'สมัครสมาชิกสำเร็จ! กรุณารอการอนุมัติจากผู้ดูแลระบบ'
+        });
+        
+        toast('สมัครสมาชิกสำเร็จ! กรุณารอการอนุมัติ');
+        
+        // ⭐ Auto redirect ไป /login หลัง 3 วินาทีเสมอ
+        setTimeout(() => {
+          router.push('/login');
+        }, 3000);
       } else {
         setError(result.error || 'สมัครสมาชิกไม่สำเร็จ');
       }
@@ -146,24 +145,22 @@ export default function RegisterPage() {
         <Card className="w-full max-w-md shadow-xl border-0 bg-white/80 backdrop-blur-sm">
           <CardContent className="pt-6 text-center">
             <div className="mb-4">
-              {success.requiresApproval ? (
-                <Clock className="w-16 h-16 text-orange-500 mx-auto mb-4" />
-              ) : (
-                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-              )}
+              <Clock className="w-16 h-16 text-orange-500 mx-auto mb-4" />
             </div>
             
-            <h3 className="text-xl font-semibold mb-2">
-              {success.requiresApproval ? 'รอการอนุมัติ' : 'สำเร็จ!'}
-            </h3>
+            <h3 className="text-xl font-semibold mb-2">รอการอนุมัติ</h3>
             
-            <p className="text-gray-600 mb-6">{success.message}</p>
+            <p className="text-gray-600 mb-4">{success.message}</p>
+            
+            <p className="text-sm text-gray-500 mb-6">
+              กำลังนำคุณไปยังหน้าเข้าสู่ระบบ...
+            </p>
             
             <Button
               onClick={() => router.push('/login')}
               className="w-full"
             >
-              กลับไปหน้าเข้าสู่ระบบ
+              ไปหน้าเข้าสู่ระบบ
             </Button>
           </CardContent>
         </Card>
@@ -356,18 +353,6 @@ export default function RegisterPage() {
               </Button>
             </form>
 
-            {/* Info */}
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <h4 className="text-sm font-semibold text-blue-900 mb-2">
-                ข้อมูลสำคัญ
-              </h4>
-              <ul className="text-xs text-blue-800 space-y-1">
-                <li>• บัญชีจะต้องผ่านการอนุมัติจากผู้ดูแลระบบ</li>
-                <li>• ผู้ใช้สามารถเข้าถึงข้อมูลทั้งคลังยาและ OPD ได้</li>
-                <li>• ข้อมูลที่กรอกต้องถูกต้องและครบถ้วน</li>
-              </ul>
-            </div>
-
             {/* Login link */}
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
@@ -388,7 +373,7 @@ export default function RegisterPage() {
         {/* Footer */}
         <div className="text-center mt-8 text-sm text-gray-500">
           <p>Hospital Pharmacy Stock Management System</p>
-          <p>© 2025 - Developed by Ai-Sat</p>
+          <p>© 2025 - Developed by Thanatouch</p>
         </div>
       </div>
     </div>

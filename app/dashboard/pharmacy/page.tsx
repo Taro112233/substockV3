@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { StockManagementTab } from '@/components/modules/dashboard/stock-management-tab'
 import { TransferTab } from '@/components/modules/dashboard/transfer-tab'
@@ -14,12 +14,114 @@ import { Package, FileText, History } from 'lucide-react'
 export default function PharmacyDashboard() {
   const [activeTransfer, setActiveTransfer] = useState<Transfer | null>(null)
 
-  // Mock user data - ในระบบจริงจะดึงจาก authentication context
-  const user = {
-    firstName: 'สมชาย',
-    lastName: 'เภสัชกร',
-    position: 'เภสัชกรรมคลินิก',
-    department: 'PHARMACY' as const
+  // ดึงข้อมูลผู้ใช้จาก API
+  const [user, setUser] = useState<{
+    firstName: string;
+    lastName: string;
+    position?: string;
+    username?: string;
+    department?: string;
+  } | null>(null)
+
+  useEffect(() => {
+    // เรียก API เพื่อดึงข้อมูลผู้ใช้จาก server
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch('/api/auth/me', {
+          method: 'GET',
+          credentials: 'include', // รวม cookies
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success && data.user) {
+            setUser({
+              ...data.user,
+              department: 'PHARMACY' // กำหนด department สำหรับ Pharmacy
+            })
+            // เก็บใน localStorage เพื่อใช้ในครั้งต่อไป
+            localStorage.setItem('user', JSON.stringify(data.user))
+          } else {
+            // หากไม่สำเร็จ ให้ใช้ข้อมูล default
+            setUser({
+              firstName: 'เภสัชกร',
+              lastName: 'คลังยา',
+              position: 'เจ้าหน้าที่เภสัชกรรม',
+              department: 'PHARMACY'
+            })
+          }
+        } else {
+          // หาก API ไม่สำเร็จ ลองดึงจาก localStorage
+          const userData = localStorage.getItem('user')
+          if (userData) {
+            try {
+              const parsedUser = JSON.parse(userData)
+              setUser({
+                ...parsedUser,
+                department: 'PHARMACY'
+              })
+            } catch {
+              setUser({
+                firstName: 'เภสัชกร',
+                lastName: 'คลังยา',
+                position: 'เจ้าหน้าที่เภสัชกรรม',
+                department: 'PHARMACY'
+              })
+            }
+          } else {
+            setUser({
+              firstName: 'เภสัชกร',
+              lastName: 'คลังยา',
+              position: 'เจ้าหน้าที่เภสัชกรรม',
+              department: 'PHARMACY'
+            })
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error)
+        // หากเกิดข้อผิดพลาด ลองดึงจาก localStorage
+        const userData = localStorage.getItem('user')
+        if (userData) {
+          try {
+            const parsedUser = JSON.parse(userData)
+            setUser({
+              ...parsedUser,
+              department: 'PHARMACY'
+            })
+          } catch {
+            setUser({
+              firstName: 'เภสัชกร',
+              lastName: 'คลังยา',
+              position: 'เจ้าหน้าที่เภสัชกรรม',
+              department: 'PHARMACY'
+            })
+          }
+        } else {
+          setUser({
+            firstName: 'เภสัชกร',
+            lastName: 'คลังยา',
+            position: 'เจ้าหน้าที่เภสัชกรรม',
+            department: 'PHARMACY'
+          })
+        }
+      }
+    }
+
+    fetchUserData()
+  }, [])
+
+  // หากยังไม่มีข้อมูลผู้ใช้ ให้แสดง loading state
+  if (!user) {
+    return (
+      <div className="container mx-auto p-4 max-w-7xl">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+            <p className="text-gray-600">กำลังโหลดข้อมูลผู้ใช้...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -31,7 +133,8 @@ export default function PharmacyDashboard() {
             ระบบจัดการสต็อกยา - แผนกเภสัชกรรม
           </h1>
           <p className="text-gray-600 mt-1">
-            ยินดีต้อนรับ คุณ{user.firstName} {user.lastName} ({user.position})
+            ยินดีต้อนรับ คุณ{user.firstName} {user.lastName}
+            {user.position && ` (${user.position})`}
           </p>
           <p className="text-xs text-gray-500 mt-1">
             อัปเดตล่าสุด: {new Date().toLocaleString('th-TH')}

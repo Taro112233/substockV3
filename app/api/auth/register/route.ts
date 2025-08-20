@@ -1,12 +1,8 @@
-// 📄 File: app/api/auth/register/route.ts (Fixed TypeScript errors)
+// 📄 File: app/api/auth/register/route.ts (Always UNAPPROVED - No Auto Login)
 import { PrismaClient } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { 
-  hashPassword, 
-  createToken, 
-  userToPayload,
-} from '@/lib/auth';
+import { hashPassword } from '@/lib/auth';
 
 const prisma = new PrismaClient();
 
@@ -47,7 +43,7 @@ export async function POST(req: NextRequest) {
     // Hash password
     const hashedPassword = await hashPassword(validatedData.password);
     
-    // สร้าง user ใหม่
+    // ⭐ สร้าง user ใหม่ โดยให้เป็น UNAPPROVED เสมอ (ไม่ auto approve)
     const user = await prisma.user.create({
       data: {
         username: validatedData.username,
@@ -55,57 +51,22 @@ export async function POST(req: NextRequest) {
         firstName: validatedData.firstName,
         lastName: validatedData.lastName,
         position: validatedData.position,
-        status: 'UNAPPROVED',
+        status: 'UNAPPROVED', // ⭐ บังคับให้เป็น UNAPPROVED เสมอ
         isActive: true,
       },
     });
     
-    // ตรวจสอบว่าควร auto-approve หรือไม่
-    const userCount = await prisma.user.count();
-    const shouldAutoApprove = process.env.NODE_ENV === 'development' || userCount === 1;
+    console.log('🎯 [REGISTER] New user created:', {
+      id: user.id,
+      username: user.username,
+      status: user.status,
+      name: `${user.firstName} ${user.lastName}`
+    });
     
-    if (shouldAutoApprove) {
-      const approvedUser = await prisma.user.update({
-        where: { id: user.id },
-        data: { status: 'APPROVED' },
-      });
-      
-      // ⭐ สร้าง token และ login ทันที (async)
-      const userPayload = userToPayload(approvedUser);
-      const token = await createToken(userPayload);
-      
-      const response = NextResponse.json({
-        success: true,
-        message: 'Registration successful',
-        user: {
-          id: approvedUser.id,
-          username: approvedUser.username,
-          firstName: approvedUser.firstName,
-          lastName: approvedUser.lastName,
-          position: approvedUser.position,
-          status: approvedUser.status,
-          fullName: `${approvedUser.firstName} ${approvedUser.lastName}`
-        },
-        token,
-        autoApproved: true,
-      });
-      
-      // Set cookie
-      response.cookies.set('auth-token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60, // 7 days
-        path: '/',
-      });
-      
-      return response;
-    }
-    
-    // ต้องรออนุมัติ
+    // ⭐ ส่ง response โดยไม่มี token (ไม่ auto login)
     return NextResponse.json({
       success: true,
-      message: 'Registration successful. Please wait for admin approval.',
+      message: 'สมัครสมาชิกสำเร็จ! กรุณารอการอนุมัติจากผู้ดูแลระบบ',
       user: {
         id: user.id,
         username: user.username,
@@ -115,7 +76,7 @@ export async function POST(req: NextRequest) {
         status: user.status,
         fullName: `${user.firstName} ${user.lastName}`
       },
-      requiresApproval: true,
+      requiresApproval: true, // ⭐ บอกว่าต้องรออนุมัติเสมอ
     });
     
   } catch (error) {
@@ -125,7 +86,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { 
           error: 'Invalid input data', 
-          details: error.issues.map((e): ZodErrorDetail => ({ // ✅ Fixed: Type-safe mapping
+          details: error.issues.map((e): ZodErrorDetail => ({
             field: e.path.join('.'),
             message: e.message
           }))

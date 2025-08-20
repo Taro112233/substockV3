@@ -1,6 +1,8 @@
+// app/dashboard/page.tsx
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Package, Hospital, ArrowRight, Users, LogOut } from 'lucide-react'
@@ -8,39 +10,126 @@ import { Package, Hospital, ArrowRight, Users, LogOut } from 'lucide-react'
 export default function MainDashboard() {
   const router = useRouter()
 
-  // Mock user data - will be replaced with actual auth
-  const user = {
-    firstName: 'สมชาย',
-    lastName: 'เภสัชกร',
-    position: 'เภสัชกรรมคลินิก'
-  }
+  // ดึงข้อมูลผู้ใช้จาก localStorage หรือ context
+  const [user, setUser] = useState<{
+    firstName: string;
+    lastName: string;
+    position?: string;
+    username?: string;
+  } | null>(null)
+
+  useEffect(() => {
+    // เรียก API เพื่อดึงข้อมูลผู้ใช้จาก server
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch('/api/auth/me', {
+          method: 'GET',
+          credentials: 'include', // รวม cookies
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success && data.user) {
+            setUser(data.user)
+            // เก็บใน localStorage เพื่อใช้ในครั้งต่อไป
+            localStorage.setItem('user', JSON.stringify(data.user))
+          } else {
+            // หากไม่สำเร็จ ให้ใช้ข้อมูล default
+            setUser({
+              firstName: 'ผู้ใช้',
+              lastName: 'ระบบ',
+              position: 'เจ้าหน้าที่'
+            })
+          }
+        } else {
+          // หาก API ไม่สำเร็จ ลองดึงจาก localStorage
+          const userData = localStorage.getItem('user')
+          if (userData) {
+            try {
+              const parsedUser = JSON.parse(userData)
+              setUser(parsedUser)
+            } catch {
+              setUser({
+                firstName: 'ผู้ใช้',
+                lastName: 'ระบบ',
+                position: 'เจ้าหน้าที่'
+              })
+            }
+          } else {
+            setUser({
+              firstName: 'ผู้ใช้',
+              lastName: 'ระบบ',
+              position: 'เจ้าหน้าที่'
+            })
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error)
+        // หากเกิดข้อผิดพลาด ลองดึงจาก localStorage
+        const userData = localStorage.getItem('user')
+        if (userData) {
+          try {
+            const parsedUser = JSON.parse(userData)
+            setUser(parsedUser)
+          } catch {
+            setUser({
+              firstName: 'ผู้ใช้',
+              lastName: 'ระบบ',
+              position: 'เจ้าหน้าที่'
+            })
+          }
+        } else {
+          setUser({
+            firstName: 'ผู้ใช้',
+            lastName: 'ระบบ',
+            position: 'เจ้าหน้าที่'
+          })
+        }
+      }
+    }
+
+    fetchUserData()
+  }, [])
 
   const handleLogout = async () => {
     try {
       // Call logout API to clear HTTP-only cookies
-      const response = await fetch('/api/auth/logout', {
+      await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include' // รวม cookies ในการเรียก API
       })
       
-      if (response.ok) {
-        // Clear any client-side storage (if exists)
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
-        sessionStorage.clear()
-        
-        // Redirect to login
-        router.push('/login')
-      } else {
-        console.error('Logout failed')
-        // Force redirect anyway for security
-        router.push('/login')
-      }
+      // Clear any client-side storage (if exists)
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      sessionStorage.clear()
+      
+      // Always redirect to login regardless of API response
+      router.push('/login')
+      
     } catch (error) {
       console.error('Logout error:', error)
+      
+      // Clear client-side storage even if API fails
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      sessionStorage.clear()
+      
       // Force redirect anyway for security
       router.push('/login')
     }
+  }
+
+  // หากยังไม่มีข้อมูลผู้ใช้ ให้แสดง loading state
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">กำลังโหลดข้อมูลผู้ใช้...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -50,9 +139,15 @@ export default function MainDashboard() {
         <div className="flex justify-between items-start">
           <div className="text-center md:text-left">
             <h1 className="text-3xl font-bold text-gray-900">ระบบจัดการสต็อกยาโรงพยาบาล</h1>
-            <p className="text-xl text-gray-600 mt-2">ยินดีต้อนรับ, {user.firstName} {user.lastName}</p>
-            {user.position && (
-              <p className="text-sm text-gray-500">ตำแหน่ง: {user.position}</p>
+            {user ? (
+              <>
+                <p className="text-xl text-gray-600 mt-2">ยินดีต้อนรับ, {user.firstName} {user.lastName}</p>
+                {user.position && (
+                  <p className="text-sm text-gray-500">ตำแหน่ง: {user.position}</p>
+                )}
+              </>
+            ) : (
+              <p className="text-xl text-gray-600 mt-2">กำลังโหลดข้อมูลผู้ใช้...</p>
             )}
           </div>
           

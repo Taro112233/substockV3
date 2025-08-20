@@ -179,21 +179,6 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            {/* Demo accounts info */}
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <h4 className="text-sm font-semibold text-blue-900 mb-2">
-                บัญชีทดสอบ (Development)
-              </h4>
-              <div className="text-xs text-blue-800 space-y-1">
-                <div>• <strong>ผู้ใช้ทดสอบ:</strong> testuser / password123</div>
-                <div>• <strong>เภสัชกร:</strong> pharmacist / password123</div>
-                <div>• <strong>พยาบาล:</strong> nurse / password123</div>
-                <p className="mt-2 text-blue-700">
-                  ผู้ใช้ทุกคนสามารถเข้าถึงข้อมูลทั้งคลังยาและ OPD ได้
-                </p>
-              </div>
-            </div>
-
             {/* Registration link */}
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
@@ -214,7 +199,7 @@ export default function LoginPage() {
         {/* Footer */}
         <div className="text-center mt-8 text-sm text-gray-500">
           <p>Hospital Pharmacy Stock Management System</p>
-          <p>© 2025 - Developed by Ai-Sat</p>
+          <p>© 2025 - Developed by Thanatouch</p>
         </div>
       </div>
     </div>

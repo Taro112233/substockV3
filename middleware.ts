@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 import { verifyToken, isUserActive } from './lib/auth';
 
 // Routes ที่ไม่ต้อง authenticate
-const publicRoutes = ['/login', '/register'];
+const publicRoutes = ['/login', '/register', '/'];
 const publicApiRoutes = ['/api/auth/login', '/api/auth/register', '/api/health'];
 
 export async function middleware(request: NextRequest) {

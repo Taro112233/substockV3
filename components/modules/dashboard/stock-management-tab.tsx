@@ -9,8 +9,6 @@ import { Stock } from "@/types/dashboard";
 import {
   RefreshCw,
   Plus,
-  Upload,
-  Download,
   Package,
   AlertTriangle,
 } from "lucide-react";

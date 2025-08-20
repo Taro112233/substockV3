@@ -1,11 +1,9 @@
-// 📄 File: app/dashboard/page.tsx
-
 'use client'
 
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Package, Hospital, ArrowRight } from 'lucide-react'
+import { Package, Hospital, ArrowRight, Users, Settings } from 'lucide-react'
 
 export default function MainDashboard() {
   const router = useRouter()
@@ -21,13 +19,34 @@ export default function MainDashboard() {
     <div className="min-h-screen bg-gray-50 p-4 space-y-6">
       {/* Header */}
       <div className="bg-white rounded-lg p-6 shadow-sm">
-        <div className="text-center space-y-4">
-          <div>
+        <div className="flex justify-between items-start">
+          <div className="text-center md:text-left">
             <h1 className="text-3xl font-bold text-gray-900">ระบบจัดการสต็อกยาโรงพยาบาล</h1>
             <p className="text-xl text-gray-600 mt-2">ยินดีต้อนรับ, {user.firstName} {user.lastName}</p>
             {user.position && (
               <p className="text-sm text-gray-500">ตำแหน่ง: {user.position}</p>
             )}
+          </div>
+          
+          {/* Admin Controls - Desktop */}
+          <div className="hidden sm:flex space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push('/admin/users')}
+            >
+              <Users className="h-4 w-4 mr-2" />
+              จัดการผู้ใช้งาน
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push('/settings')}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              ตั้งค่า
+            </Button>
           </div>
         </div>
       </div>
@@ -117,6 +136,36 @@ export default function MainDashboard() {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Admin Controls - Mobile */}
+      <div className="sm:hidden">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">เมนูจัดการ</h3>
+        <div className="space-y-3">
+          <Button
+            variant="outline"
+            onClick={() => router.push('/admin/users')}
+            className="w-full justify-start"
+          >
+            <Users className="h-4 w-4 mr-3" />
+            จัดการผู้ใช้งาน
+          </Button>
+          
+          <Button
+            variant="outline"
+            onClick={() => router.push('/settings')}
+            className="w-full justify-start"
+          >
+            <Settings className="h-4 w-4 mr-3" />
+            ตั้งค่าระบบ
+          </Button>
+        </div>
+      </div>
+
+      {/* System Info */}
+      <div className="text-center text-sm text-gray-500 mt-8">
+        <p>Hospital Pharmacy Stock Management System V3.0</p>
+        <p>Mobile-First • Department Isolation • Real-time Updates</p>
       </div>
     </div>
   )

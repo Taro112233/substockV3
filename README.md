@@ -67,8 +67,6 @@ Directory structure:
     │   │   └── page.tsx
     │   ├── register/
     │   │   └── page.tsx
-    │   ├── showcase/
-    │   │   └── page.tsx
     │   ├── transfers/
     │   │   └── [id]/
     │   │       ├── page.tsx
@@ -77,14 +75,9 @@ Directory structure:
     │   └── utils/
     │       └── auth-client.tsx
     ├── components/
-    │   ├── BackgroundDecoration.tsx
     │   ├── CookieDebug.tsx
     │   ├── DemoComponents.tsx
     │   ├── error-boundary.tsx
-    │   ├── FloatingActionButton.tsx
-    │   ├── ShowcaseFooter.tsx
-    │   ├── ShowcaseHeader.tsx
-    │   ├── ShowcaseNavigation.tsx
     │   ├── modules/
     │   │   ├── dashboard/
     │   │   │   ├── dashboard-stats.tsx
@@ -110,14 +103,6 @@ Directory structure:
     │   │       ├── transfer-request-tab.tsx
     │   │       ├── transfer-signatures.tsx
     │   │       └── workflow-progress.tsx
-    │   ├── sections/
-    │   │   ├── ActionsSection.tsx
-    │   │   ├── AdvancedPatternsSection.tsx
-    │   │   ├── AuthSection.tsx
-    │   │   ├── DisplaySection.tsx
-    │   │   ├── FormsSection.tsx
-    │   │   ├── LayoutSection.tsx
-    │   │   └── VisualizationSection.tsx
     │   └── ui/
     │       ├── accordion.tsx
     │       ├── alert-dialog.tsx

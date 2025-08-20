@@ -22,15 +22,6 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           className
         )}
         ref={ref}
-        animate={error ? { x: [0, -8, 8, -8, 8, 0] } : { x: 0 }}
-        transition={
-          error
-            ? { type: "tween", duration: 0.4 }
-            : { type: "spring", duration: 0.4 }
-        }
-        onFocus={() => {}}
-        onBlur={() => {}}
-        whileFocus={{ scale: 1.02 }}
         {...props}
       />
     )

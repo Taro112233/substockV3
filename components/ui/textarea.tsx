@@ -21,13 +21,6 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           className
         )}
         ref={ref}
-        animate={error ? { x: [0, -8, 8, -8, 8, 0] } : { x: 0 }}
-        transition={
-          error
-            ? { type: "tween", duration: 0.4 }
-            : { type: "spring", duration: 0.4 }
-        }
-        whileFocus={{ scale: 1.01 }}
         {...props}
       />
     )

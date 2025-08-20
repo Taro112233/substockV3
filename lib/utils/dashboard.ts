@@ -183,7 +183,7 @@ export function getCategoryLabel(category: string): string {
     'SYRUP': 'ยาแบบน้ำ',
     'INJECTION': 'ยาฉีด',
     'EXTERNAL': 'ยาภายนอก',
-    'ALERT': 'ยาที่ต้องเฝ้าระวังพิเศษ'
+    'ALERT': 'ระวังพิเศษ'
   }
   return labels[category] || category
 }

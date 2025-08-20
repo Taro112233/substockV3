@@ -1,21 +1,23 @@
-// app/api/admin/users/[userId]/status/route.ts - ใช้ auth-server ที่มีอยู่แล้ว
+// 📄 File: app/api/admin/users/[userId]/status/route.ts (FIXED FOR NEXT.JS 15)
 import { PrismaClient } from '@prisma/client'
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerUser } from '@/lib/auth-server'
 
 const prisma = new PrismaClient()
 
-interface RouteParams {
-  params: {
-    userId: string
-  }
+// ✅ FIX: เปลี่ยน RouteParams interface สำหรับ Next.js 15
+interface RouteContext {
+  params: Promise<{ userId: string }> // ✅ params เป็น Promise ใน Next.js 15
 }
 
 export async function PATCH(
   request: NextRequest,
-  { params }: RouteParams
+  context: RouteContext // ✅ ใช้ RouteContext แทน inline destructuring
 ) {
   try {
+    // ✅ FIX: await params สำหรับ Next.js 15
+    const { userId } = await context.params
+
     // Check authentication ด้วย function ที่มีอยู่แล้ว
     const currentUser = await getServerUser()
     if (!currentUser) {
@@ -39,7 +41,7 @@ export async function PATCH(
 
     // Check if target user exists
     const targetUser = await prisma.user.findUnique({
-      where: { id: params.userId },
+      where: { id: userId }, // ✅ ใช้ userId ที่ await แล้ว
       select: {
         id: true,
         username: true,
@@ -95,7 +97,7 @@ export async function PATCH(
 
     // Update user status
     const updatedUser = await prisma.user.update({
-      where: { id: params.userId },
+      where: { id: userId }, // ✅ ใช้ userId ที่ await แล้ว
       data: {
         status: newStatus,
         isActive: newIsActive,

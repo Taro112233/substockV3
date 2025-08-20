@@ -107,24 +107,6 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
     });
   };
 
-  const handleImportStock = () => {
-    // TODO: เปิด dialog import
-    toast({
-      title: "ฟีเจอร์กำลังพัฒนา",
-      description: "การ import ข้อมูลสต็อกจะพร้อมใช้งานในเร็วๆ นี้",
-      variant: "default",
-    });
-  };
-
-  const handleExportStock = () => {
-    // TODO: Export ข้อมูลสต็อก
-    toast({
-      title: "ฟีเจอร์กำลังพัฒนา",
-      description: "การ export ข้อมูลสต็อกจะพร้อมใช้งานในเร็วๆ นี้",
-      variant: "default",
-    });
-  };
-
   // ฟังก์ชันสำหรับคำนวณมูลค่ารวมใหม่ (totalQuantity × pricePerBox)
   const calculateTotalValue = () => {
     if (!data || !data.stocks) return 0;

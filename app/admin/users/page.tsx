@@ -1,10 +1,10 @@
-// app/admin/users/page.tsx
+// 📄 File: app/admin/users/page.tsx (Fixed ESLint warnings and errors)
 'use client'
 
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/app/utils/auth-client'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card' // ✅ ลบ unused imports
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -213,7 +213,7 @@ export default function UserApprovalPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>ยืนยันการอนุมัติผู้ใช้งาน</AlertDialogTitle>
                   <AlertDialogDescription>
-                    คุณต้องการอนุมัติให้ "{user.fullName}" สามารถเข้าใช้งานระบบได้หรือไม่?
+                    คุณต้องการอนุมัติให้ &ldquo;{user.fullName}&rdquo; สามารถเข้าใช้งานระบบได้หรือไม่?
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -245,7 +245,7 @@ export default function UserApprovalPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>ยืนยันการปฏิเสธผู้ใช้งาน</AlertDialogTitle>
                   <AlertDialogDescription>
-                    คุณต้องการปฏิเสธการสมัครของ "{user.fullName}" หรือไม่? 
+                    คุณต้องการปฏิเสธการสมัครของ &ldquo;{user.fullName}&rdquo; หรือไม่? 
                     ผู้ใช้นี้จะไม่สามารถเข้าใช้งานระบบได้
                   </AlertDialogDescription>
                 </AlertDialogHeader>
@@ -282,7 +282,7 @@ export default function UserApprovalPage() {
               <AlertDialogHeader>
                 <AlertDialogTitle>ยืนยันการระงับผู้ใช้งาน</AlertDialogTitle>
                 <AlertDialogDescription>
-                  คุณต้องการระงับการใช้งานของ "{user.fullName}" หรือไม่?
+                  คุณต้องการระงับการใช้งานของ &ldquo;{user.fullName}&rdquo; หรือไม่?
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -316,7 +316,7 @@ export default function UserApprovalPage() {
               <AlertDialogHeader>
                 <AlertDialogTitle>ยืนยันการเปิดใช้งานผู้ใช้</AlertDialogTitle>
                 <AlertDialogDescription>
-                  คุณต้องการเปิดใช้งานให้ "{user.fullName}" หรือไม่?
+                  คุณต้องการเปิดใช้งานให้ &ldquo;{user.fullName}&rdquo; หรือไม่?
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -347,8 +347,9 @@ export default function UserApprovalPage() {
   }
 
   const pendingUsers = users.filter(user => user.status === 'UNAPPROVED')
-  const approvedUsers = users.filter(user => user.status === 'APPROVED')
-  const suspendedUsers = users.filter(user => user.status === 'SUSPENDED')
+  // ✅ ลบตัวแปรที่ไม่ได้ใช้
+  // const approvedUsers = users.filter(user => user.status === 'APPROVED')
+  // const suspendedUsers = users.filter(user => user.status === 'SUSPENDED')
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 space-y-6">

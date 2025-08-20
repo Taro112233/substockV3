@@ -1,4 +1,4 @@
-// 📄 File: components/modules/dashboard/history-tab.tsx (Fixed)
+// 📄 File: components/modules/dashboard/history-tab.tsx (Fixed ESLint warnings)
 
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
@@ -190,11 +190,11 @@ export function HistoryTab({
       setLoading(false)
       setRefreshing(false)
     }
-  }, [department, toast]) // Add dependencies to useCallback
+  }, [department, toast])
 
   useEffect(() => {
     fetchTransactionData()
-  }, [fetchTransactionData]) // Use fetchTransactionData in dependency array
+  }, [fetchTransactionData])
 
   const handleRefresh = () => {
     fetchTransactionData(true)
@@ -319,13 +319,6 @@ export function HistoryTab({
   const filteredOutTransactions = filteredTransactions.filter(t => 
     ['DISPENSE_EXTERNAL', 'ADJUST_DECREASE', 'TRANSFER_OUT', 'RESERVE'].includes(t.type)
   )
-  
-  // Calculate recent transactions from filtered data (last 7 days)
-  const sevenDaysAgo = new Date()
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-  const filteredRecentTransactions = filteredTransactions.filter(t => 
-    t.createdAt && new Date(t.createdAt) >= sevenDaysAgo
-  )
 
   return (
     <div className="space-y-6">
@@ -422,52 +415,52 @@ export function HistoryTab({
       </div>
 
       {/* Filter Bar - Updated Layout */}
-<div className="space-y-4">
-  {/* Search Bar - อยู่ข้างบน */}
-  <div className="relative">
-    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-    <Input
-      placeholder="ค้นหา (ชื่อยา, รหัส, ชื่อสามัญ, เอกสารอ้างอิง)..."
-      value={searchTerm}
-      onChange={(e) => setSearchTerm(e.target.value)}
-      className="pl-10"
-    />
-  </div>
+      <div className="space-y-4">
+        {/* Search Bar - อยู่ข้างบน */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="ค้นหา (ชื่อยา, รหัส, ชื่อสามัญ, เอกสารอ้างอิง)..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
 
-  {/* Filter Controls - อยู่ข้างล่าง ชิดขวาทั้งคู่ */}
-  <div className="flex justify-end items-center gap-4">
-    {/* Type Filter */}
-    <Select value={typeFilter} onValueChange={setTypeFilter}>
-      <SelectTrigger className="w-[180px]">
-        <SelectValue placeholder="ประเภทการเคลื่อนไหว" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">ทุกประเภท</SelectItem>
-        <SelectItem value="RECEIVE_EXTERNAL">รับเข้า</SelectItem>
-        <SelectItem value="DISPENSE_EXTERNAL">จ่ายออก</SelectItem>
-        <SelectItem value="TRANSFER_IN">โอนเข้า</SelectItem>
-        <SelectItem value="TRANSFER_OUT">โอนออก</SelectItem>
-        <SelectItem value="ADJUST_INCREASE">ปรับเพิ่ม</SelectItem>
-        <SelectItem value="ADJUST_DECREASE">ปรับลด</SelectItem>
-        <SelectItem value="RESERVE">จอง</SelectItem>
-        <SelectItem value="UNRESERVE">ยกเลิกจอง</SelectItem>
-      </SelectContent>
-    </Select>
+        {/* Filter Controls - อยู่ข้างล่าง ชิดขวาทั้งคู่ */}
+        <div className="flex justify-end items-center gap-4">
+          {/* Type Filter */}
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="ประเภทการเคลื่อนไหว" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">ทุกประเภท</SelectItem>
+              <SelectItem value="RECEIVE_EXTERNAL">รับเข้า</SelectItem>
+              <SelectItem value="DISPENSE_EXTERNAL">จ่ายออก</SelectItem>
+              <SelectItem value="TRANSFER_IN">โอนเข้า</SelectItem>
+              <SelectItem value="TRANSFER_OUT">โอนออก</SelectItem>
+              <SelectItem value="ADJUST_INCREASE">ปรับเพิ่ม</SelectItem>
+              <SelectItem value="ADJUST_DECREASE">ปรับลด</SelectItem>
+              <SelectItem value="RESERVE">จอง</SelectItem>
+              <SelectItem value="UNRESERVE">ยกเลิกจอง</SelectItem>
+            </SelectContent>
+          </Select>
 
-    {/* Date Filter */}
-    <Select value={dateFilter} onValueChange={setDateFilter}>
-      <SelectTrigger className="w-[140px]">
-        <SelectValue placeholder="ช่วงเวลา" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">ทั้งหมด</SelectItem>
-        <SelectItem value="today">วันนี้</SelectItem>
-        <SelectItem value="week">7 วันที่ผ่านมา</SelectItem>
-        <SelectItem value="month">30 วันที่ผ่านมา</SelectItem>
-      </SelectContent>
-    </Select>
-  </div>
-</div>
+          {/* Date Filter */}
+          <Select value={dateFilter} onValueChange={setDateFilter}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="ช่วงเวลา" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">ทั้งหมด</SelectItem>
+              <SelectItem value="today">วันนี้</SelectItem>
+              <SelectItem value="week">7 วันที่ผ่านมา</SelectItem>
+              <SelectItem value="month">30 วันที่ผ่านมา</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
       {/* Transaction Table */}
       <div className="border rounded-lg overflow-hidden">

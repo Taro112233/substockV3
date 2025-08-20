@@ -1,11 +1,11 @@
-// app/api/admin/users/stats/route.ts - ใช้ auth-server ที่มีอยู่แล้ว
+// 📄 File: app/api/admin/users/stats/route.ts (Fixed ESLint warnings)
 import { PrismaClient } from '@prisma/client'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server' // ✅ ลบ NextRequest ที่ไม่ได้ใช้
 import { getServerUser } from '@/lib/auth-server'
 
 const prisma = new PrismaClient()
 
-export async function GET(request: NextRequest) {
+export async function GET() { // ✅ ลบ request parameter ที่ไม่ได้ใช้
   try {
     // Check authentication ด้วย function ที่มีอยู่แล้ว
     const currentUser = await getServerUser()

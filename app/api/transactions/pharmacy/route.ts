@@ -12,8 +12,8 @@ type DosageForm =
   | 'SUS' | 'SYR' | 'TAB' | 'TUR'
 
 type DrugCategory = 
-  | 'REFER' | 'HIGH_ALERT' | 'NARCOTIC' | 'REFRIGERATED' 
-  | 'PSYCHIATRIC' | 'FLUID' | 'GENERAL'
+  | 'REFER' | 'HAD' | 'NARCOTIC' | 'REFRIGERATED' 
+  | 'PSYCHIATRIC' | 'FLUID' | 'GENERAL' | 'TABLET' | 'SYRUP' | 'INJECTION' | 'EXTERNAL' | 'ALERT'
 
 // Define proper type for transaction mapping that matches actual Prisma return
 interface StockTransactionWithRelations {

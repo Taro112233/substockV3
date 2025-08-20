@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
     if (category) {
       // ✅ Fixed: Type-safe category validation
       const validCategories: DrugCategory[] = [
-        'REFER', 'HIGH_ALERT', 'NARCOTIC', 'REFRIGERATED', 
-        'PSYCHIATRIC', 'FLUID', 'GENERAL'
+        'REFER', 'HAD', 'NARCOTIC', 'REFRIGERATED', 
+        'PSYCHIATRIC', 'FLUID', 'GENERAL', 'TABLET', 'SYRUP', 'INJECTION' ,'EXTERNAL', 'ALERT'
       ]
       
       if (validCategories.includes(category as DrugCategory)) {

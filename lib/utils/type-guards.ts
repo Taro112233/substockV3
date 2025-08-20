@@ -41,8 +41,8 @@ function parseDosageForm(dosageForm: string): DosageForm {
 // Helper function เพื่อแปลง category string เป็น enum
 function parseDrugCategory(category: string): DrugCategory {
   const validCategories: DrugCategory[] = [
-    'REFER', 'HIGH_ALERT', 'NARCOTIC', 'REFRIGERATED', 'PSYCHIATRIC',
-    'FLUID', 'GENERAL'
+    'REFER', 'HAD', 'NARCOTIC', 'REFRIGERATED', 'PSYCHIATRIC',
+    'FLUID', 'GENERAL', 'TABLET', 'SYRUP', 'INJECTION', 'EXTERNAL', 'ALERT'
   ]
   
   if (validCategories.includes(category as DrugCategory)) {

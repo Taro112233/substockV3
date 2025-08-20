@@ -8,8 +8,9 @@ export type DosageForm =
   | 'TAB' | 'TUR'
 
 export type DrugCategory = 
-  | 'REFER' | 'HIGH_ALERT' | 'NARCOTIC' | 'REFRIGERATED' | 'PSYCHIATRIC' 
-  | 'FLUID' | 'GENERAL'
+  | 'REFER' | 'HAD' | 'NARCOTIC' | 'REFRIGERATED' | 'PSYCHIATRIC' 
+  | 'FLUID' | 'GENERAL' | 'TABLET' 
+  | 'SYRUP' | 'INJECTION' | 'EXTERNAL' | 'ALERT'
 
 export interface Drug {
   id: string

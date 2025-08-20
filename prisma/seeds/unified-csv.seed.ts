@@ -492,11 +492,11 @@
 // function standardizeCategory(category: string): string {
 //   const categoryMap: Record<string, string> = {
 //     'ยาแผนปัจจุบัน': 'GENERAL', 'ยาแผนโบราณ': 'GENERAL',
-//     'ยาเสี่ยงสูง': 'HIGH_ALERT', 'ยาส่งต่อ': 'REFER',
-//     'MODERN': 'GENERAL', 'HERBAL': 'GENERAL', 'HIGH_ALERT': 'HIGH_ALERT',
+//     'ยาเสี่ยงสูง': 'HAD', 'ยาส่งต่อ': 'REFER',
+//     'MODERN': 'GENERAL', 'HERBAL': 'GENERAL', 'HAD': 'HAD',
 //     'REFER': 'REFER', 'NARCOTIC': 'NARCOTIC', 'REFRIGERATED': 'REFRIGERATED',
 //     'PSYCHIATRIC': 'PSYCHIATRIC', 'FLUID': 'FLUID', 'GENERAL': 'GENERAL',
-//     'tab2': 'GENERAL'
+//     'TABLET': 'TABLET', 'SYRUP': 'SYRUP', 'INJECTION': 'INJECTION', 'EXTERNAL': 'EXTERNAL', 'ALERT': 'ALERT',
 //   };
   
 //   return categoryMap[category] || 'GENERAL';

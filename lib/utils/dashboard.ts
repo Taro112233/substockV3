@@ -158,9 +158,14 @@ export function getCategoryColor(category: string): string {
     'GENERAL': 'bg-blue-100 text-blue-800',
     'ANTIBIOTICS': 'bg-red-100 text-red-800',
     'CONTROLLED': 'bg-purple-100 text-purple-800',
-    'HIGH_ALERT': 'bg-orange-100 text-orange-800',
+    'HAD': 'bg-orange-100 text-orange-800',
     'VACCINE': 'bg-green-100 text-green-800',
-    'REFER': 'bg-yellow-100 text-yellow-800'
+    'REFER': 'bg-yellow-100 text-yellow-800',
+    'TABLET' : 'bg-gray-200 text-gray-800',
+    'SYRUP': 'bg-pink-100 text-pink-800',
+    'INJECTION': 'bg-teal-100 text-teal-800',
+    'EXTERNAL': 'bg-indigo-100 text-indigo-800',
+    'ALERT': 'bg-red-200 text-red-900'
   }
   return colors[category] || 'bg-gray-100 text-gray-800'
 }
@@ -171,9 +176,14 @@ export function getCategoryLabel(category: string): string {
     'GENERAL': 'ยาทั่วไป',
     'ANTIBIOTICS': 'ยาปฏิชีวนะ',
     'CONTROLLED': 'ยาควบคุม',
-    'HIGH_ALERT': 'ยาเสี่ยงสูง',
+    'HAD': 'ยาเสี่ยงสูง',
     'VACCINE': 'วัคซีน',
-    'REFER': 'ยาส่งต่อ'
+    'REFER': 'ยาส่งต่อ',
+    'TABLET': 'ยาเม็ด',
+    'SYRUP': 'ยาแบบน้ำ',
+    'INJECTION': 'ยาฉีด',
+    'EXTERNAL': 'ยาภายนอก',
+    'ALERT': 'ยาที่ต้องเฝ้าระวังพิเศษ'
   }
   return labels[category] || category
 }

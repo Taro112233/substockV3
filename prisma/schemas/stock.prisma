@@ -9,16 +9,16 @@ model Stock {
   totalQuantity Int        @default(0) // รวมจากทุก batch
   reservedQty   Int        @default(0) // จำนวนที่จองไว้
   minimumStock  Int        @default(10) // minimum stock ของแผนกนั้น
+  fixedStock    Int        @default(0) // minimum stock ของแผนกนั้น
   totalValue    Float      @default(0) // มูลค่ารวม
   lastUpdated   DateTime   @updatedAt
-  
+
   // Relations
-  drug          Drug               @relation(fields: [drugId], references: [id], onDelete: Cascade)
-  transactions  StockTransaction[]
-  
+  drug         Drug               @relation(fields: [drugId], references: [id], onDelete: Cascade)
+  transactions StockTransaction[]
+
   // Constraints - แต่ละยาใน 1 แผนกมี stock record เดียว
   @@unique([drugId, department])
-  
   // Indexes สำหรับ Performance
   @@index([department])
   @@index([totalQuantity])
@@ -28,30 +28,30 @@ model Stock {
 
 // Enhanced Transaction Tracking
 model StockTransaction {
-  id            String          @id @default(cuid())
-  stockId       String
-  userId        String
-  batchId       String?         // Link to specific batch
-  transferId    String?         // Link to transfer if applicable
-  
-  type          TransactionType
-  quantity      Int             // จำนวน (+/-)
-  beforeQty     Int             // จำนวนก่อนทำรายการ
-  afterQty      Int             // จำนวนหลังทำรายการ
-  
-  unitCost      Float           @default(0)
-  totalCost     Float           @default(0)
-  
-  reference     String?         // เลขที่อ้างอิง
-  note          String?         // หมายเหตุ
-  createdAt     DateTime        @default(now())
-  
+  id         String  @id @default(cuid())
+  stockId    String
+  userId     String
+  batchId    String? // Link to specific batch
+  transferId String? // Link to transfer if applicable
+
+  type      TransactionType
+  quantity  Int // จำนวน (+/-)
+  beforeQty Int // จำนวนก่อนทำรายการ
+  afterQty  Int // จำนวนหลังทำรายการ
+
+  unitCost  Float @default(0)
+  totalCost Float @default(0)
+
+  reference String? // เลขที่อ้างอิง
+  note      String? // หมายเหตุ
+  createdAt DateTime @default(now())
+
   // Relations
-  stock         Stock           @relation(fields: [stockId], references: [id], onDelete: Cascade)
-  user          User            @relation(fields: [userId], references: [id])
-  batch         DrugBatch?      @relation(fields: [batchId], references: [id])
-  transfer      Transfer?       @relation(fields: [transferId], references: [id]) // ⭐ เพิ่มใหม่
-  
+  stock    Stock      @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  user     User       @relation(fields: [userId], references: [id])
+  batch    DrugBatch? @relation(fields: [batchId], references: [id])
+  transfer Transfer?  @relation(fields: [transferId], references: [id]) // ⭐ เพิ่มใหม่
+
   // Indexes สำหรับ Performance & Reporting
   @@index([stockId])
   @@index([type])

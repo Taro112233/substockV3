@@ -101,7 +101,7 @@ const formatTransactionAmount = (type: string, quantity: number) => {
 
 const getCategoryColor = (category: string) => {
   const colors = {
-    'HIGH_ALERT': 'bg-red-100 text-red-800 border-red-200',
+    'HAD': 'bg-red-100 text-red-800 border-red-200',
     'NARCOTIC': 'bg-purple-100 text-purple-800 border-purple-200',
     'REFRIGERATED': 'bg-blue-100 text-blue-800 border-blue-200',
     'PSYCHIATRIC': 'bg-indigo-100 text-indigo-800 border-indigo-200',
@@ -113,7 +113,7 @@ const getCategoryColor = (category: string) => {
 
 const getCategoryLabel = (category: string) => {
   const labels = {
-    'HIGH_ALERT': 'ยาเสี่ยงสูง',
+    'HAD': 'ยาเสี่ยงสูง',
     'NARCOTIC': 'ยาเสพติด',
     'REFRIGERATED': 'ยาแช่เย็น',
     'PSYCHIATRIC': 'ยาจิตเวช',
@@ -375,7 +375,7 @@ export function HistoryTab({
       </div>
 
       {/* Quick Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -419,66 +419,55 @@ export function HistoryTab({
             </div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <History className="h-5 w-5 text-purple-600" />
-              <div>
-                <div className="text-2xl font-bold text-purple-900">
-                  {filteredRecentTransactions.length.toLocaleString()}
-                </div>
-                <div className="text-sm text-purple-600">7 วันที่ผ่านมา</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
-      {/* Filter Bar */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="ค้นหา (ชื่อยา, รหัส, ชื่อสามัญ, เอกสารอ้างอิง)..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
+      {/* Filter Bar - Updated Layout */}
+<div className="space-y-4">
+  {/* Search Bar - อยู่ข้างบน */}
+  <div className="relative">
+    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+    <Input
+      placeholder="ค้นหา (ชื่อยา, รหัส, ชื่อสามัญ, เอกสารอ้างอิง)..."
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      className="pl-10"
+    />
+  </div>
 
-        {/* Type Filter */}
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="ประเภทการเคลื่อนไหว" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">ทุกประเภท</SelectItem>
-            <SelectItem value="RECEIVE_EXTERNAL">รับเข้า</SelectItem>
-            <SelectItem value="DISPENSE_EXTERNAL">จ่ายออก</SelectItem>
-            <SelectItem value="TRANSFER_IN">โอนเข้า</SelectItem>
-            <SelectItem value="TRANSFER_OUT">โอนออก</SelectItem>
-            <SelectItem value="ADJUST_INCREASE">ปรับเพิ่ม</SelectItem>
-            <SelectItem value="ADJUST_DECREASE">ปรับลด</SelectItem>
-            <SelectItem value="RESERVE">จอง</SelectItem>
-            <SelectItem value="UNRESERVE">ยกเลิกจอง</SelectItem>
-          </SelectContent>
-        </Select>
+  {/* Filter Controls - อยู่ข้างล่าง ชิดขวาทั้งคู่ */}
+  <div className="flex justify-end items-center gap-4">
+    {/* Type Filter */}
+    <Select value={typeFilter} onValueChange={setTypeFilter}>
+      <SelectTrigger className="w-[180px]">
+        <SelectValue placeholder="ประเภทการเคลื่อนไหว" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">ทุกประเภท</SelectItem>
+        <SelectItem value="RECEIVE_EXTERNAL">รับเข้า</SelectItem>
+        <SelectItem value="DISPENSE_EXTERNAL">จ่ายออก</SelectItem>
+        <SelectItem value="TRANSFER_IN">โอนเข้า</SelectItem>
+        <SelectItem value="TRANSFER_OUT">โอนออก</SelectItem>
+        <SelectItem value="ADJUST_INCREASE">ปรับเพิ่ม</SelectItem>
+        <SelectItem value="ADJUST_DECREASE">ปรับลด</SelectItem>
+        <SelectItem value="RESERVE">จอง</SelectItem>
+        <SelectItem value="UNRESERVE">ยกเลิกจอง</SelectItem>
+      </SelectContent>
+    </Select>
 
-        {/* Date Filter */}
-        <Select value={dateFilter} onValueChange={setDateFilter}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="ช่วงเวลา" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">ทั้งหมด</SelectItem>
-            <SelectItem value="today">วันนี้</SelectItem>
-            <SelectItem value="week">7 วันที่ผ่านมา</SelectItem>
-            <SelectItem value="month">30 วันที่ผ่านมา</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+    {/* Date Filter */}
+    <Select value={dateFilter} onValueChange={setDateFilter}>
+      <SelectTrigger className="w-[140px]">
+        <SelectValue placeholder="ช่วงเวลา" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">ทั้งหมด</SelectItem>
+        <SelectItem value="today">วันนี้</SelectItem>
+        <SelectItem value="week">7 วันที่ผ่านมา</SelectItem>
+        <SelectItem value="month">30 วันที่ผ่านมา</SelectItem>
+      </SelectContent>
+    </Select>
+  </div>
+</div>
 
       {/* Transaction Table */}
       <div className="border rounded-lg overflow-hidden">

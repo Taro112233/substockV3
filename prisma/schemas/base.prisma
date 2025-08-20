@@ -73,10 +73,15 @@ enum DosageForm {
 
 enum DrugCategory {
   REFER           // ยา refer
-  HIGH_ALERT      // ยา High Alert Drug
+  HAD      // ยา High Alert Drug
   NARCOTIC        // ยา เสพติด
   REFRIGERATED    // ยา แช่เย็น
   PSYCHIATRIC     // ยา จิตเวช
   FLUID           // สารน้ำ
   GENERAL         // ยาทั่วไป (default)
+  TABLET          // ยาเม็ด
+  SYRUP           // ยาน้ำ
+  INJECTION       // ยาฉีด
+  EXTERNAL       // ยาภายนอก
+  ALERT           // ยาที่ต้องเฝ้าระวังพิเศษ (อัตราใช้ผันผวนสูง)
 }

@@ -234,26 +234,6 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
           </Button>
 
           <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportStock}
-            className="flex items-center gap-2"
-          >
-            <Download className="h-4 w-4" />
-            ส่งออก
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleImportStock}
-            className="flex items-center gap-2"
-          >
-            <Upload className="h-4 w-4" />
-            นำเข้า
-          </Button>
-
-          <Button
             size="sm"
             onClick={handleAddStock}
             className="flex items-center gap-2"

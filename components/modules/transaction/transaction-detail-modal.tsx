@@ -103,7 +103,7 @@ const getTransactionTypeInfo = (type: string) => {
 
 const getCategoryColor = (category: string) => {
   const colors = {
-    'HIGH_ALERT': 'bg-red-100 text-red-800 border-red-200',
+    'HAD': 'bg-red-100 text-red-800 border-red-200',
     'NARCOTIC': 'bg-purple-100 text-purple-800 border-purple-200',
     'REFRIGERATED': 'bg-blue-100 text-blue-800 border-blue-200',
     'PSYCHIATRIC': 'bg-indigo-100 text-indigo-800 border-indigo-200',
@@ -115,7 +115,7 @@ const getCategoryColor = (category: string) => {
 
 const getCategoryLabel = (category: string) => {
   const labels = {
-    'HIGH_ALERT': 'ยาเสี่ยงสูง',
+    'HAD': 'ยาเสี่ยงสูง',
     'NARCOTIC': 'ยาเสพติด',
     'REFRIGERATED': 'ยาแช่เย็น',
     'PSYCHIATRIC': 'ยาจิตเวช',

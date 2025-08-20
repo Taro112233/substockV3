@@ -152,7 +152,7 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
 
             {/* User & Timestamp */}
             <div className="flex items-center justify-between text-xs text-gray-500 pt-1 border-t">
-              <div>โดย: {transaction.user.name}</div>
+              <div>โดย: {transaction.user.firstName} {transaction.user.lastName}</div>
               <div>{new Date(transaction.createdAt).toLocaleString('th-TH')}</div>
             </div>
           </div>

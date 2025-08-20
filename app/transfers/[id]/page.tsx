@@ -1,10 +1,10 @@
-
-// 📄 File: app/transfers/[id]/page.tsx (Fixed)
+// 📄 File: app/transfers/[id]/page.tsx (FIXED FOR NEXT.JS 15)
 
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { use } from 'react' // ✅ FIX: Import use hook for React 19
 import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -23,11 +23,15 @@ import {
   Download
 } from 'lucide-react'
 
+// ✅ FIX: Props interface สำหรับ Next.js 15
 interface TransferDetailPageProps {
-  params: { id: string }
+  params: Promise<{ id: string }> // ✅ เปลี่ยนเป็น Promise
 }
 
 export default function TransferDetailPage({ params }: TransferDetailPageProps) {
+  // ✅ FIX: Use React 'use' hook to unwrap Promise params
+  const resolvedParams = use(params)
+  
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user } = useAuth()
@@ -43,7 +47,7 @@ export default function TransferDetailPage({ params }: TransferDetailPageProps) 
   const fetchTransferDetails = useCallback(async () => {
     try {
       setLoading(true)
-      const result = await transferService.getTransferDetails(params.id)
+      const result = await transferService.getTransferDetails(resolvedParams.id) // ✅ ใช้ resolvedParams
       setTransfer(result)
     } catch (error) {
       console.error('Failed to fetch transfer details:', error)
@@ -56,7 +60,7 @@ export default function TransferDetailPage({ params }: TransferDetailPageProps) 
     } finally {
       setLoading(false)
     }
-  }, [params.id, toast, router])
+  }, [resolvedParams.id, toast, router]) // ✅ ใช้ resolvedParams
   
   useEffect(() => {
     fetchTransferDetails()
@@ -92,7 +96,7 @@ export default function TransferDetailPage({ params }: TransferDetailPageProps) 
   }
   
   const handleNavigateAction = (action: string) => {
-    router.push(`/transfers/${params.id}/action?type=${action}`)
+    router.push(`/transfers/${resolvedParams.id}/action?type=${action}`) // ✅ ใช้ resolvedParams
   }
   
   const getActionSuccessMessage = (action: string) => {
@@ -104,7 +108,7 @@ export default function TransferDetailPage({ params }: TransferDetailPageProps) 
   }
   
   const handleTabChange = (value: string) => {
-    router.replace(`/transfers/${params.id}?tab=${value}`)
+    router.replace(`/transfers/${resolvedParams.id}?tab=${value}`) // ✅ ใช้ resolvedParams
   }
   
   if (loading) {

@@ -1,9 +1,10 @@
-// 📄 File: app/transfers/[id]/action/page.tsx (Fixed)
+// 📄 File: app/transfers/[id]/action/page.tsx (FIXED FOR NEXT.JS 15)
 
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { use } from 'react' // ✅ FIX: Import use hook for React 19
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,8 +23,9 @@ import {
   Eye
 } from 'lucide-react'
 
+// ✅ FIX: Props interface สำหรับ Next.js 15
 interface TransferActionPageProps {
-  params: { id: string }
+  params: Promise<{ id: string }> // ✅ เปลี่ยนเป็น Promise
 }
 
 interface ActionFormData {
@@ -74,6 +76,9 @@ interface ActionConfig {
 }
 
 export default function TransferActionPage({ params }: TransferActionPageProps) {
+  // ✅ FIX: Use React 'use' hook to unwrap Promise params
+  const resolvedParams = use(params)
+  
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -86,7 +91,7 @@ export default function TransferActionPage({ params }: TransferActionPageProps) 
   
   const fetchTransferDetails = useCallback(async () => {
     try {
-      const response = await fetch(`/api/transfers/${params.id}`)
+      const response = await fetch(`/api/transfers/${resolvedParams.id}`) // ✅ ใช้ resolvedParams
       
       if (!response.ok) {
         throw new Error('Failed to fetch transfer details')
@@ -122,11 +127,11 @@ export default function TransferActionPage({ params }: TransferActionPageProps) 
         description: "ไม่สามารถโหลดข้อมูลใบเบิกได้",
         variant: "destructive",
       })
-      router.push(`/transfers/${params.id}`)
+      router.push(`/transfers/${resolvedParams.id}`) // ✅ ใช้ resolvedParams
     } finally {
       setLoading(false)
     }
-  }, [params.id, toast, router])
+  }, [resolvedParams.id, toast, router]) // ✅ ใช้ resolvedParams
   
   useEffect(() => {
     fetchTransferDetails()
@@ -219,7 +224,7 @@ export default function TransferActionPage({ params }: TransferActionPageProps) 
         }
       }
       
-      const response = await fetch(`/api/transfers/${params.id}/actions`, {
+      const response = await fetch(`/api/transfers/${resolvedParams.id}/actions`, { // ✅ ใช้ resolvedParams
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -246,7 +251,7 @@ export default function TransferActionPage({ params }: TransferActionPageProps) 
       })
       
       // Redirect back to transfer detail
-      router.push(`/transfers/${params.id}`)
+      router.push(`/transfers/${resolvedParams.id}`) // ✅ ใช้ resolvedParams
       
     } catch (error) {
       console.error('Action failed:', error)
@@ -298,7 +303,7 @@ export default function TransferActionPage({ params }: TransferActionPageProps) 
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
             การดำเนินการไม่ถูกต้อง
           </h2>
-          <Button onClick={() => router.push(`/transfers/${params.id}`)}>
+          <Button onClick={() => router.push(`/transfers/${resolvedParams.id}`)}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             กลับไปรายละเอียดใบเบิก
           </Button>
@@ -318,7 +323,7 @@ export default function TransferActionPage({ params }: TransferActionPageProps) 
           <Button
             variant="outline"
             size="sm"
-            onClick={() => router.push(`/transfers/${params.id}`)}
+            onClick={() => router.push(`/transfers/${resolvedParams.id}`)} // ✅ ใช้ resolvedParams
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             กลับ
@@ -341,7 +346,7 @@ export default function TransferActionPage({ params }: TransferActionPageProps) 
           <Button
             variant="outline"
             size="sm"
-            onClick={() => router.push(`/transfers/${params.id}`)}
+            onClick={() => router.push(`/transfers/${resolvedParams.id}`)} // ✅ ใช้ resolvedParams
           >
             <Eye className="h-4 w-4 mr-2" />
             ดูรายละเอียด
@@ -530,7 +535,7 @@ export default function TransferActionPage({ params }: TransferActionPageProps) 
           <div className="flex items-center justify-between">
             <Button
               variant="outline"
-              onClick={() => router.push(`/transfers/${params.id}`)}
+              onClick={() => router.push(`/transfers/${resolvedParams.id}`)} // ✅ ใช้ resolvedParams
             >
               ยกเลิก
             </Button>

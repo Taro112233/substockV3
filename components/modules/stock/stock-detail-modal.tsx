@@ -463,17 +463,11 @@ export function StockDetailModalEnhanced({
                 <CardTitle className="text-base flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Target className="h-4 w-4" />
-                    ปรับสต็อกด่วน
+                    ปรับสต็อก
                   </div>
                   
                   {/* Status Info ข้างๆ หัวข้อ */}
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1">
-                      <div className={`text-sm font-medium ${lowStock ? 'text-red-600' : 'text-green-600'}`}>
-                        {availableStock.toLocaleString()}
-                      </div>
-                      <span className="text-xs text-gray-500">คงเหลือ</span>
-                    </div>
                     <div className="flex items-center gap-1">
                       <div className="text-sm font-medium text-blue-600">
                         {stock.minimumStock.toLocaleString()}

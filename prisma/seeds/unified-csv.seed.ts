@@ -496,7 +496,7 @@ function standardizeCategory(category: string): string {
     'MODERN': 'GENERAL', 'HERBAL': 'GENERAL', 'HAD': 'HAD',
     'REFER': 'REFER', 'NARCOTIC': 'NARCOTIC', 'REFRIGERATED': 'REFRIGERATED',
     'PSYCHIATRIC': 'PSYCHIATRIC', 'FLUID': 'FLUID', 'GENERAL': 'GENERAL',
-    'TABLET': 'TABLET', 'SYRUP': 'SYRUP', 'INJECTION': 'INJECTION', 'EXTERNAL': 'EXTERNAL', 'ALERT': 'ALERT',
+    'TABLET': 'TABLET', 'SYRUP': 'SYRUP', 'INJECTION': 'INJECTION', 'EXTEMP': 'EXTEMP', 'ALERT': 'ALERT',
   };
   
   return categoryMap[category] || 'GENERAL';

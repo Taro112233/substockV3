@@ -1,16 +1,18 @@
-// 📄 File: components/modules/dashboard/stock-management-tab.tsx (Fixed)
+// 📄 File: components/modules/dashboard/stock-management-tab.tsx (Updated)
+// Updated with Dynamic Stats that respond to filtering
 
 import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { StockTable } from "@/components/modules/stock/stock-table";
 import { Stock } from "@/types/dashboard";
 import {
   RefreshCw,
   Plus,
   Package,
   AlertTriangle,
+  TrendingUp,
+  Filter
 } from "lucide-react";
 import { StockTableEnhanced } from "../stock/stock-table-enhanced";
 
@@ -23,6 +25,12 @@ interface StockData {
   };
 }
 
+interface FilteredStatsData {
+  totalDrugs: number;
+  totalValue: number;
+  lowStockCount: number;
+}
+
 interface StockManagementTabProps {
   department: "PHARMACY" | "OPD";
 }
@@ -31,6 +39,8 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
   const [data, setData] = useState<StockData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [filteredStats, setFilteredStats] = useState<FilteredStatsData | null>(null);
+  const [isFiltered, setIsFiltered] = useState(false);
 
   const { toast } = useToast();
 
@@ -155,6 +165,22 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
     });
   };
 
+  // Handle filtered stats from table
+  const handleFilteredStatsChange = useCallback((stats: FilteredStatsData) => {
+    setFilteredStats(stats);
+    
+    // Check if filters are active (different from original data)
+    if (data) {
+      const originalTotalValue = calculateTotalValue();
+      const isCurrentlyFiltered = 
+        stats.totalDrugs !== data.stats.totalDrugs ||
+        Math.abs(stats.totalValue - originalTotalValue) > 0.01 ||
+        stats.lowStockCount !== data.stats.lowStockCount;
+      
+      setIsFiltered(isCurrentlyFiltered);
+    }
+  }, [data]);
+
   // กรณี loading หรือไม่มีข้อมูล
   if (loading || !data) {
     return (
@@ -175,7 +201,21 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
         {/* Loading State */}
         <Card>
           <CardContent>
-            <StockTable stocks={[]} department={department} loading={true} />
+            <div className="space-y-4">
+              <div className="flex gap-4 mb-4">
+                <div className="flex-1">
+                  <div className="h-10 bg-gray-200 rounded animate-pulse" />
+                </div>
+                <div className="w-32">
+                  <div className="h-10 bg-gray-200 rounded animate-pulse" />
+                </div>
+              </div>
+              <div className="border rounded-lg">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-16 bg-gray-100 border-b animate-pulse" />
+                ))}
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -184,21 +224,18 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
 
   // คำนวณมูลค่ารวมแบบใหม่
   const totalValueCalculated = calculateTotalValue();
+  
+  // ใช้ filtered stats หากมีการกรอง หรือใช้ original stats
+  const displayStats = filteredStats || {
+    totalDrugs: data.stats.totalDrugs,
+    totalValue: totalValueCalculated,
+    lowStockCount: data.stats.lowStockCount
+  };
 
   return (
     <div className="space-y-6">
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">
-            จัดการสต็อกยา -{" "}
-            {department === "PHARMACY" ? "แผนกเภสัชกรรม" : "แผนก OPD"}
-          </h2>
-          <p className="text-sm text-gray-600 mt-1">
-            ข้อมูลสต็อกยาแบบเรียลไทม์ • อัปเดตล่าสุด:{" "}
-            {new Date().toLocaleString("th-TH")}
-          </p>
-        </div>
 
         <div className="flex gap-2 flex-wrap">
           <Button
@@ -225,40 +262,64 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
         </div>
       </div>
 
-      {/* Statistics Cards - ลบ card จำนวนทั้งหมดออก */}
+      {/* Dynamic Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+        {/* Total Drugs Card */}
+        <Card className={`transition-all duration-200 ${
+          isFiltered ? 'border-blue-300 bg-blue-50' : 'border-gray-200'
+        }`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">รายการยาทั้งหมด</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {data.stats.totalDrugs.toLocaleString()}
+                <p className="text-sm text-gray-600">
+                  รายการยา{isFiltered ? ' (กรองแล้ว)' : 'ทั้งหมด'}
                 </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-2xl font-bold text-gray-900">
+                    {displayStats.totalDrugs.toLocaleString()}
+                  </p>
+                  {isFiltered && (
+                    <span className="text-sm text-blue-600">
+                      / {data.stats.totalDrugs.toLocaleString()}
+                    </span>
+                  )}
+                </div>
               </div>
-              <Package className="h-8 w-8 text-blue-500" />
+              <Package className={`h-8 w-8 ${isFiltered ? 'text-blue-500' : 'text-gray-500'}`} />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        {/* Low Stock Card */}
+        <Card className={`transition-all duration-200 ${
+          isFiltered ? 'border-orange-300 bg-orange-50' : 'border-gray-200'
+        }`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">สต็อกต่ำ</p>
-                <p
-                  className={`text-2xl font-bold ${
-                    data.stats.lowStockCount > 0
-                      ? "text-red-600"
-                      : "text-gray-400"
-                  }`}
-                >
-                  {data.stats.lowStockCount.toLocaleString()}
+                <p className="text-sm text-gray-600">
+                  สต็อกต่ำ{isFiltered ? ' (กรองแล้ว)' : ''}
                 </p>
+                <div className="flex items-center gap-2">
+                  <p
+                    className={`text-2xl font-bold ${
+                      displayStats.lowStockCount > 0
+                        ? "text-red-600"
+                        : "text-gray-400"
+                    }`}
+                  >
+                    {displayStats.lowStockCount.toLocaleString()}
+                  </p>
+                  {isFiltered && (
+                    <span className="text-sm text-orange-600">
+                      / {data.stats.lowStockCount.toLocaleString()}
+                    </span>
+                  )}
+                </div>
               </div>
               <AlertTriangle
                 className={`h-8 w-8 ${
-                  data.stats.lowStockCount > 0
+                  displayStats.lowStockCount > 0
                     ? "text-red-500"
                     : "text-gray-400"
                 }`}
@@ -267,27 +328,40 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
           </CardContent>
         </Card>
 
-        <Card>
+        {/* Total Value Card */}
+        <Card className={`transition-all duration-200 ${
+          isFiltered ? 'border-purple-300 bg-purple-50' : 'border-gray-200'
+        }`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">มูลค่ารวม</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  ฿{totalValueCalculated.toLocaleString()}
+                <p className="text-sm text-gray-600">
+                  มูลค่ารวม{isFiltered ? ' (กรองแล้ว)' : ''}
                 </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-2xl font-bold text-purple-600">
+                    ฿{displayStats.totalValue.toLocaleString()}
+                  </p>
+                  {isFiltered && (
+                    <span className="text-sm text-purple-600">
+                      / ฿{totalValueCalculated.toLocaleString()}
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="text-2xl">💰</div>
+              <TrendingUp className={`h-8 w-8 ${isFiltered ? 'text-purple-500' : 'text-gray-500'}`} />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Stock Table */}
+      {/* Enhanced Stock Table */}
       <StockTableEnhanced
         stocks={data.stocks}
         department={department}
         loading={loading}
         onUpdate={handleStockUpdate}
+        onFilteredStatsChange={handleFilteredStatsChange}
       />
     </div>
   );

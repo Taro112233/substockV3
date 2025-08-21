@@ -1,5 +1,5 @@
 // 📄 File: components/modules/stock/stock-table-enhanced.tsx
-// Enhanced Stock Table with Sorting Features
+// Enhanced Stock Table with Total Value Display and Date Color Coding
 
 import {
   Table,
@@ -33,13 +33,14 @@ import {
   Filter,
   ArrowUpDown,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  TrendingUp
 } from 'lucide-react'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { StockDetailModalEnhanced } from './stock-detail-modal'
 
 // Type สำหรับ sorting
-type SortField = 'name' | 'dosageForm' | 'strength' | 'packageSize' | 'quantity' | 'lastUpdated'
+type SortField = 'name' | 'dosageForm' | 'strength' | 'packageSize' | 'quantity' | 'totalValue' | 'lastUpdated'
 type SortDirection = 'asc' | 'desc' | null
 
 interface SortConfig {
@@ -63,12 +64,19 @@ interface FilterConfig {
   dosageForm: DosageForm | 'all'
 }
 
+interface FilteredStatsData {
+  totalDrugs: number
+  totalValue: number
+  lowStockCount: number
+}
+
 interface StockTableProps {
   stocks: Stock[]
   department: 'PHARMACY' | 'OPD'
   onAdjust?: (stock: Stock) => void
   onView?: (stock: Stock) => void
   onUpdate?: (updatedStock: Stock) => void
+  onFilteredStatsChange?: (stats: FilteredStatsData) => void
   loading?: boolean
 }
 
@@ -76,6 +84,7 @@ export function StockTableEnhanced({
   stocks,
   onAdjust, 
   onUpdate,
+  onFilteredStatsChange,
   loading = false 
 }: StockTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
@@ -132,6 +141,25 @@ export function StockTableEnhanced({
     { value: 'LIQ', label: 'LIQ' },
     { value: 'MIX', label: 'MIX' }
   ]
+
+  // Utility functions
+  const calculateStockValue = (stock: Stock) => {
+    const availableStock = calculateAvailableStock(stock)
+    const pricePerBox = stock.drug?.pricePerBox || 0
+    return availableStock * pricePerBox
+  }
+
+  const getLastUpdatedColor = (lastUpdated: string | null) => {
+    if (!lastUpdated) return 'text-gray-400'
+    
+    const now = new Date()
+    const updatedDate = new Date(lastUpdated)
+    const diffDays = Math.floor((now.getTime() - updatedDate.getTime()) / (1000 * 60 * 60 * 24))
+    
+    if (diffDays >= 14) return 'text-red-600'
+    if (diffDays >= 7) return 'text-yellow-600'
+    return 'text-green-600'
+  }
 
   // Sorting function
   const handleSort = (field: SortField) => {
@@ -197,6 +225,10 @@ export function StockTableEnhanced({
           aValue = calculateAvailableStock(a)
           bValue = calculateAvailableStock(b)
           break
+        case 'totalValue':
+          aValue = calculateStockValue(a)
+          bValue = calculateStockValue(b)
+          break
         case 'lastUpdated':
           aValue = a.lastUpdated ? new Date(a.lastUpdated).getTime() : 0
           bValue = b.lastUpdated ? new Date(b.lastUpdated).getTime() : 0
@@ -246,7 +278,23 @@ export function StockTableEnhanced({
     })
   }, [sortedStocks, searchTerm, showLowStockOnly, filterConfig])
 
-  // Component methods (unchanged)
+  // Calculate filtered stats and notify parent
+  const filteredStats = useMemo(() => {
+    const totalDrugs = filteredStocks.length
+    const totalValue = filteredStocks.reduce((sum, stock) => sum + calculateStockValue(stock), 0)
+    const lowStockCount = filteredStocks.filter(stock => isLowStock(stock)).length
+
+    return { totalDrugs, totalValue, lowStockCount }
+  }, [filteredStocks])
+
+  // Use useEffect to notify parent component about stats change
+  useEffect(() => {
+    if (onFilteredStatsChange) {
+      onFilteredStatsChange(filteredStats)
+    }
+  }, [filteredStats, onFilteredStatsChange])
+
+  // Component methods
   const handleAdjust = (stock: Stock) => {
     setSelectedStock(stock)
     setIsModalOpen(true)
@@ -324,8 +372,8 @@ export function StockTableEnhanced({
                 <TableHead>ความแรง</TableHead>
                 <TableHead>ขนาดบรรจุ</TableHead>
                 <TableHead>คงเหลือ</TableHead>
+                <TableHead>มูลค่ารวม</TableHead>
                 <TableHead>อัปเดตล่าสุด</TableHead>
-                <TableHead>จัดการ</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -337,7 +385,7 @@ export function StockTableEnhanced({
                   <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse" /></TableCell>
                   <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse" /></TableCell>
                   <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse" /></TableCell>
-                  <TableCell><div className="h-8 bg-gray-200 rounded animate-pulse" /></TableCell>
+                  <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse" /></TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -351,22 +399,22 @@ export function StockTableEnhanced({
     <>
       <div className="space-y-4">
         {/* Enhanced Search and Filter Bar */}
-        <div className="flex flex-col gap-4">
-          {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="ค้นหายา (ชื่อ, รหัส, ชื่อสามัญ)..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          
-          {/* Filter Row */}
-          <div className="flex flex-col sm:flex-row gap-3">
+        <div className="space-y-3">
+          {/* Large Screen: Everything in one row */}
+          <div className="hidden lg:flex items-center gap-3">
+            {/* Search Bar */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="ค้นหายา (ชื่อ, รหัส, ชื่อสามัญ)..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
             {/* Category Filter */}
-            <div className="flex-1 min-w-0">
+            <div className="w-48">
               <Select
                 value={filterConfig.category}
                 onValueChange={(value) => setFilterConfig(prev => ({ 
@@ -374,7 +422,7 @@ export function StockTableEnhanced({
                   category: value as DrugCategory | 'all' 
                 }))}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger>
                   <SelectValue placeholder="เลือกประเภทยา" />
                 </SelectTrigger>
                 <SelectContent>
@@ -388,7 +436,7 @@ export function StockTableEnhanced({
             </div>
 
             {/* Dosage Form Filter */}
-            <div className="flex-1 min-w-0">
+            <div className="w-48">
               <Select
                 value={filterConfig.dosageForm}
                 onValueChange={(value) => setFilterConfig(prev => ({ 
@@ -396,7 +444,7 @@ export function StockTableEnhanced({
                   dosageForm: value as DosageForm | 'all' 
                 }))}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger>
                   <SelectValue placeholder="เลือกรูปแบบยา" />
                 </SelectTrigger>
                 <SelectContent>
@@ -444,9 +492,99 @@ export function StockTableEnhanced({
             </div>
           </div>
 
+          {/* Small Screen: Mobile Layout */}
+          <div className="lg:hidden">
+            {/* Row 1: Search Bar */}
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="ค้นหายา (ชื่อ, รหัส, ชื่อสามัญ)..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            {/* Row 2: Filters and Buttons */}
+            <div className="flex items-center gap-2">
+              {/* Category Filter */}
+              <div className="flex-1">
+                <Select
+                  value={filterConfig.category}
+                  onValueChange={(value) => setFilterConfig(prev => ({ 
+                    ...prev, 
+                    category: value as DrugCategory | 'all' 
+                  }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="ยาใช้ภายนอก/สมุนไพร" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categoryOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
+              {/* Dosage Form Filter */}
+              <div className="flex-1">
+                <Select
+                  value={filterConfig.dosageForm}
+                  onValueChange={(value) => setFilterConfig(prev => ({ 
+                    ...prev, 
+                    dosageForm: value as DosageForm | 'all' 
+                  }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="ทุกรูปแบบ" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dosageFormOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          
+              {/* Action Buttons - Icon only */}
+              <Button
+                variant={showLowStockOnly ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowLowStockOnly(!showLowStockOnly)}
+                className="flex items-center justify-center shrink-0 w-10 h-10"
+                title="สต็อกต่ำ"
+              >
+                <AlertTriangle className="h-4 w-4" />
+              </Button>
+
+              {/* Clear Filters Button - Icon only */}
+              {(filterConfig.category !== 'all' || 
+                filterConfig.dosageForm !== 'all' || 
+                searchTerm || 
+                showLowStockOnly ||
+                sortConfig.field) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSearchTerm('')
+                    setShowLowStockOnly(false)
+                    setFilterConfig({ category: 'all', dosageForm: 'all' })
+                    setSortConfig({ field: null, direction: null })
+                  }}
+                  className="flex items-center justify-center shrink-0 w-10 h-10 bg-red-500 text-white hover:bg-red-600 border-red-500"
+                  title="ล้างตัวกรอง"
+                >
+                  ✕
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Enhanced Table with Sortable Headers */}
@@ -470,6 +608,9 @@ export function StockTableEnhanced({
                   <SortableHeader field="quantity" className="w-[120px]" align="center">
                     คงเหลือ
                   </SortableHeader>
+                  <SortableHeader field="totalValue" className="w-[130px]" align="right">
+                    มูลค่ารวม
+                  </SortableHeader>
                   <SortableHeader field="lastUpdated" className="w-[140px]" align="center">
                     อัปเดตล่าสุด
                   </SortableHeader>
@@ -489,6 +630,8 @@ export function StockTableEnhanced({
                     const categoryColor = getCategoryColor(stock.drug?.category)
                     const categoryLabel = getCategoryLabel(stock.drug?.category)
                     const reorderPoint = stock.minimumStock || 0
+                    const stockValue = calculateStockValue(stock)
+                    const lastUpdatedColor = getLastUpdatedColor(stock.lastUpdated)
 
                     return (
                       <TableRow 
@@ -567,18 +710,30 @@ export function StockTableEnhanced({
                           </div>
                         </TableCell>
 
+                        {/* มูลค่ารวม */}
+                        <TableCell className="text-right">
+                          <div className="space-y-1">
+                            <div className="font-medium text-purple-600">
+                              ฿{stockValue.toLocaleString()}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              @฿{(stock.drug?.pricePerBox || 0).toFixed(2)}/กล่อง
+                            </div>
+                          </div>
+                        </TableCell>
+
                         {/* อัปเดตล่าสุด */}
                         <TableCell className="text-center">
                           {stock.lastUpdated ? (
                             <div className="space-y-1">
-                              <div className="text-sm text-gray-700">
+                              <div className={`text-sm font-medium ${lastUpdatedColor}`}>
                                 {new Date(stock.lastUpdated).toLocaleDateString('th-TH', {
                                   year: 'numeric',
                                   month: 'short',
                                   day: 'numeric'
                                 })}
                               </div>
-                              <div className="text-xs text-gray-500">
+                              <div className={`text-xs ${lastUpdatedColor}`}>
                                 {new Date(stock.lastUpdated).toLocaleTimeString('th-TH', {
                                   hour: '2-digit',
                                   minute: '2-digit'
@@ -606,20 +761,23 @@ export function StockTableEnhanced({
                 แสดง <strong className="text-gray-700">{filteredStocks.length}</strong> รายการ
                 จากทั้งหมด <strong className="text-gray-700">{stocks.length}</strong> รายการ
               </span>
+              <span className="text-purple-600 font-medium">
+                มูลค่ารวม ฿{filteredStats.totalValue.toLocaleString()}
+              </span>
             </div>
             
             <div className="flex items-center gap-4 text-xs">
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                <span>สต็อกต่ำ</span>
+                <span>อัปเดต {'>'}14 วัน</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                <span>อัปเดต 7-13 วัน</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span>สต็อกปกติ</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                <span>หมดสต็อก</span>
+                <span>อัปเดต {'<'}7 วัน</span>
               </div>
             </div>
           </div>

@@ -164,7 +164,7 @@ export function getCategoryColor(category: string): string {
     'TABLET' : 'bg-gray-200 text-gray-800',
     'SYRUP': 'bg-pink-100 text-pink-800',
     'INJECTION': 'bg-teal-100 text-teal-800',
-    'EXTERNAL': 'bg-indigo-100 text-indigo-800',
+    'EXTEMP': 'bg-indigo-100 text-indigo-800',
     'ALERT': 'bg-red-200 text-red-900'
   }
   return colors[category] || 'bg-gray-100 text-gray-800'
@@ -182,7 +182,7 @@ export function getCategoryLabel(category: string): string {
     'TABLET': 'ยาเม็ด',
     'SYRUP': 'ยาแบบน้ำ',
     'INJECTION': 'ยาฉีด',
-    'EXTERNAL': 'ยาภายนอก',
+    'EXTEMP': 'ยาภายนอก',
     'ALERT': 'ระวังพิเศษ'
   }
   return labels[category] || category

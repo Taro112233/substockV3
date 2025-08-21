@@ -42,7 +42,7 @@ function parseDosageForm(dosageForm: string): DosageForm {
 function parseDrugCategory(category: string): DrugCategory {
   const validCategories: DrugCategory[] = [
     'REFER', 'HAD', 'NARCOTIC', 'REFRIGERATED', 'PSYCHIATRIC',
-    'FLUID', 'GENERAL', 'TABLET', 'SYRUP', 'INJECTION', 'EXTERNAL', 'ALERT'
+    'FLUID', 'GENERAL', 'TABLET', 'SYRUP', 'INJECTION', 'EXTEMP', 'ALERT'
   ]
   
   if (validCategories.includes(category as DrugCategory)) {

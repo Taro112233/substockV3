@@ -10,7 +10,7 @@ export type DosageForm =
 export type DrugCategory = 
   | 'REFER' | 'HAD' | 'NARCOTIC' | 'REFRIGERATED' | 'PSYCHIATRIC' 
   | 'FLUID' | 'GENERAL' | 'TABLET' 
-  | 'SYRUP' | 'INJECTION' | 'EXTERNAL' | 'ALERT'
+  | 'SYRUP' | 'INJECTION' | 'EXTEMP' | 'ALERT'
 
 export interface Drug {
   id: string

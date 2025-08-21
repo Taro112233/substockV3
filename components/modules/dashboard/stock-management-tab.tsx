@@ -12,6 +12,7 @@ import {
   Package,
   AlertTriangle,
 } from "lucide-react";
+import { StockTableEnhanced } from "../stock/stock-table-enhanced";
 
 interface StockData {
   stocks: Stock[];
@@ -285,7 +286,7 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
       </div>
 
       {/* Stock Table */}
-      <StockTable
+      <StockTableEnhanced
         stocks={data.stocks}
         department={department}
         loading={loading}

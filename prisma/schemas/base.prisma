@@ -82,6 +82,6 @@ enum DrugCategory {
   TABLET          // ยาเม็ด
   SYRUP           // ยาน้ำ
   INJECTION       // ยาฉีด
-  EXTERNAL       // ยาภายนอก
+  EXTEMP       // ยาภายนอก
   ALERT           // ยาที่ต้องเฝ้าระวังพิเศษ (อัตราใช้ผันผวนสูง)
 }

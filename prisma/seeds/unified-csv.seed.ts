@@ -494,7 +494,7 @@ function standardizeCategory(category: string): string {
     'ยาแผนปัจจุบัน': 'GENERAL', 'ยาแผนโบราณ': 'GENERAL',
     'ยาเสี่ยงสูง': 'HAD', 'ยาส่งต่อ': 'REFER',
     'MODERN': 'GENERAL', 'HERBAL': 'GENERAL', 'HAD': 'HAD',
-    'REFER': 'REFER', 'NARCOTIC': 'NARCOTIC', 'REFRIGERATED': 'REFRIGERATED',
+    'REFER': 'REFER', 'NARCOTIC': 'NARCOTIC', 'REFRIGERATED': 'ยาแช่เย็น',
     'PSYCHIATRIC': 'PSYCHIATRIC', 'FLUID': 'FLUID', 'GENERAL': 'GENERAL',
     'TABLET': 'TABLET', 'SYRUP': 'SYRUP', 'INJECTION': 'INJECTION', 'EXTERNAL': 'EXTERNAL', 'ALERT': 'ALERT',
   };

@@ -88,11 +88,7 @@
 
 //   } catch (error) {
 //     console.error("❌ Failed to create transfers:", error);
-    
-//     // Fallback: สร้าง minimal transfer
-//     console.log("🔄 Creating basic transfer sample...");
-//     return createBasicTransfer(prisma);
-//   }
+
 // }
 
 // function createSampleTransfers(drugs: any[]): TransferSeedData[] {
@@ -438,61 +434,6 @@
 //   };
 // }
 
-// async function createBasicTransfer(prisma: PrismaClient) {
-//   console.log("📋 Creating basic transfer sample...");
-  
-//   try {
-//     // ค้นหา users และ drugs พื้นฐาน
-//     const users = await prisma.user.findMany({ take: 2 });
-//     const drugs = await prisma.drug.findMany({ take: 1 });
-
-//     if (users.length === 0 || drugs.length === 0) {
-//       console.log("⚠️  No users or drugs found for basic transfer");
-//       return { success: false, totalTransfers: 0 };
-//     }
-
-//     const transfer = await prisma.transfer.create({
-//       data: {
-//         requisitionNumber: "SAMPLE001",
-//         title: "Sample Transfer",
-//         fromDept: "PHARMACY",
-//         toDept: "OPD",
-//         requesterId: users[0].id,
-//         status: "PENDING",
-//         purpose: "Sample transfer for testing",
-//         totalItems: 1,
-//         totalValue: 100,
-//         requestedAt: new Date(),
-//       },
-//     });
-
-//     await prisma.transferItem.create({
-//       data: {
-//         transferId: transfer.id,
-//         drugId: drugs[0].id,
-//         requestedQty: 10,
-//         unitPrice: 10,
-//         totalValue: 100,
-//       },
-//     });
-
-//     console.log("✅ Basic transfer created");
-
-//     return {
-//       totalTransfers: 1,
-//       totalValue: 100,
-//       byStatus: { PENDING: 1 },
-//       byDirection: { PHARMACY_to_OPD: 1 },
-//       success: true,
-//       source: "basic"
-//     };
-
-//   } catch (error) {
-//     console.error("❌ Failed to create basic transfer:", error);
-//     return { success: false, totalTransfers: 0 };
-//   }
-// }
-
 // function generateTransferSummary(result: any): string {
 //   return `
 // 🎉 TRANSFER SYSTEM CREATION COMPLETED!
@@ -556,4 +497,5 @@
 // ├── Manager View: อนุมัติและติดตาม
 // └── Real-time Updates: ทุกแผนกเห็นข้อมูลปัจจุบัน
 // `;
+// }
 // }

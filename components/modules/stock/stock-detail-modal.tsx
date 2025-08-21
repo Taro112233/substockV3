@@ -101,7 +101,7 @@ export function StockDetailModal({
   const [formData, setFormData] = useState<StockUpdateData>({
     totalQuantity: 0,
     minimumStock: 0,
-    adjustmentReason: ''
+    adjustmentReason: 'นับสต็อก' // 🔥 ใส่ค่าเริ่มต้นเป็น "นับสต็อก"
   })
 
   const { toast } = useToast()
@@ -112,7 +112,7 @@ export function StockDetailModal({
       setFormData({
         totalQuantity: stock.totalQuantity,
         minimumStock: stock.minimumStock,
-        adjustmentReason: ''
+        adjustmentReason: 'นับสต็อก' // 🔥 ใส่ค่าเริ่มต้นเป็น "นับสต็อก"
       })
       setIsEditing(false)
     }
@@ -135,7 +135,7 @@ export function StockDetailModal({
     setFormData({
       totalQuantity: stock.totalQuantity,
       minimumStock: stock.minimumStock,
-      adjustmentReason: ''
+      adjustmentReason: 'นับสต็อก' // 🔥 ใส่ค่าเริ่มต้นเป็น "นับสต็อก"
     })
   }
 

@@ -1,6 +1,6 @@
 // This file is auto-generated. Do not edit manually.
 // Edit files in prisma/schemas/ directory instead.
-// Last generated: 2025-08-20T16:08:44.809Z
+// Last generated: 2025-08-21T09:12:11.200Z
 // Hospital Pharmacy Stock Management System V3.0
 
 generator client {
@@ -101,7 +101,7 @@ enum DrugCategory {
   TABLET          // ยาเม็ด
   SYRUP           // ยาน้ำ
   INJECTION       // ยาฉีด
-  EXTERNAL       // ยาภายนอก
+  EXTEMP       // ยาภายนอก
   ALERT           // ยาที่ต้องเฝ้าระวังพิเศษ (อัตราใช้ผันผวนสูง)
 }
 

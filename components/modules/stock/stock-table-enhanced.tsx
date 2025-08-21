@@ -108,29 +108,29 @@ export function StockTableEnhanced({
   // Dosage form options with Thai labels
   const dosageFormOptions = [
     { value: 'all', label: 'ทุกรูปแบบ' },
-    { value: 'TAB', label: 'เม็ด' },
-    { value: 'CAP', label: 'แคปซูล' },
-    { value: 'SYR', label: 'น้ำเชื่อม' },
-    { value: 'SUS', label: 'ยาแขวนตะกอน' },
-    { value: 'INJ', label: 'ยาฉีด' },
-    { value: 'SOL', label: 'สารละลาย' },
-    { value: 'OIN', label: 'ครีม/ยาทา' },
-    { value: 'GEL', label: 'เจล' },
-    { value: 'LOT', label: 'โลชั่น' },
-    { value: 'SPR', label: 'สเปรย์' },
-    { value: 'SUP', label: 'ยาเหน็บ' },
-    { value: 'ENE', label: 'ยาสวนลำไส้' },
-    { value: 'POW', label: 'ผง' },
-    { value: 'PWD', label: 'แป้ง' },
-    { value: 'CR', label: 'ครีม' },
-    { value: 'BAG', label: 'ถุง' },
-    { value: 'APP', label: 'เครื่องมือ' },
-    { value: 'LVP', label: 'ถุงใส่เลือด' },
-    { value: 'MDI', label: 'พ่นสูดดม' },
-    { value: 'NAS', label: 'พ่นจมูก' },
-    { value: 'SAC', label: 'ซอง' },
-    { value: 'LIQ', label: 'ของเหลว' },
-    { value: 'MIX', label: 'ผสม' }
+    { value: 'TAB', label: 'TAB' },
+    { value: 'CAP', label: 'CAP' },
+    { value: 'SYR', label: 'SYR' },
+    { value: 'SUS', label: 'SUS' },
+    { value: 'INJ', label: 'INJ' },
+    { value: 'SOL', label: 'SOL' },
+    { value: 'OIN', label: 'OIN' },
+    { value: 'GEL', label: 'GEL' },
+    { value: 'LOT', label: 'LOT' },
+    { value: 'SPR', label: 'SPR' },
+    { value: 'SUP', label: 'SUP' },
+    { value: 'ENE', label: 'ENE' },
+    { value: 'POW', label: 'POW' },
+    { value: 'PWD', label: 'PWD' },
+    { value: 'CR', label: 'CR' },
+    { value: 'BAG', label: 'BAG' },
+    { value: 'APP', label: 'APP' },
+    { value: 'LVP', label: 'LVP' },
+    { value: 'MDI', label: 'MDI' },
+    { value: 'NAS', label: 'NAS' },
+    { value: 'SAC', label: 'SAC' },
+    { value: 'LIQ', label: 'LIQ' },
+    { value: 'MIX', label: 'MIX' }
   ]
 
   // Sorting function
@@ -417,7 +417,7 @@ export function StockTableEnhanced({
                 onClick={() => setShowLowStockOnly(!showLowStockOnly)}
                 className="flex items-center gap-2"
               >
-                <Filter className="h-4 w-4" />
+                <AlertTriangle className="h-4 w-4" />
                 สต็อกต่ำ
               </Button>
 
@@ -444,56 +444,6 @@ export function StockTableEnhanced({
             </div>
           </div>
         </div>
-
-        {/* Active Filters Summary */}
-        {(filterConfig.category !== 'all' || 
-          filterConfig.dosageForm !== 'all' || 
-          searchTerm || 
-          showLowStockOnly ||
-          sortConfig.field) && (
-          <div className="text-sm bg-blue-50 border border-blue-200 p-3 rounded-lg">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-medium text-blue-800">กำลังกรอง:</span>
-              
-              {searchTerm && (
-                <Badge variant="secondary" className="text-xs">
-                  ค้นหา: "{searchTerm}"
-                </Badge>
-              )}
-              
-              {filterConfig.category !== 'all' && (
-                <Badge variant="secondary" className="text-xs">
-                  ประเภท: {categoryOptions.find(opt => opt.value === filterConfig.category)?.label}
-                </Badge>
-              )}
-              
-              {filterConfig.dosageForm !== 'all' && (
-                <Badge variant="secondary" className="text-xs">
-                  รูปแบบ: {dosageFormOptions.find(opt => opt.value === filterConfig.dosageForm)?.label}
-                </Badge>
-              )}
-              
-              {showLowStockOnly && (
-                <Badge variant="secondary" className="text-xs">
-                  สต็อกต่ำเท่านั้น
-                </Badge>
-              )}
-              
-              {sortConfig.field && (
-                <Badge variant="secondary" className="text-xs">
-                  เรียงตาม: {
-                    sortConfig.field === 'name' ? 'ชื่อยา' :
-                    sortConfig.field === 'dosageForm' ? 'รูปแบบ' :
-                    sortConfig.field === 'strength' ? 'ความแรง' :
-                    sortConfig.field === 'packageSize' ? 'ขนาดบรรจุ' :
-                    sortConfig.field === 'quantity' ? 'จำนวน' :
-                    sortConfig.field === 'lastUpdated' ? 'วันที่' : sortConfig.field
-                  } ({sortConfig.direction === 'asc' ? '↑' : '↓'})
-                </Badge>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Enhanced Table with Sortable Headers */}
         <div className="border rounded-lg overflow-hidden">

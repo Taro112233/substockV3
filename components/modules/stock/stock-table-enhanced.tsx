@@ -436,13 +436,17 @@ export function StockTableEnhanced({
                     setFilterConfig({ category: 'all', dosageForm: 'all' })
                     setSortConfig({ field: null, direction: null })
                   }}
-                  className="flex items-center gap-2 text-xs"
+                  className="flex items-center gap-2 text-xs bg-red-500 text-white hover:bg-red-600"
                 >
                   ✕ ล้าง
                 </Button>
               )}
             </div>
           </div>
+
+
+
+          
         </div>
 
         {/* Enhanced Table with Sortable Headers */}
@@ -469,7 +473,6 @@ export function StockTableEnhanced({
                   <SortableHeader field="lastUpdated" className="w-[140px]" align="center">
                     อัปเดตล่าสุด
                   </SortableHeader>
-                  <TableHead className="w-[120px] text-center">จัดการ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -586,24 +589,6 @@ export function StockTableEnhanced({
                             <span className="text-gray-400 text-sm">-</span>
                           )}
                         </TableCell>
-
-                        {/* จัดการ */}
-                        <TableCell>
-                          <div className="flex gap-2 justify-center" onClick={(e) => e.stopPropagation()}>
-                            <Button
-                              variant={lowStock ? "default" : "outline"}
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleQuickEdit(stock)
-                              }}
-                              className="h-8 px-3 text-xs"
-                            >
-                              <Edit className="h-3 w-3 mr-1" />
-                              ปรับ
-                            </Button>
-                          </div>
-                        </TableCell>
                       </TableRow>
                     )
                   })
@@ -621,12 +606,6 @@ export function StockTableEnhanced({
                 แสดง <strong className="text-gray-700">{filteredStocks.length}</strong> รายการ
                 จากทั้งหมด <strong className="text-gray-700">{stocks.length}</strong> รายการ
               </span>
-              
-              {(filteredStocks.length !== stocks.length) && (
-                <span className="text-orange-600 text-xs">
-                  (กรองแล้ว {stocks.length - filteredStocks.length} รายการ)
-                </span>
-              )}
             </div>
             
             <div className="flex items-center gap-4 text-xs">

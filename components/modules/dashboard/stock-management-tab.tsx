@@ -275,9 +275,6 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
                 <p className="text-2xl font-bold text-purple-600">
                   ฿{totalValueCalculated.toLocaleString()}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  คำนวณจาก: จำนวนคงเหลือ × ราคาต่อกล่อง
-                </p>
               </div>
               <div className="text-2xl">💰</div>
             </div>

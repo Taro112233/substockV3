@@ -178,7 +178,6 @@ export function StockTable({
                   <TableHead className="w-[120px]">ขนาดบรรจุ</TableHead>
                   <TableHead className="w-[120px] text-center">คงเหลือ</TableHead>
                   <TableHead className="w-[140px] text-center">อัปเดตล่าสุด</TableHead>
-                  <TableHead className="w-[120px] text-center">จัดการ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -303,26 +302,6 @@ export function StockTable({
                           ) : (
                             <span className="text-gray-400 text-sm">-</span>
                           )}
-                        </TableCell>
-
-                        {/* จัดการ */}
-                        <TableCell>
-                          <div className="flex gap-2 justify-center" onClick={(e) => e.stopPropagation()}>
-                            {/* ปุ่มแก้ไขด่วน */}
-                            <Button
-                              variant={lowStock ? "default" : "outline"}
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleQuickEdit(stock)
-                              }}
-                              className="h-8 px-3 text-xs"
-                            >
-                              <Edit className="h-3 w-3 mr-1" />
-                              ปรับ
-                            </Button>
-                            
-                          </div>
                         </TableCell>
                       </TableRow>
                     )

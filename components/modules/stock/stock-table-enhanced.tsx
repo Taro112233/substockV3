@@ -36,7 +36,7 @@ import {
   ArrowDown
 } from 'lucide-react'
 import { useState, useMemo } from 'react'
-import { StockDetailModal } from './stock-detail-modal'
+import { StockDetailModalEnhanced } from './stock-detail-modal'
 
 // Type สำหรับ sorting
 type SortField = 'name' | 'dosageForm' | 'strength' | 'packageSize' | 'quantity' | 'lastUpdated'
@@ -627,7 +627,7 @@ export function StockTableEnhanced({
       </div>
 
       {/* Stock Detail Modal */}
-      <StockDetailModal
+      <StockDetailModalEnhanced
         stock={selectedStock}
         isOpen={isModalOpen}
         onClose={handleModalClose}

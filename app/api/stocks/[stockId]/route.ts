@@ -1,4 +1,4 @@
-// 📄 File: app/api/stocks/[stockId]/route.ts (FIXED FOR NEXT.JS 15)
+// 📄 File: app/api/stocks/[stockId]/route.ts (FIXED - No Permission Restrictions)
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
@@ -13,7 +13,7 @@ const updateStockSchema = z.object({
   department: z.enum(['PHARMACY', 'OPD'])
 })
 
-// ✅ FIX: เปลี่ยน params type ให้ตรงกับ Next.js 15
+// ✅ Context type สำหรับ Next.js 15
 interface RouteContext {
   params: Promise<{ stockId: string }>
 }
@@ -21,10 +21,9 @@ interface RouteContext {
 // GET - ดึงข้อมูลสต็อกเฉพาะรายการ
 export async function GET(
   request: NextRequest,
-  context: RouteContext // ✅ ใช้ RouteContext แทน inline type
+  context: RouteContext
 ) {
   try {
-    // ✅ FIX: await params สำหรับ Next.js 15
     const { stockId } = await context.params
 
     // Verify authentication
@@ -53,7 +52,9 @@ export async function GET(
             strength: true,
             unit: true,
             packageSize: true,
-            category: true
+            category: true,
+            pricePerBox: true,
+            notes: true
           }
         },
         transactions: {
@@ -80,7 +81,7 @@ export async function GET(
       data: stock
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get stock error:', error)
     return NextResponse.json(
       { error: 'เกิดข้อผิดพลาดในการดึงข้อมูลสต็อก' },
@@ -92,10 +93,9 @@ export async function GET(
 // PATCH - อัปเดตข้อมูลสต็อก
 export async function PATCH(
   request: NextRequest,
-  context: RouteContext // ✅ ใช้ RouteContext แทน inline type
+  context: RouteContext
 ) {
   try {
-    // ✅ FIX: await params สำหรับ Next.js 15
     const { stockId } = await context.params
 
     // Verify authentication
@@ -160,7 +160,9 @@ export async function PATCH(
               strength: true,
               unit: true,
               packageSize: true,
-              category: true
+              category: true,
+              pricePerBox: true,
+              notes: true
             }
           }
         }
@@ -216,7 +218,7 @@ export async function PATCH(
       message: 'อัปเดตข้อมูลสต็อกสำเร็จ'
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Update stock error:', error)
     
     // Handle validation errors
@@ -237,13 +239,12 @@ export async function PATCH(
   }
 }
 
-// DELETE - ลบข้อมูลสต็อก
+// DELETE - ลบข้อมูลสต็อก (ไม่จำกัดสิทธิ์)
 export async function DELETE(
   request: NextRequest,
-  context: RouteContext // ✅ ใช้ RouteContext แทน inline type
+  context: RouteContext
 ) {
   try {
-    // ✅ FIX: await params สำหรับ Next.js 15
     const { stockId } = await context.params
 
     // Verify authentication
@@ -289,7 +290,7 @@ export async function DELETE(
       message: `ลบข้อมูลสต็อกยา "${existingStock.drug.name}" สำเร็จ`
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Delete stock error:', error)
     return NextResponse.json(
       { error: 'เกิดข้อผิดพลาดในการลบข้อมูลสต็อก' },

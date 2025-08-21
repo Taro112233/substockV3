@@ -1,4 +1,5 @@
-// 📄 File: components/modules/stock/stock-detail-modal.tsx
+// 📄 File: components/modules/stock/stock-detail-modal-enhanced.tsx
+// Enhanced Mobile-First Stock Detail Modal with Drug Info Edit
 
 import { useState, useEffect } from 'react'
 import {
@@ -13,6 +14,14 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { Stock } from '@/types/dashboard'
 import {
@@ -35,7 +44,12 @@ import {
   X,
   Edit3,
   DollarSign,
-  FileText
+  FileText,
+  RotateCcw,
+  Plus,
+  Minus,
+  Target,
+  Info
 } from 'lucide-react'
 
 interface StockDetailModalProps {
@@ -50,6 +64,65 @@ interface StockUpdateData {
   minimumStock: number
   adjustmentReason: string
 }
+
+interface DrugUpdateData {
+  name: string
+  genericName: string | null
+  dosageForm: string
+  strength: string | null
+  unit: string
+  packageSize: string | null
+  pricePerBox: number
+  category: string
+  notes: string | null
+}
+
+// Quick adjustment options
+const QUICK_ADJUSTMENTS = [
+  { label: '+1', value: 1 },
+  { label: '+5', value: 5 },
+  { label: '+10', value: 10 },
+  { label: '+50', value: 50 },
+  { label: '-1', value: -1 },
+  { label: '-5', value: -5 },
+  { label: '-10', value: -10 },
+  { label: '-50', value: -50 }
+]
+
+// Common adjustment reasons
+const ADJUSTMENT_REASONS = [
+  'นับสต็อก',
+  'รับยาใหม่',
+  'แก้ไขข้อมูล',
+  'สูญหาย',
+  'หมดอายุ',
+  'เสียหาย',
+  'ส่งคืน',
+  'ปรับปรุงข้อมูล'
+]
+
+// Drug categories
+const DRUG_CATEGORIES = [
+  { value: 'GENERAL', label: 'ยาทั่วไป' },
+  { value: 'TABLET', label: 'ยาเม็ด' },
+  { value: 'SYRUP', label: 'ยาน้ำ' },
+  { value: 'INJECTION', label: 'ยาฉีด' },
+  { value: 'EXTEMP', label: 'ยาใช้ภายนอก/สมุนไพร' },
+  { value: 'HAD', label: 'ยาเสี่ยงสูง' },
+  { value: 'NARCOTIC', label: 'ยาเสพติด' },
+  { value: 'PSYCHIATRIC', label: 'ยาจิตเวช' },
+  { value: 'REFRIGERATED', label: 'ยาเย็น' },
+  { value: 'FLUID', label: 'สารน้ำ' },
+  { value: 'REFER', label: 'ยาส่งต่อ' },
+  { value: 'ALERT', label: 'ยาเฝ้าระวัง' }
+]
+
+// Dosage forms
+const DOSAGE_FORMS = [
+  'TAB', 'CAP', 'SYR', 'SUS', 'INJ', 'SOL', 'OIN', 'GEL', 'LOT', 'SPR', 
+  'SUP', 'ENE', 'POW', 'PWD', 'CR', 'BAG', 'APP', 'LVP', 'MDI', 'NAS', 
+  'SAC', 'LIQ', 'MIX'
+]
 
 // Helper functions
 const getStockStatusIcon = (stock: Stock) => {
@@ -73,35 +146,50 @@ const getStockStatusInfo = (stock: Stock) => {
     return {
       label: 'สต็อกต่ำ',
       color: 'bg-red-100 text-red-800 border-red-200',
-      description: 'สต็อกคงเหลือต่ำกว่าจำนวนขั้นต่ำที่กำหนด ควรเติมสต็อก'
+      description: 'สต็อกคงเหลือต่ำกว่าจำนวนขั้นต่ำ ต้องเติมสต็อก'
     }
   } else if (availableStock > stock.minimumStock * 2) {
     return {
       label: 'สต็อกเพียงพอ',
       color: 'bg-green-100 text-green-800 border-green-200',
-      description: 'สต็อกคงเหลือเพียงพอสำหรับการใช้งาน'
+      description: 'สต็อกคงเหลือเพียงพอ'
     }
   } else {
     return {
       label: 'สต็อกปานกลาง',
       color: 'bg-orange-100 text-orange-800 border-orange-200',
-      description: 'สต็อกคงเหลือใกล้จำนวนขั้นต่ำ ควรติดตามและวางแผนเติมสต็อก'
+      description: 'สต็อกใกล้ขั้นต่ำ ควรติดตาม'
     }
   }
 }
 
-export function StockDetailModal({ 
+export function StockDetailModalEnhanced({ 
   stock, 
   isOpen, 
   onClose, 
   onUpdate 
 }: StockDetailModalProps) {
-  const [isEditing, setIsEditing] = useState(false)
+  const [activeTab, setActiveTab] = useState<'stock' | 'drug'>('stock')
   const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState<StockUpdateData>({
+  
+  // Stock data states
+  const [stockFormData, setStockFormData] = useState<StockUpdateData>({
     totalQuantity: 0,
     minimumStock: 0,
-    adjustmentReason: 'นับสต็อก' // 🔥 ใส่ค่าเริ่มต้นเป็น "นับสต็อก"
+    adjustmentReason: 'นับสต็อก'
+  })
+
+  // Drug data states  
+  const [drugFormData, setDrugFormData] = useState<DrugUpdateData>({
+    name: '',
+    genericName: null,
+    dosageForm: '',
+    strength: null,
+    unit: '',
+    packageSize: null,
+    pricePerBox: 0,
+    category: 'GENERAL',
+    notes: null
   })
 
   const { toast } = useToast()
@@ -109,12 +197,26 @@ export function StockDetailModal({
   // Reset form เมื่อเปิด modal ใหม่
   useEffect(() => {
     if (stock && isOpen) {
-      setFormData({
+      setStockFormData({
         totalQuantity: stock.totalQuantity,
         minimumStock: stock.minimumStock,
-        adjustmentReason: 'นับสต็อก' // 🔥 ใส่ค่าเริ่มต้นเป็น "นับสต็อก"
+        adjustmentReason: 'นับสต็อก'
       })
-      setIsEditing(false)
+      
+      setDrugFormData({
+        name: stock.drug.name,
+        genericName: stock.drug.genericName || null,
+        dosageForm: stock.drug.dosageForm,
+        strength: stock.drug.strength || null,
+        unit: stock.drug.unit,
+        packageSize: stock.drug.packageSize || null,
+        pricePerBox: stock.drug.pricePerBox,
+        category: stock.drug.category,
+        notes: stock.drug.notes || null
+      })
+
+      // Default to stock tab for primary use case
+      setActiveTab('stock')
     }
   }, [stock, isOpen])
 
@@ -126,21 +228,47 @@ export function StockDetailModal({
   const categoryColor = getCategoryColor(stock.drug.category)
   const categoryLabel = getCategoryLabel(stock.drug.category)
 
-  const handleEdit = () => {
-    setIsEditing(true)
+  // Quick stock adjustment handlers
+  const handleQuickAdjustment = (delta: number) => {
+    const newQuantity = Math.max(0, stockFormData.totalQuantity + delta)
+    setStockFormData(prev => ({
+      ...prev,
+      totalQuantity: newQuantity
+    }))
   }
 
-  const handleCancel = () => {
-    setIsEditing(false)
-    setFormData({
+  const handleSetMinimumStock = () => {
+    setStockFormData(prev => ({
+      ...prev,
+      minimumStock: prev.totalQuantity
+    }))
+  }
+
+  const handleResetStock = () => {
+    setStockFormData({
       totalQuantity: stock.totalQuantity,
       minimumStock: stock.minimumStock,
-      adjustmentReason: 'นับสต็อก' // 🔥 ใส่ค่าเริ่มต้นเป็น "นับสต็อก"
+      adjustmentReason: 'นับสต็อก'
     })
   }
 
-  const handleSave = async () => {
-    if (!formData.adjustmentReason.trim() && formData.totalQuantity !== stock.totalQuantity) {
+  const handleResetDrug = () => {
+    setDrugFormData({
+      name: stock.drug.name,
+      genericName: stock.drug.genericName || null,
+      dosageForm: stock.drug.dosageForm,
+      strength: stock.drug.strength || null,
+      unit: stock.drug.unit,
+      packageSize: stock.drug.packageSize || null,
+      pricePerBox: stock.drug.pricePerBox,
+      category: stock.drug.category,
+      notes: stock.drug.notes || null
+    })
+  }
+
+  // Save stock changes
+  const handleSaveStock = async () => {
+    if (!stockFormData.adjustmentReason.trim() && stockFormData.totalQuantity !== stock.totalQuantity) {
       toast({
         title: "กรุณาระบุเหตุผล",
         description: "กรุณาระบุเหตุผลในการปรับสต็อก",
@@ -158,9 +286,9 @@ export function StockDetailModal({
         },
         credentials: 'include',
         body: JSON.stringify({
-          totalQuantity: formData.totalQuantity,
-          minimumStock: formData.minimumStock,
-          adjustmentReason: formData.adjustmentReason,
+          totalQuantity: stockFormData.totalQuantity,
+          minimumStock: stockFormData.minimumStock,
+          adjustmentReason: stockFormData.adjustmentReason,
           department: stock.department
         }),
       })
@@ -173,13 +301,13 @@ export function StockDetailModal({
       const { data: updatedStock } = await response.json()
 
       toast({
-        title: "อัปเดตสำเร็จ",
+        title: "อัปเดตสต็อกสำเร็จ",
         description: "ข้อมูลสต็อกถูกอัปเดตเรียบร้อยแล้ว",
         variant: "default"
       })
 
-      setIsEditing(false)
       onUpdate?.(updatedStock)
+      onClose() // ✅ ปิด modal อัตโนมัติหลังบันทึกสำเร็จ
       
     } catch (error) {
       console.error('Error updating stock:', error)
@@ -188,274 +316,463 @@ export function StockDetailModal({
         description: error instanceof Error ? error.message : 'ไม่สามารถอัปเดตข้อมูลได้',
         variant: "destructive"
       })
+      // ✅ ไม่ปิด modal เมื่อเกิด error
     } finally {
       setLoading(false)
     }
   }
 
+  // Save drug changes
+  const handleSaveDrug = async () => {
+    if (!drugFormData.name.trim()) {
+      toast({
+        title: "กรุณาระบุชื่อยา",
+        description: "ชื่อยาเป็นข้อมูลที่จำเป็น",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/drugs/${stock.drugId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(drugFormData),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'เกิดข้อผิดพลาดในการอัปเดต')
+      }
+
+      const { data: updatedDrug, message, priceChanged, oldPrice, newPrice } = await response.json()
+
+      // แสดงข้อความที่เหมาะสม
+      let toastDescription = "ข้อมูลยาถูกอัปเดตเรียบร้อยแล้ว"
+      if (priceChanged) {
+        toastDescription += `\nราคาเปลี่ยนจาก ฿${oldPrice?.toFixed(2)} เป็น ฿${newPrice?.toFixed(2)}`
+      }
+
+      toast({
+        title: "อัปเดตข้อมูลยาสำเร็จ",
+        description: toastDescription,
+        variant: "default"
+      })
+
+      // Update stock with new drug info and recalculated values
+      const updatedStock = { 
+        ...stock, 
+        drug: {
+          ...updatedDrug,
+          // แน่ใจว่ามีฟิลด์ที่จำเป็นครบ
+          hospitalDrugCode: updatedDrug.hospitalDrugCode,
+          name: updatedDrug.name,
+          genericName: updatedDrug.genericName,
+          dosageForm: updatedDrug.dosageForm,
+          strength: updatedDrug.strength,
+          unit: updatedDrug.unit,
+          packageSize: updatedDrug.packageSize,
+          pricePerBox: updatedDrug.pricePerBox,
+          category: updatedDrug.category,
+          isActive: updatedDrug.isActive,
+          notes: updatedDrug.notes
+        },
+        // อัปเดตมูลค่าสต็อกถ้าราคาเปลี่ยน
+        ...(priceChanged && {
+          totalValue: stock.totalQuantity * newPrice
+        })
+      }
+      
+      onUpdate?.(updatedStock)
+      onClose() // ✅ ปิด modal อัตโนมัติหลังบันทึกสำเร็จ
+      
+      // Reset form ให้ตรงกับข้อมูลใหม่
+      setDrugFormData({
+        name: updatedDrug.name,
+        genericName: updatedDrug.genericName || null,
+        dosageForm: updatedDrug.dosageForm,
+        strength: updatedDrug.strength || null,
+        unit: updatedDrug.unit,
+        packageSize: updatedDrug.packageSize || null,
+        pricePerBox: updatedDrug.pricePerBox,
+        category: updatedDrug.category,
+        notes: updatedDrug.notes || null
+      })
+      
+    } catch (error) {
+      console.error('Error updating drug:', error)
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error instanceof Error ? error.message : 'ไม่สามารถอัปเดตข้อมูลได้',
+        variant: "destructive",
+        duration: 5000
+      })
+      // ✅ ไม่ปิด modal เมื่อเกิด error
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const hasStockChanges = stockFormData.totalQuantity !== stock.totalQuantity || 
+                        stockFormData.minimumStock !== stock.minimumStock
+
+  const hasDrugChanges = drugFormData.name !== stock.drug.name ||
+                        drugFormData.genericName !== stock.drug.genericName ||
+                        drugFormData.dosageForm !== stock.drug.dosageForm ||
+                        drugFormData.strength !== stock.drug.strength ||
+                        drugFormData.unit !== stock.drug.unit ||
+                        drugFormData.packageSize !== stock.drug.packageSize ||
+                        drugFormData.pricePerBox !== stock.drug.pricePerBox ||
+                        drugFormData.category !== stock.drug.category ||
+                        drugFormData.notes !== stock.drug.notes
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 text-lg">
             <Package className="h-5 w-5" />
-            รายละเอียดสต็อกยา
+            จัดการข้อมูลยา
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Stock Status Card */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {getStockStatusIcon(stock)}
-                  <span>สถานะสต็อก</span>
-                </div>
-                <Badge className={stockStatusInfo.color}>
-                  {stockStatusInfo.label}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600">{stockStatusInfo.description}</p>
-            </CardContent>
-          </Card>
 
-          {/* Drug Information Card */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center justify-between">
-                <span>ข้อมูลยา</span>
-                <Badge className={categoryColor}>
-                  {categoryLabel}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-600 flex items-center gap-1">
-                    <Pill className="h-4 w-4" />
-                    ชื่อยา
-                  </label>
-                  <p className="font-medium">{stock.drug.name}</p>
-                </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-600 flex items-center gap-1">
-                    <Hash className="h-4 w-4" />
-                    รหัสยา
-                  </label>
-                  <p className="font-mono text-sm">{stock.drug.hospitalDrugCode}</p>
-                </div>
+        {/* Main Tabs */}
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'stock' | 'drug')}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="stock" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              จัดการสต็อก
+            </TabsTrigger>
+            <TabsTrigger value="drug" className="flex items-center gap-2">
+              <Pill className="h-4 w-4" />
+              ข้อมูลยา
+            </TabsTrigger>
+          </TabsList>
 
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-600">ชื่อสามัญ</label>
-                  <p className="text-sm">{stock.drug.genericName || '-'}</p>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-600">รูปแบบ</label>
-                  <p className="text-sm">{stock.drug.dosageForm}</p>
+          {/* Stock Management Tab */}
+          <TabsContent value="stock" className="space-y-4">
+            {/* Quick Adjustments */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Target className="h-4 w-4" />
+                    ปรับสต็อกด่วน
+                  </div>
+                  
+                  {/* Status Info ข้างๆ หัวข้อ */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1">
+                      <div className={`text-sm font-medium ${lowStock ? 'text-red-600' : 'text-green-600'}`}>
+                        {availableStock.toLocaleString()}
+                      </div>
+                      <span className="text-xs text-gray-500">คงเหลือ</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="text-sm font-medium text-blue-600">
+                        {stock.minimumStock.toLocaleString()}
+                      </div>
+                      <span className="text-xs text-gray-500">ขั้นต่ำ</span>
+                    </div>
+                    <Badge className={stockStatusInfo.color}>
+                      {stockStatusInfo.label}
+                    </Badge>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Current Stock Display */}
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {stockFormData.totalQuantity.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-gray-600">จำนวนปัจจุบัน</div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-600">ความแรง</label>
-                  <p className="text-sm">{stock.drug.strength} {stock.drug.unit}</p>
+                {/* Quick Adjustment Buttons */}
+                <div className="grid grid-cols-4 gap-2">
+                  {QUICK_ADJUSTMENTS.map((adj) => (
+                    <Button
+                      key={adj.label}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleQuickAdjustment(adj.value)}
+                      className={`${adj.value > 0 ? 'text-green-600 hover:bg-green-50' : 'text-red-600 hover:bg-red-50'}`}
+                    >
+                      {adj.label}
+                    </Button>
+                  ))}
                 </div>
 
+                {/* Manual Input */}
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-600">ขนาดบรรจุ</label>
-                  <p className="text-sm">{stock.drug.packageSize || '-'}</p>
-                </div>
-              </div>
-
-              {/* Department */}
-              <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                <label className="text-sm text-gray-600 flex items-center gap-1">
-                  <Building className="h-4 w-4" />
-                  แผนก
-                </label>
-                <p className="text-sm mt-1">
-                  {stock.department === 'PHARMACY' ? 'แผนกเภสัชกรรม' : 'แผนก OPD'}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Stock Details Card */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center justify-between">
-                <span>รายละเอียดสต็อก</span>
-                {!isEditing && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleEdit}
-                    className="flex items-center gap-2"
-                  >
-                    <Edit3 className="h-4 w-4" />
-                    แก้ไข
-                  </Button>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Stock Quantities */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-600">
-                    จำนวนคงเหลือ
-                    {lowStock && <AlertTriangle className="inline h-4 w-4 ml-1 text-red-500" />}
-                  </label>
-                  {isEditing ? (
+                  <label className="text-sm font-medium">ระบุจำนวนที่ต้องการ</label>
+                  <div className="flex gap-2">
                     <Input
                       type="number"
                       min="0"
-                      value={formData.totalQuantity}
-                      onChange={(e) => setFormData(prev => ({
+                      value={stockFormData.totalQuantity}
+                      onChange={(e) => setStockFormData(prev => ({
                         ...prev,
                         totalQuantity: Math.max(0, parseInt(e.target.value) || 0)
                       }))}
-                      className="text-center"
+                      className="text-center text-lg font-medium"
                     />
-                  ) : (
-                    <p className={`text-2xl font-bold ${
-                      lowStock ? 'text-red-600' : 'text-green-600'
-                    }`}>
-                      {stock.totalQuantity.toLocaleString()}
-                    </p>
-                  )}
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleResetStock}
+                      title="รีเซ็ต"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-600">จำนวนจอง</label>
-                  <p className="text-xl font-medium text-orange-600">
-                    {stock.reservedQty.toLocaleString()}
-                  </p>
-                </div>
+                <Separator />
 
+                {/* Minimum Stock */}
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-600">จำนวนที่ใช้ได้</label>
-                  <p className="text-xl font-medium text-blue-600">
-                    {availableStock.toLocaleString()}
-                  </p>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Minimum Stock and Value */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-600">จำนวนขั้นต่ำ</label>
-                  {isEditing ? (
+                  <label className="text-sm font-medium">จำนวนขั้นต่ำ</label>
+                  <div className="flex gap-2">
                     <Input
                       type="number"
                       min="0"
-                      value={formData.minimumStock}
-                      onChange={(e) => setFormData(prev => ({
+                      value={stockFormData.minimumStock}
+                      onChange={(e) => setStockFormData(prev => ({
                         ...prev,
                         minimumStock: Math.max(0, parseInt(e.target.value) || 0)
                       }))}
                     />
-                  ) : (
-                    <p className="text-lg font-medium">
-                      {stock.minimumStock.toLocaleString()}
-                    </p>
-                  )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSetMinimumStock}
+                      className="shrink-0"
+                    >
+                      ใช้ปัจจุบัน
+                    </Button>
+                  </div>
                 </div>
 
+                {/* Adjustment Reason */}
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-600 flex items-center gap-1">
-                    <DollarSign className="h-4 w-4" />
-                    มูลค่าสต็อก
-                  </label>
-                  <p className="text-lg font-bold text-green-600">
-                    {formatCurrency(stock.totalValue)}
-                  </p>
+                  <label className="text-sm font-medium">เหตุผล *</label>
+                  <Select
+                    value={stockFormData.adjustmentReason}
+                    onValueChange={(value) => setStockFormData(prev => ({ ...prev, adjustmentReason: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="เลือกเหตุผล" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ADJUSTMENT_REASONS.map((reason) => (
+                        <SelectItem key={reason} value={reason}>
+                          {reason}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
 
-              <Separator />
-
-              {/* Adjustment Reason for Editing */}
-              {isEditing && (
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-600 flex items-center gap-1">
-                    <FileText className="h-4 w-4" />
-                    เหตุผลในการปรับสต็อก *
-                  </label>
+                {/* Additional Notes for Custom Reason */}
+                {stockFormData.adjustmentReason === 'ปรับปรุงข้อมูล' && (
                   <Textarea
-                    value={formData.adjustmentReason}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      adjustmentReason: e.target.value
-                    }))}
-                    placeholder="ระบุเหตุผลในการปรับสต็อก เช่น รับยาเพิ่ม, นับสต็อก, แก้ไขข้อมูล"
+                    placeholder="ระบุรายละเอียดเพิ่มเติม..."
+                    className="min-h-[60px]"
+                  />
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Action Buttons for Stock */}
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={handleResetStock}
+                disabled={loading || !hasStockChanges}
+                className="flex-1"
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                รีเซ็ต
+              </Button>
+              <Button
+                onClick={handleSaveStock}
+                disabled={loading || !hasStockChanges || (!stockFormData.adjustmentReason.trim() && stockFormData.totalQuantity !== stock.totalQuantity)}
+                className="flex-1"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {loading ? 'กำลังบันทึก...' : 'บันทึก'}
+              </Button>
+            </div>
+          </TabsContent>
+
+          {/* Drug Information Tab */}
+          <TabsContent value="drug" className="space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Pill className="h-4 w-4" />
+                  ข้อมูลยา
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Basic Drug Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">ชื่อยา *</label>
+                    <Input
+                      value={drugFormData.name}
+                      onChange={(e) => setDrugFormData(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="ระบุชื่อยา"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">ชื่อสามัญ</label>
+                    <Input
+                      value={drugFormData.genericName || ''}
+                      onChange={(e) => setDrugFormData(prev => ({ ...prev, genericName: e.target.value || null }))}
+                      placeholder="ระบุชื่อสามัญ"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">รูปแบบยา</label>
+                    <Select
+                      value={drugFormData.dosageForm}
+                      onValueChange={(value) => setDrugFormData(prev => ({ ...prev, dosageForm: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="เลือกรูปแบบ" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DOSAGE_FORMS.map((form) => (
+                          <SelectItem key={form} value={form}>
+                            {form}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">ความแรง</label>
+                    <div className="flex gap-2">
+                      <Input
+                        value={drugFormData.strength || ''}
+                        onChange={(e) => setDrugFormData(prev => ({ ...prev, strength: e.target.value || null }))}
+                        placeholder="เช่น 500"
+                        className="flex-1"
+                      />
+                      <Input
+                        value={drugFormData.unit}
+                        onChange={(e) => setDrugFormData(prev => ({ ...prev, unit: e.target.value }))}
+                        placeholder="หน่วย"
+                        className="w-20"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">ขนาดบรรจุ</label>
+                    <Input
+                      value={drugFormData.packageSize || ''}
+                      onChange={(e) => setDrugFormData(prev => ({ ...prev, packageSize: e.target.value || null }))}
+                      placeholder="เช่น 100"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">ราคาต่อกล่อง</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={drugFormData.pricePerBox}
+                      onChange={(e) => setDrugFormData(prev => ({ ...prev, pricePerBox: parseFloat(e.target.value) || 0 }))}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
+                {/* Category */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">ประเภทยา</label>
+                  <Select
+                    value={drugFormData.category}
+                    onValueChange={(value) => setDrugFormData(prev => ({ ...prev, category: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="เลือกประเภท" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DRUG_CATEGORIES.map((cat) => (
+                        <SelectItem key={cat.value} value={cat.value}>
+                          {cat.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Notes */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">หมายเหตุ</label>
+                  <Textarea
+                    value={drugFormData.notes || ''}
+                    onChange={(e) => setDrugFormData(prev => ({ ...prev, notes: e.target.value || null }))}
+                    placeholder="หมายเหตุเพิ่มเติม..."
                     className="min-h-[80px]"
                   />
                 </div>
-              )}
+              </CardContent>
+            </Card>
 
-              {/* Last Updated */}
-              <div className="space-y-2">
-                <label className="text-sm text-gray-600 flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  อัปเดตล่าสุด
-                </label>
-                <p className="text-sm">
-                  {stock.lastUpdated ? (
-                    new Date(stock.lastUpdated).toLocaleString('th-TH', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      second: '2-digit'
-                    })
-                  ) : (
-                    '-'
-                  )}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            {isEditing ? (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={loading}
-                  className="flex items-center gap-2"
-                >
-                  <X className="h-4 w-4" />
-                  ยกเลิก
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  disabled={loading || (!formData.adjustmentReason.trim() && formData.totalQuantity !== stock.totalQuantity)}
-                  className="flex items-center gap-2"
-                >
-                  <Save className="h-4 w-4" />
-                  {loading ? 'กำลังบันทึก...' : 'บันทึก'}
-                </Button>
-              </>
-            ) : (
+            {/* Action Buttons for Drug */}
+            <div className="flex gap-3">
               <Button
                 variant="outline"
-                onClick={onClose}
-                className="flex items-center gap-2"
+                onClick={handleResetDrug}
+                disabled={loading || !hasDrugChanges}
+                className="flex-1"
               >
-                <X className="h-4 w-4" />
-                ปิด
+                <RotateCcw className="h-4 w-4 mr-2" />
+                รีเซ็ต
               </Button>
-            )}
+              <Button
+                onClick={handleSaveDrug}
+                disabled={loading || !hasDrugChanges || !drugFormData.name.trim()}
+                className="flex-1"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {loading ? 'กำลังบันทึก...' : 'บันทึก'}
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Footer Info */}
+        <div className="pt-4 border-t">
+          <div className="flex justify-between items-center text-xs text-gray-500">
+            <div>
+              อัปเดตล่าสุด: {stock.lastUpdated ? new Date(stock.lastUpdated).toLocaleString('th-TH') : '-'}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="flex items-center gap-1"
+            >
+              <X className="h-4 w-4" />
+              ปิด
+            </Button>
           </div>
         </div>
       </DialogContent>

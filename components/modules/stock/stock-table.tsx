@@ -25,7 +25,7 @@ import {
   Filter
 } from 'lucide-react'
 import { useState } from 'react'
-import { StockDetailModal } from './stock-detail-modal'
+import { StockDetailModalEnhanced } from './stock-detail-modal'
 
 interface StockTableProps {
   stocks: Stock[]
@@ -339,7 +339,7 @@ export function StockTable({
       </div>
 
       {/* Stock Detail Modal */}
-      <StockDetailModal
+      <StockDetailModalEnhanced
         stock={selectedStock}
         isOpen={isModalOpen}
         onClose={handleModalClose}

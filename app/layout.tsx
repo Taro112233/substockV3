@@ -1,5 +1,5 @@
-// app/layout.tsx
-import type { Metadata } from "next";
+// app/layout.tsx - ✅ FIXED for Next.js 15
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
@@ -15,12 +15,21 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// ✅ แยก metadata export (ไม่รวม themeColor และ viewport)
 export const metadata: Metadata = {
   title: "Hospital Pharmacy Stock Management System V3.0",
   description: "ระบบจัดการสต็อกยาโรงพยาบาล - Single Hospital System",
   manifest: "/manifest.json",
-  themeColor: "#2563eb",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
+  // ❌ ลบ themeColor และ viewport ออก
+};
+
+// ✅ สร้าง viewport export แยกต่างหาก (Next.js 15+)
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#2563eb', // ✅ ย้าย themeColor มาที่นี่
 };
 
 export default function RootLayout({

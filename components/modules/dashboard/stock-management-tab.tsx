@@ -1,4 +1,4 @@
-// 📄 File: components/modules/dashboard/stock-management-tab.tsx (Fixed)
+// 📄 File: components/modules/dashboard/stock-management-tab.tsx (Updated with Responsive)
 // =====================================================
 
 import { useState, useEffect, useCallback } from "react";
@@ -12,9 +12,14 @@ import {
   Package,
   AlertTriangle,
   TrendingUp,
-  Filter
+  Filter,
+  Smartphone,
+  Monitor,
+  Grid3X3,
+  List
 } from "lucide-react";
-import { StockTableEnhanced } from "../stock/stock-table-enhanced";
+// ✅ Updated: Import the new responsive component
+import { StockDisplayResponsive, useStockViewMode } from "../stock/stock-display-responsive";
 import { AddDrugModal } from "../stock/add-drug-modal";
 
 interface StockData {
@@ -45,6 +50,9 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const { toast } = useToast();
+  
+  // ✅ New: Get view mode info for display
+  const { viewMode, screenSize, isCardsView, setViewMode } = useStockViewMode();
 
   // ดึงข้อมูลสต็อก - wrapped with useCallback to fix hook dependency warning
   const fetchStockData = useCallback(async (isRefresh = false) => {
@@ -214,6 +222,11 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
     }
   }, [data]);
 
+  // ✅ New: Handle view mode toggle for mobile
+  const handleViewModeToggle = () => {
+    setViewMode(isCardsView ? 'table' : 'cards');
+  };
+
   // กรณี loading หรือไม่มีข้อมูล
   if (loading || !data) {
     return (
@@ -268,20 +281,88 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
   return (
     <>
       <div className="space-y-6">
-        {/* Header Actions - Updated Layout */}
+        {/* Header Actions - Updated Layout with View Mode Info */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">
-              จัดการสต็อกยา -{" "}
-              {department === "PHARMACY" ? "แผนกเภสัชกรรม" : "แผนก OPD"}
-            </h2>
-            <p className="text-sm text-gray-600 mt-1">
-              จัดการข้อมูลยาและสต็อกของแผนก
-            </p>
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-semibold text-gray-900">
+                จัดการสต็อกยา -{" "}
+                {department === "PHARMACY" ? "แผนกเภสัชกรรม" : "แผนก OPD"}
+              </h2>
+              
+              {/* ✅ New: View mode indicator for mobile */}
+              {screenSize === 'mobile' && (
+                <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-lg text-xs">
+                  {isCardsView ? (
+                    <>
+                      <Grid3X3 className="h-3 w-3" />
+                      <span>การ์ด</span>
+                    </>
+                  ) : (
+                    <>
+                      <List className="h-3 w-3" />
+                      <span>ตาราง</span>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-4 mt-1">
+              <p className="text-sm text-gray-600">
+                จัดการข้อมูลยาและสต็อกของแผนก
+              </p>
+              
+              {/* ✅ New: Screen size indicator (desktop only) */}
+              {(screenSize === 'tablet' || screenSize === 'desktop') && (
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <div className="flex items-center gap-1">
+                    <div className={`w-2 h-2 rounded-full ${
+                      screenSize === 'desktop' ? 'bg-green-500' : 'bg-gray-300'
+                    }`} />
+                    <Smartphone className="h-3 w-3" />
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className={`w-2 h-2 rounded-full ${
+                      screenSize === 'tablet' ? 'bg-green-500' : 'bg-gray-300'
+                    }`} />
+                    <span>Tablet</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className={`w-2 h-2 rounded-full ${
+                      screenSize === 'desktop' ? 'bg-green-500' : 'bg-gray-300'
+                    }`} />
+                    <Monitor className="h-3 w-3" />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right-aligned Action Buttons */}
           <div className="flex gap-2 flex-wrap justify-end">
+            {/* ✅ New: View mode toggle for mobile */}
+            {screenSize === 'mobile' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleViewModeToggle}
+                className="flex items-center gap-2"
+              >
+                {isCardsView ? (
+                  <>
+                    <List className="h-4 w-4" />
+                    <span>ตาราง</span>
+                  </>
+                ) : (
+                  <>
+                    <Grid3X3 className="h-4 w-4" />
+                    <span>การ์ด</span>
+                  </>
+                )}
+              </Button>
+            )}
+
             <Button
               variant="outline"
               size="sm"
@@ -306,7 +387,7 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
           </div>
         </div>
 
-        {/* Dynamic Statistics Cards */}
+        {/* Dynamic Statistics Cards - Enhanced with Mobile Optimization */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Total Drugs Card */}
           <Card className={`transition-all duration-200 ${
@@ -314,8 +395,8 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
           }`}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-600 truncate">
                     รายการยา{isFiltered ? ' (กรองแล้ว)' : 'ทั้งหมด'}
                   </p>
                   <div className="flex items-center gap-2">
@@ -329,7 +410,7 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
                     )}
                   </div>
                 </div>
-                <Package className={`h-8 w-8 ${isFiltered ? 'text-blue-500' : 'text-gray-500'}`} />
+                <Package className={`h-8 w-8 shrink-0 ${isFiltered ? 'text-blue-500' : 'text-gray-500'}`} />
               </div>
             </CardContent>
           </Card>
@@ -340,8 +421,8 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
           }`}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-600 truncate">
                     สต็อกต่ำ{isFiltered ? ' (กรองแล้ว)' : ''}
                   </p>
                   <div className="flex items-center gap-2">
@@ -362,7 +443,7 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
                   </div>
                 </div>
                 <AlertTriangle
-                  className={`h-8 w-8 ${
+                  className={`h-8 w-8 shrink-0 ${
                     displayStats.lowStockCount > 0
                       ? "text-red-500"
                       : "text-gray-400"
@@ -378,8 +459,8 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
           }`}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-600 truncate">
                     มูลค่ารวม{isFiltered ? ' (กรองแล้ว)' : ''}
                   </p>
                   <div className="flex items-center gap-2">
@@ -393,20 +474,23 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
                     )}
                   </div>
                 </div>
-                <TrendingUp className={`h-8 w-8 ${isFiltered ? 'text-purple-500' : 'text-gray-500'}`} />
+                <TrendingUp className={`h-8 w-8 shrink-0 ${isFiltered ? 'text-purple-500' : 'text-gray-500'}`} />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Enhanced Stock Table */}
-        <StockTableEnhanced
+        {/* ✅ Updated: Use Responsive Stock Display */}
+        <StockDisplayResponsive
           stocks={data.stocks}
           department={department}
           loading={loading}
           onUpdate={handleStockUpdate}
           onFilteredStatsChange={handleFilteredStatsChange}
         />
+
+        {/* ✅ New: Mobile Bottom Spacing for FAB and Navigation */}
+        <div className="h-16 sm:h-0" />
       </div>
 
       {/* Add Drug Modal */}

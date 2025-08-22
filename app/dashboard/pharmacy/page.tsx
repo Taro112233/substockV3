@@ -1,17 +1,20 @@
-// 📄 File: app/dashboard/pharmacy/page.tsx
+// 📄 File: app/dashboard/pharmacy/page.tsx (with Back Button)
 
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/button'
 import { StockManagementTab } from '@/components/modules/dashboard/stock-management-tab'
 import { TransferTab } from '@/components/modules/dashboard/transfer-tab'
 import { HistoryTab } from '@/components/modules/dashboard/history-tab'
 import { TransferDetailModal } from '@/components/modules/transfer/transfer-detail-modal'
 import { Transfer } from '@/types/dashboard'
-import { Package, FileText, History } from 'lucide-react'
+import { Package, FileText, History, ArrowLeft, Home } from 'lucide-react'
 
 export default function PharmacyDashboard() {
+  const router = useRouter()
   const [activeTransfer, setActiveTransfer] = useState<Transfer | null>(null)
 
   // ดึงข้อมูลผู้ใช้จาก API
@@ -110,6 +113,11 @@ export default function PharmacyDashboard() {
     fetchUserData()
   }, [])
 
+  // Function to handle back navigation
+  const handleBackToDashboard = () => {
+    router.push('/dashboard')
+  }
+
   // หากยังไม่มีข้อมูลผู้ใช้ ให้แสดง loading state
   if (!user) {
     return (
@@ -126,12 +134,30 @@ export default function PharmacyDashboard() {
 
   return (
     <div className="container mx-auto p-4 max-w-7xl">
+      {/* Back Button Section */}
+      <div className="mb-4">
+        <Button
+          variant="ghost"
+          onClick={handleBackToDashboard}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 p-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="hidden sm:inline">กลับไปหน้าหลัก</span>
+          <span className="sm:hidden">กลับ</span>
+        </Button>
+      </div>
+
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            ระบบจัดการสต็อกยา - แผนกเภสัชกรรม
-          </h1>
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-2">
+              <Package className="h-6 w-6 text-blue-600" />
+              <h1 className="text-2xl font-bold text-gray-900">
+                ระบบจัดการสต็อกยา - แผนกเภสัชกรรม
+              </h1>
+            </div>
+          </div>
           <p className="text-gray-600 mt-1">
             ยินดีต้อนรับ คุณ{user.firstName} {user.lastName}
             {user.position && ` (${user.position})`}
@@ -139,6 +165,19 @@ export default function PharmacyDashboard() {
           <p className="text-xs text-gray-500 mt-1">
             อัปเดตล่าสุด: {new Date().toLocaleString('th-TH')}
           </p>
+        </div>
+        
+        {/* Quick Action Button - Desktop */}
+        <div className="hidden sm:flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleBackToDashboard}
+            className="flex items-center gap-2"
+          >
+            <Home className="h-4 w-4" />
+            หน้าหลัก
+          </Button>
         </div>
       </div>
 

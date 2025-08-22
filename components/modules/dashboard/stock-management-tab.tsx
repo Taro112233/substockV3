@@ -1,5 +1,5 @@
 // 📄 File: components/modules/dashboard/stock-management-tab.tsx (Updated)
-// Updated with Dynamic Stats that respond to filtering
+// Updated with Right-aligned Buttons and Add Drug Modal
 
 import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import {
   Filter
 } from "lucide-react";
 import { StockTableEnhanced } from "../stock/stock-table-enhanced";
+import { AddDrugModal } from "../stock/add-drug-modal";
 
 interface StockData {
   stocks: Stock[];
@@ -41,6 +42,7 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
   const [refreshing, setRefreshing] = useState(false);
   const [filteredStats, setFilteredStats] = useState<FilteredStatsData | null>(null);
   const [isFiltered, setIsFiltered] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const { toast } = useToast();
 
@@ -110,12 +112,7 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
   };
 
   const handleAddStock = () => {
-    // TODO: เปิด modal เพิ่มสต็อก
-    toast({
-      title: "ฟีเจอร์กำลังพัฒนา",
-      description: "การเพิ่มสต็อกใหม่จะพร้อมใช้งานในเร็วๆ นี้",
-      variant: "default",
-    });
+    setIsAddModalOpen(true);
   };
 
   // ฟังก์ชันสำหรับคำนวณมูลค่ารวมใหม่ (totalQuantity × pricePerBox)
@@ -161,6 +158,40 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
     toast({
       title: "อัปเดตสำเร็จ",
       description: `ข้อมูลสต็อก "${updatedStock.drug.name}" ถูกอัปเดตแล้ว`,
+      variant: "default",
+    });
+  };
+
+  // Handle new drug added
+  const handleDrugAdded = (newStock: Stock) => {
+    if (!data) return;
+
+    // เพิ่มยาใหม่เข้าใน state (เฉพาะแผนกปัจจุบัน)
+    const updatedStocks = [...data.stocks, newStock];
+
+    // คำนวณ stats ใหม่
+    const newTotalValue = updatedStocks.reduce((sum, stock) => {
+      const quantity = stock.totalQuantity || 0;
+      const pricePerBox = stock.drug?.pricePerBox || 0;
+      return sum + (quantity * pricePerBox);
+    }, 0);
+
+    const lowStockCount = updatedStocks.filter(
+      (stock) => stock.totalQuantity <= stock.minimumStock
+    ).length;
+
+    setData({
+      stocks: updatedStocks,
+      stats: {
+        totalDrugs: updatedStocks.length,
+        totalValue: newTotalValue,
+        lowStockCount,
+      },
+    });
+
+    toast({
+      title: "เพิ่มยาสำเร็จ",
+      description: `เพิ่มยา "${newStock.drug.name}" เรียบร้อยแล้ว (สร้างสต็อกทั้ง 2 แผนก)`,
       variant: "default",
     });
   };
@@ -233,136 +264,156 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header Actions */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <>
+      <div className="space-y-6">
+        {/* Header Actions - Updated Layout */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">
+              จัดการสต็อกยา -{" "}
+              {department === "PHARMACY" ? "แผนกเภสัชกรรม" : "แผนก OPD"}
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              จัดการข้อมูลยาและสต็อกของแผนก
+            </p>
+          </div>
 
-        <div className="flex gap-2 flex-wrap">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={refreshing || loading}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
-            />
-            {refreshing ? "กำลังอัปเดต..." : "รีเฟรช"}
-          </Button>
-
-          <Button
-            size="sm"
-            onClick={handleAddStock}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            เพิ่มสต็อก
-          </Button>
-        </div>
-      </div>
-
-      {/* Dynamic Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Total Drugs Card */}
-        <Card className={`transition-all duration-200 ${
-          isFiltered ? 'border-blue-300 bg-blue-50' : 'border-gray-200'
-        }`}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">
-                  รายการยา{isFiltered ? ' (กรองแล้ว)' : 'ทั้งหมด'}
-                </p>
-                <div className="flex items-center gap-2">
-                  <p className="text-2xl font-bold text-gray-900">
-                    {displayStats.totalDrugs.toLocaleString()}
-                  </p>
-                  {isFiltered && (
-                    <span className="text-sm text-blue-600">
-                      / {data.stats.totalDrugs.toLocaleString()}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <Package className={`h-8 w-8 ${isFiltered ? 'text-blue-500' : 'text-gray-500'}`} />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Low Stock Card */}
-        <Card className={`transition-all duration-200 ${
-          isFiltered ? 'border-orange-300 bg-orange-50' : 'border-gray-200'
-        }`}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">
-                  สต็อกต่ำ{isFiltered ? ' (กรองแล้ว)' : ''}
-                </p>
-                <div className="flex items-center gap-2">
-                  <p
-                    className={`text-2xl font-bold ${
-                      displayStats.lowStockCount > 0
-                        ? "text-red-600"
-                        : "text-gray-400"
-                    }`}
-                  >
-                    {displayStats.lowStockCount.toLocaleString()}
-                  </p>
-                  {isFiltered && (
-                    <span className="text-sm text-orange-600">
-                      / {data.stats.lowStockCount.toLocaleString()}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <AlertTriangle
-                className={`h-8 w-8 ${
-                  displayStats.lowStockCount > 0
-                    ? "text-red-500"
-                    : "text-gray-400"
-                }`}
+          {/* Right-aligned Action Buttons */}
+          <div className="flex gap-2 flex-wrap justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={refreshing || loading}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
               />
-            </div>
-          </CardContent>
-        </Card>
+              {refreshing ? "กำลังอัปเดต..." : "รีเฟรช"}
+            </Button>
 
-        {/* Total Value Card */}
-        <Card className={`transition-all duration-200 ${
-          isFiltered ? 'border-purple-300 bg-purple-50' : 'border-gray-200'
-        }`}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">
-                  มูลค่ารวม{isFiltered ? ' (กรองแล้ว)' : ''}
-                </p>
-                <div className="flex items-center gap-2">
-                  <p className="text-2xl font-bold text-purple-600">
-                    ฿{displayStats.totalValue.toLocaleString()}
+            <Button
+              size="sm"
+              onClick={handleAddStock}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              เพิ่มยาใหม่
+            </Button>
+          </div>
+        </div>
+
+        {/* Dynamic Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Total Drugs Card */}
+          <Card className={`transition-all duration-200 ${
+            isFiltered ? 'border-blue-300 bg-blue-50' : 'border-gray-200'
+          }`}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">
+                    รายการยา{isFiltered ? ' (กรองแล้ว)' : 'ทั้งหมด'}
                   </p>
-                  {isFiltered && (
-                    <span className="text-sm text-purple-600">
-                      / ฿{totalValueCalculated.toLocaleString()}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <p className="text-2xl font-bold text-gray-900">
+                      {displayStats.totalDrugs.toLocaleString()}
+                    </p>
+                    {isFiltered && (
+                      <span className="text-sm text-blue-600">
+                        / {data.stats.totalDrugs.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
                 </div>
+                <Package className={`h-8 w-8 ${isFiltered ? 'text-blue-500' : 'text-gray-500'}`} />
               </div>
-              <TrendingUp className={`h-8 w-8 ${isFiltered ? 'text-purple-500' : 'text-gray-500'}`} />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          {/* Low Stock Card */}
+          <Card className={`transition-all duration-200 ${
+            isFiltered ? 'border-orange-300 bg-orange-50' : 'border-gray-200'
+          }`}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">
+                    สต็อกต่ำ{isFiltered ? ' (กรองแล้ว)' : ''}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <p
+                      className={`text-2xl font-bold ${
+                        displayStats.lowStockCount > 0
+                          ? "text-red-600"
+                          : "text-gray-400"
+                      }`}
+                    >
+                      {displayStats.lowStockCount.toLocaleString()}
+                    </p>
+                    {isFiltered && (
+                      <span className="text-sm text-orange-600">
+                        / {data.stats.lowStockCount.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <AlertTriangle
+                  className={`h-8 w-8 ${
+                    displayStats.lowStockCount > 0
+                      ? "text-red-500"
+                      : "text-gray-400"
+                  }`}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Total Value Card */}
+          <Card className={`transition-all duration-200 ${
+            isFiltered ? 'border-purple-300 bg-purple-50' : 'border-gray-200'
+          }`}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">
+                    มูลค่ารวม{isFiltered ? ' (กรองแล้ว)' : ''}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-2xl font-bold text-purple-600">
+                      ฿{displayStats.totalValue.toLocaleString()}
+                    </p>
+                    {isFiltered && (
+                      <span className="text-sm text-purple-600">
+                        / ฿{totalValueCalculated.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <TrendingUp className={`h-8 w-8 ${isFiltered ? 'text-purple-500' : 'text-gray-500'}`} />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Enhanced Stock Table */}
+        <StockTableEnhanced
+          stocks={data.stocks}
+          department={department}
+          loading={loading}
+          onUpdate={handleStockUpdate}
+          onFilteredStatsChange={handleFilteredStatsChange}
+        />
       </div>
 
-      {/* Enhanced Stock Table */}
-      <StockTableEnhanced
-        stocks={data.stocks}
+      {/* Add Drug Modal */}
+      <AddDrugModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onDrugAdded={handleDrugAdded}
         department={department}
-        loading={loading}
-        onUpdate={handleStockUpdate}
-        onFilteredStatsChange={handleFilteredStatsChange}
       />
-    </div>
+    </>
   );
 }

@@ -1,13 +1,14 @@
-// 📄 File: app/api/drugs/[drugId]/route.ts
-// Drug Management API Endpoint for Next.js 15
+// 📄 File: app/api/drugs/[drugId]/route.ts (Updated)
+// Updated Drug API with Hospital Drug Code support
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth'
 import { z } from 'zod'
 
-// Schema สำหรับ validation ข้อมูลยา
+// Schema สำหรับ validation ข้อมูลยา (เพิ่ม hospitalDrugCode)
 const updateDrugSchema = z.object({
+  hospitalDrugCode: z.string().min(1, 'รหัสยาโรงพยาบาลเป็นข้อมูลที่จำเป็น').max(50, 'รหัสยาต้องไม่เกิน 50 ตัวอักษร'),
   name: z.string().min(1, 'ชื่อยาเป็นข้อมูลที่จำเป็น').max(255, 'ชื่อยาต้องไม่เกิน 255 ตัวอักษร'),
   genericName: z.string().max(255, 'ชื่อสามัญต้องไม่เกิน 255 ตัวอักษร').nullable().optional(),
   dosageForm: z.enum([
@@ -99,7 +100,7 @@ export async function GET(
   }
 }
 
-// PATCH - อัปเดตข้อมูลยา
+// PATCH - อัปเดตข้อมูลยา (รวม hospitalDrugCode)
 export async function PATCH(
   request: NextRequest,
   context: RouteContext
@@ -143,6 +144,22 @@ export async function PATCH(
       return NextResponse.json({ error: 'ไม่พบข้อมูลยา' }, { status: 404 })
     }
 
+    // ตรวจสอบว่ารหัสยาซ้ำหรือไม่ (ยกเว้นตัวเอง)
+    if (validatedData.hospitalDrugCode !== existingDrug.hospitalDrugCode) {
+      const duplicateCode = await prisma.drug.findFirst({
+        where: {
+          hospitalDrugCode: validatedData.hospitalDrugCode,
+          id: { not: drugId }
+        }
+      })
+
+      if (duplicateCode) {
+        return NextResponse.json({ 
+          error: 'รหัสยาโรงพยาบาลนี้มีอยู่ในระบบแล้ว' 
+        }, { status: 400 })
+      }
+    }
+
     // ตรวจสอบว่าชื่อยาซ้ำหรือไม่ (ยกเว้นตัวเอง)
     if (validatedData.name !== existingDrug.name) {
       const duplicateName = await prisma.drug.findFirst({
@@ -170,7 +187,16 @@ export async function PATCH(
       const updatedDrug = await tx.drug.update({
         where: { id: drugId },
         data: {
-          ...validatedData,
+          hospitalDrugCode: validatedData.hospitalDrugCode,
+          name: validatedData.name,
+          genericName: validatedData.genericName,
+          dosageForm: validatedData.dosageForm,
+          strength: validatedData.strength,
+          unit: validatedData.unit,
+          packageSize: validatedData.packageSize,
+          pricePerBox: validatedData.pricePerBox,
+          category: validatedData.category,
+          notes: validatedData.notes,
           updatedAt: new Date()
         },
         include: {
@@ -256,8 +282,17 @@ export async function PATCH(
 
     // Handle Prisma unique constraint errors
     if (error.code === 'P2002') {
+      const field = error.meta?.target?.[0]
+      let message = 'ข้อมูลซ้ำกับรายการที่มีอยู่แล้ว'
+      
+      if (field === 'hospitalDrugCode') {
+        message = 'รหัสยาโรงพยาบาลนี้มีอยู่ในระบบแล้ว'
+      } else if (field === 'name') {
+        message = 'ชื่อยานี้มีอยู่ในระบบแล้ว'
+      }
+      
       return NextResponse.json(
-        { error: 'ข้อมูลซ้ำกับรายการที่มีอยู่แล้ว' },
+        { error: message },
         { status: 400 }
       )
     }

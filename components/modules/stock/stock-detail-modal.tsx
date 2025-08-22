@@ -1,5 +1,5 @@
-// 📄 File: components/modules/stock/stock-detail-modal-enhanced.tsx
-// Enhanced Mobile-First Stock Detail Modal with Drug Info Edit
+// 📄 File: components/modules/stock/stock-detail-modal.tsx (Updated)
+// Enhanced Modal with Hospital Drug Code Edit
 
 import { useState, useEffect } from 'react'
 import {
@@ -66,6 +66,7 @@ interface StockUpdateData {
 }
 
 interface DrugUpdateData {
+  hospitalDrugCode: string
   name: string
   genericName: string | null
   dosageForm: string
@@ -181,6 +182,7 @@ export function StockDetailModalEnhanced({
 
   // Drug data states  
   const [drugFormData, setDrugFormData] = useState<DrugUpdateData>({
+    hospitalDrugCode: '',
     name: '',
     genericName: null,
     dosageForm: '',
@@ -204,6 +206,7 @@ export function StockDetailModalEnhanced({
       })
       
       setDrugFormData({
+        hospitalDrugCode: stock.drug.hospitalDrugCode,
         name: stock.drug.name,
         genericName: stock.drug.genericName || null,
         dosageForm: stock.drug.dosageForm,
@@ -254,6 +257,7 @@ export function StockDetailModalEnhanced({
 
   const handleResetDrug = () => {
     setDrugFormData({
+      hospitalDrugCode: stock.drug.hospitalDrugCode,
       name: stock.drug.name,
       genericName: stock.drug.genericName || null,
       dosageForm: stock.drug.dosageForm,
@@ -316,7 +320,6 @@ export function StockDetailModalEnhanced({
         description: error instanceof Error ? error.message : 'ไม่สามารถอัปเดตข้อมูลได้',
         variant: "destructive"
       })
-      // ✅ ไม่ปิด modal เมื่อเกิด error
     } finally {
       setLoading(false)
     }
@@ -328,6 +331,15 @@ export function StockDetailModalEnhanced({
       toast({
         title: "กรุณาระบุชื่อยา",
         description: "ชื่อยาเป็นข้อมูลที่จำเป็น",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (!drugFormData.hospitalDrugCode.trim()) {
+      toast({
+        title: "กรุณาระบุรหัสยา",
+        description: "รหัสยาโรงพยาบาลเป็นข้อมูลที่จำเป็น",
         variant: "destructive"
       })
       return
@@ -368,7 +380,6 @@ export function StockDetailModalEnhanced({
         ...stock, 
         drug: {
           ...updatedDrug,
-          // แน่ใจว่ามีฟิลด์ที่จำเป็นครบ
           hospitalDrugCode: updatedDrug.hospitalDrugCode,
           name: updatedDrug.name,
           genericName: updatedDrug.genericName,
@@ -392,6 +403,7 @@ export function StockDetailModalEnhanced({
       
       // Reset form ให้ตรงกับข้อมูลใหม่
       setDrugFormData({
+        hospitalDrugCode: updatedDrug.hospitalDrugCode,
         name: updatedDrug.name,
         genericName: updatedDrug.genericName || null,
         dosageForm: updatedDrug.dosageForm,
@@ -411,7 +423,6 @@ export function StockDetailModalEnhanced({
         variant: "destructive",
         duration: 5000
       })
-      // ✅ ไม่ปิด modal เมื่อเกิด error
     } finally {
       setLoading(false)
     }
@@ -420,7 +431,8 @@ export function StockDetailModalEnhanced({
   const hasStockChanges = stockFormData.totalQuantity !== stock.totalQuantity || 
                         stockFormData.minimumStock !== stock.minimumStock
 
-  const hasDrugChanges = drugFormData.name !== stock.drug.name ||
+  const hasDrugChanges = drugFormData.hospitalDrugCode !== stock.drug.hospitalDrugCode ||
+                        drugFormData.name !== stock.drug.name ||
                         drugFormData.genericName !== stock.drug.genericName ||
                         drugFormData.dosageForm !== stock.drug.dosageForm ||
                         drugFormData.strength !== stock.drug.strength ||
@@ -439,8 +451,6 @@ export function StockDetailModalEnhanced({
             จัดการข้อมูลยา
           </DialogTitle>
         </DialogHeader>
-
-
 
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'stock' | 'drug')}>
@@ -619,6 +629,16 @@ export function StockDetailModalEnhanced({
               <CardContent className="space-y-4">
                 {/* Basic Drug Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* รหัสยาโรงพยาบาล */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">รหัสยาโรงพยาบาล *</label>
+                    <Input
+                      value={drugFormData.hospitalDrugCode}
+                      onChange={(e) => setDrugFormData(prev => ({ ...prev, hospitalDrugCode: e.target.value }))}
+                      placeholder="ระบุรหัสยา"
+                    />
+                  </div>
+
                   <div className="space-y-2">
                     <label className="text-sm font-medium">ชื่อยา *</label>
                     <Input
@@ -742,7 +762,7 @@ export function StockDetailModalEnhanced({
               </Button>
               <Button
                 onClick={handleSaveDrug}
-                disabled={loading || !hasDrugChanges || !drugFormData.name.trim()}
+                disabled={loading || !hasDrugChanges || !drugFormData.name.trim() || !drugFormData.hospitalDrugCode.trim()}
                 className="flex-1"
               >
                 <Save className="h-4 w-4 mr-2" />

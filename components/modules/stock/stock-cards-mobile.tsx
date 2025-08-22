@@ -347,19 +347,29 @@ export function StockCardsMobile({
               </Select>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-2 shrink-0">
+            {/* Action Buttons - Icon only */}
               <Button
                 variant={showLowStockOnly ? "default" : "outline"}
                 size="sm"
                 onClick={() => setShowLowStockOnly(!showLowStockOnly)}
-                className="flex items-center gap-2"
+                className="flex items-center justify-center shrink-0 w-10 h-10"
+                title="สต็อกต่ำ"
               >
                 <AlertTriangle className="h-4 w-4" />
-                สต็อกต่ำ
               </Button>
 
-              {/* Clear Filters Button */}
+              {/* Sort by Last Updated Button */}
+              <Button
+                variant={sortBy === 'lastUpdated' ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSortBy(sortBy === 'lastUpdated' ? 'name' : 'lastUpdated')}
+                className="flex items-center justify-center shrink-0 w-10 h-10"
+                title="เรียงตามเวลาอัพเดท (เก่าที่สุดก่อน)"
+              >
+                <Clock className="h-4 w-4" />
+              </Button>
+
+              {/* Clear Filters Button - Icon only */}
               {(filterConfig.category !== 'all' || 
                 filterConfig.dosageForm !== 'all' || 
                 searchTerm || 
@@ -369,9 +379,10 @@ export function StockCardsMobile({
                   variant="outline"
                   size="sm"
                   onClick={clearFilters}
-                  className="flex items-center gap-2 text-xs bg-red-500 text-white hover:bg-red-600"
+                  className="flex items-center justify-center shrink-0 w-10 h-10 bg-red-500 text-white hover:bg-red-600 border-red-500"
+                  title="ล้างตัวกรอง"
                 >
-                  ✕ ล้าง
+                  ✕
                 </Button>
               )}
             </div>
@@ -597,7 +608,6 @@ export function StockCardsMobile({
             </p>
           </div>
         )}
-      </div>
 
       {/* Stock Detail Modal */}
       <StockDetailModalEnhanced

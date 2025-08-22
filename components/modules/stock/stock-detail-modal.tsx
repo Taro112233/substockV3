@@ -1,4 +1,4 @@
-// 📄 File: components/modules/stock/stock-detail-modal.tsx (Fixed)
+// 📄 File: components/modules/stock/stock-detail-modal.tsx (ปรับปรุงแล้ว - ปุ่มกดได้ตลอด + เหตุผลอัตโนมัติ)
 // =====================================================
 
 import { useState, useEffect } from 'react'
@@ -125,6 +125,36 @@ const DOSAGE_FORMS = [
   'SAC', 'LIQ', 'MIX'
 ]
 
+// ✅ ฟังก์ชันสำหรับสร้างเหตุผลอัตโนมัติ
+const generateAdjustmentReason = (
+  currentQty: number, 
+  newQty: number, 
+  currentMin: number, 
+  newMin: number
+): string => {
+  const qtyChange = newQty - currentQty
+  const minChange = newMin - currentMin
+
+  // กรณีจำนวนคงเหลือเท่าเดิม
+  if (qtyChange === 0) {
+    if (minChange === 0) return 'อัพเดทข้อมูล'
+    if (minChange > 0) return 'ปรับเพิ่มขั้นต่ำ'
+    if (minChange < 0) return 'ปรับลดขั้นต่ำ'
+  }
+  
+  // กรณีจำนวนคงเหลือเพิ่มขึ้น
+  if (qtyChange > 0) {
+    return 'ปรับเพิ่มสต็อก'
+  }
+  
+  // กรณีจำนวนคงเหลือลดลง
+  if (qtyChange < 0) {
+    return 'ปรับลดสต็อก'
+  }
+
+  return 'อัพเดทข้อมูล'
+}
+
 // Helper functions
 const getStockStatusIcon = (stock: Stock) => {
   const availableStock = calculateAvailableStock(stock)
@@ -185,7 +215,7 @@ export function StockDetailModalEnhanced({
   const [stockFormData, setStockFormData] = useState<StockUpdateData>({
     totalQuantity: 0,
     minimumStock: 0,
-    adjustmentReason: 'นับสต็อก'
+    adjustmentReason: 'อัพเดทข้อมูล'
   })
 
   // Drug data states  
@@ -210,7 +240,7 @@ export function StockDetailModalEnhanced({
       setStockFormData({
         totalQuantity: stock.totalQuantity,
         minimumStock: stock.minimumStock,
-        adjustmentReason: 'นับสต็อก'
+        adjustmentReason: 'อัพเดทข้อมูล'
       })
       
       setDrugFormData({
@@ -230,6 +260,23 @@ export function StockDetailModalEnhanced({
       setActiveTab('stock')
     }
   }, [stock, isOpen])
+
+  // ✅ อัปเดตเหตุผลอัตโนมัติเมื่อมีการเปลี่ยนแปลงข้อมูล
+  useEffect(() => {
+    if (stock) {
+      const autoReason = generateAdjustmentReason(
+        stock.totalQuantity,
+        stockFormData.totalQuantity,
+        stock.minimumStock,
+        stockFormData.minimumStock
+      )
+      
+      setStockFormData(prev => ({
+        ...prev,
+        adjustmentReason: autoReason
+      }))
+    }
+  }, [stock, stockFormData.totalQuantity, stockFormData.minimumStock])
 
   if (!stock) return null
 
@@ -259,7 +306,7 @@ export function StockDetailModalEnhanced({
     setStockFormData({
       totalQuantity: stock.totalQuantity,
       minimumStock: stock.minimumStock,
-      adjustmentReason: 'นับสต็อก'
+      adjustmentReason: 'อัพเดทข้อมูล'
     })
   }
 
@@ -278,17 +325,8 @@ export function StockDetailModalEnhanced({
     })
   }
 
-  // Save stock changes
+  // ✅ Save stock changes - ปรับให้กดได้ตลอด ไม่มีเงื่อนไข
   const handleSaveStock = async () => {
-    if (!stockFormData.adjustmentReason.trim() && stockFormData.totalQuantity !== stock.totalQuantity) {
-      toast({
-        title: "กรุณาระบุเหตุผล",
-        description: "กรุณาระบุเหตุผลในการปรับสต็อก",
-        variant: "destructive"
-      })
-      return
-    }
-
     setLoading(true)
     try {
       const response = await fetch(`/api/stocks/${stock.id}`, {
@@ -310,11 +348,11 @@ export function StockDetailModalEnhanced({
         throw new Error(errorData.error || 'เกิดข้อผิดพลาดในการอัปเดต')
       }
 
-      const { data: updatedStock } = await response.json()
+      const { data: updatedStock, message } = await response.json()
 
       toast({
         title: "อัปเดตสต็อกสำเร็จ",
-        description: "ข้อมูลสต็อกถูกอัปเดตเรียบร้อยแล้ว",
+        description: message || "ข้อมูลสต็อกถูกอัปเดตเรียบร้อยแล้ว",
         variant: "default"
       })
 
@@ -436,6 +474,7 @@ export function StockDetailModalEnhanced({
     }
   }
 
+  // ✅ ตรวจสอบการเปลี่ยนแปลงข้อมูล
   const hasStockChanges = stockFormData.totalQuantity !== stock.totalQuantity || 
                         stockFormData.minimumStock !== stock.minimumStock
 
@@ -573,33 +612,35 @@ export function StockDetailModalEnhanced({
                   </div>
                 </div>
 
-                {/* Adjustment Reason */}
+                {/* ✅ แสดงเหตุผลที่ถูกสร้างอัตโนมัติ */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">เหตุผล *</label>
-                  <Select
-                    value={stockFormData.adjustmentReason}
-                    onValueChange={(value) => setStockFormData(prev => ({ ...prev, adjustmentReason: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="เลือกเหตุผล" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ADJUSTMENT_REASONS.map((reason) => (
-                        <SelectItem key={reason} value={reason}>
-                          {reason}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <label className="text-sm font-medium">เหตุผล (อัตโนมัติ)</label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={stockFormData.adjustmentReason}
+                      readOnly
+                      className="bg-gray-50 text-gray-700"
+                    />
+                    <Select
+                      value={stockFormData.adjustmentReason}
+                      onValueChange={(value) => setStockFormData(prev => ({ ...prev, adjustmentReason: value }))}
+                    >
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="เปลี่ยน" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ADJUSTMENT_REASONS.map((reason) => (
+                          <SelectItem key={reason} value={reason}>
+                            {reason}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    เหตุผลถูกสร้างอัตโนมัติตามการเปลี่ยนแปลง หรือเลือกเปลี่ยนเองได้
+                  </p>
                 </div>
-
-                {/* Additional Notes for Custom Reason */}
-                {stockFormData.adjustmentReason === 'ปรับปรุงข้อมูล' && (
-                  <Textarea
-                    placeholder="ระบุรายละเอียดเพิ่มเติม..."
-                    className="min-h-[60px]"
-                  />
-                )}
               </CardContent>
             </Card>
 
@@ -608,15 +649,16 @@ export function StockDetailModalEnhanced({
               <Button
                 variant="outline"
                 onClick={handleResetStock}
-                disabled={loading || !hasStockChanges}
+                disabled={loading}
                 className="flex-1"
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
                 รีเซ็ต
               </Button>
+              {/* ✅ ปุ่มบันทึกกดได้ตลอด ไม่มีเงื่อนไข */}
               <Button
                 onClick={handleSaveStock}
-                disabled={loading || !hasStockChanges || (!stockFormData.adjustmentReason.trim() && stockFormData.totalQuantity !== stock.totalQuantity)}
+                disabled={loading}
                 className="flex-1"
               >
                 <Save className="h-4 w-4 mr-2" />

@@ -20,14 +20,25 @@ enum UserStatus {
 // แต่ละ user สามารถทำงานได้ทุก department ตามหน้าที่ใช้งาน
 
 enum TransactionType {
+  // การเคลื่อนไหวสต็อกจริง (มีผลต่อ totalQuantity)
   RECEIVE_EXTERNAL    // รับยาจากภายนอก (ซื้อ/บริจาค)
   DISPENSE_EXTERNAL   // จ่ายยาให้ผู้ป่วย
   TRANSFER_OUT        // ส่งยาให้แผนกอื่น
   TRANSFER_IN         // รับยาจากแผนกอื่น
-  ADJUST_INCREASE     // ปรับเพิ่ม (นับสต็อก/คืนยา)
-  ADJUST_DECREASE     // ปรับลด (เสียหาย/หมดอายุ)
-  RESERVE             // จองยา
-  UNRESERVE           // ยกเลิกการจอง
+  ADJUST_INCREASE     // ปรับเพิ่มสต็อก (นับสต็อก/คืนยา/แก้ไขข้อมูล)
+  ADJUST_DECREASE     // ปรับลดสต็อก (เสียหาย/หมดอายุ/สูญหาย)
+  RESERVE             // จองยา (ลด available แต่ totalQuantity เท่าเดิม)
+  UNRESERVE           // ยกเลิกการจอง (เพิ่ม available)
+
+  // ✅ การจัดการ Minimum Stock (ไม่มีผลต่อ totalQuantity)
+  MIN_STOCK_INCREASE  // เพิ่มจำนวนขั้นต่ำ
+  MIN_STOCK_DECREASE  // ลดจำนวนขั้นต่ำ
+  MIN_STOCK_RESET     // รีเซ็ตจำนวนขั้นต่ำ
+  
+  // ✅ การปรับปรุงข้อมูลอื่นๆ (ไม่มีผลต่อจำนวนสต็อก)
+  DATA_UPDATE         // อัปเดตข้อมูลทั่วไป
+  PRICE_UPDATE        // อัปเดตราคายา
+  INFO_CORRECTION     // แก้ไขข้อมูลยา
 }
 
 enum TransferStatus {

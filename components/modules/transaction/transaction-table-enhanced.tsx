@@ -1,5 +1,5 @@
-// 📄 File: components/modules/transaction/transaction-table-enhanced.tsx
-// ✅ Enhanced Transaction Table with Fixed Price Calculation using pricePerBox
+// ===================================================================
+// 📄 File: components/modules/transaction/transaction-table-enhanced.tsx (ปรับปรุง enum ใหม่)
 
 import {
   Table,
@@ -32,11 +32,19 @@ import {
   ArrowDown,
   RotateCcw,
   Eye,
-  Clock
+  Clock,
+  Package,
+  ShoppingCart,
+  Users,
+  AlertTriangle,
+  Bookmark,
+  Settings,
+  Edit,
+  DollarSign,
+  Target
 } from 'lucide-react'
 import { useState, useMemo, useEffect } from 'react'
 
-// Type สำหรับ sorting
 type SortField = 'drug' | 'type' | 'quantity' | 'totalCost' | 'createdAt' | 'user'
 type SortDirection = 'asc' | 'desc' | null
 
@@ -73,34 +81,105 @@ export function TransactionTableEnhanced({
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [sortConfig, setSortConfig] = useState<SortConfig>({ field: null, direction: null })
 
-  // Helper functions
+  // ✅ Updated Helper functions รองรับ enum ใหม่
   const getTransactionTypeIcon = (type: string) => {
     switch (type) {
       case 'RECEIVE_EXTERNAL':
-      case 'TRANSFER_IN':
-      case 'ADJUST_INCREASE':
-      case 'UNRESERVE':
-        return <TrendingUp className="h-4 w-4 text-green-600" />
+        return <ShoppingCart className="h-4 w-4 text-green-600" />
       case 'DISPENSE_EXTERNAL':
+        return <Users className="h-4 w-4 text-red-600" />
+      case 'TRANSFER_IN':
+        return <TrendingUp className="h-4 w-4 text-blue-600" />
       case 'TRANSFER_OUT':
+        return <TrendingDown className="h-4 w-4 text-orange-600" />
+      case 'ADJUST_INCREASE':
+        return <TrendingUp className="h-4 w-4 text-green-600" />
       case 'ADJUST_DECREASE':
-      case 'RESERVE':
         return <TrendingDown className="h-4 w-4 text-red-600" />
+      case 'RESERVE':
+        return <Bookmark className="h-4 w-4 text-yellow-600" />
+      case 'UNRESERVE':
+        return <RotateCcw className="h-4 w-4 text-gray-600" />
+      
+      // ✅ New enum icons
+      case 'MIN_STOCK_INCREASE':
+        return <Target className="h-4 w-4 text-blue-600" />
+      case 'MIN_STOCK_DECREASE':
+        return <Target className="h-4 w-4 text-blue-400" />
+      case 'MIN_STOCK_RESET':
+        return <Target className="h-4 w-4 text-indigo-600" />
+      case 'DATA_UPDATE':
+        return <Settings className="h-4 w-4 text-gray-600" />
+      case 'PRICE_UPDATE':
+        return <DollarSign className="h-4 w-4 text-purple-600" />
+      case 'INFO_CORRECTION':
+        return <Edit className="h-4 w-4 text-orange-600" />
+        
       default:
-        return <RotateCcw className="h-4 w-4 text-blue-600" />
+        return <Package className="h-4 w-4 text-gray-600" />
     }
   }
 
   const getTransactionTypeBadge = (type: string) => {
     const config = {
-      'RECEIVE_EXTERNAL': { label: 'รับเข้า', color: 'bg-green-100 text-green-800 border-green-200' },
-      'DISPENSE_EXTERNAL': { label: 'จ่ายออก', color: 'bg-red-100 text-red-800 border-red-200' },
-      'TRANSFER_IN': { label: 'โอนเข้า', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-      'TRANSFER_OUT': { label: 'โอนออก', color: 'bg-orange-100 text-orange-800 border-orange-200' },
-      'ADJUST_INCREASE': { label: 'ปรับเพิ่ม', color: 'bg-green-100 text-green-800 border-green-200' },
-      'ADJUST_DECREASE': { label: 'ปรับลด', color: 'bg-red-100 text-red-800 border-red-200' },
-      'RESERVE': { label: 'จอง', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-      'UNRESERVE': { label: 'ยกเลิกจอง', color: 'bg-gray-100 text-gray-800 border-gray-200' },
+      'RECEIVE_EXTERNAL': { 
+        label: 'รับจากภายนอก', 
+        color: 'bg-green-100 text-green-800 border-green-200' 
+      },
+      'DISPENSE_EXTERNAL': { 
+        label: 'จ่ายให้ผู้ป่วย', 
+        color: 'bg-red-100 text-red-800 border-red-200' 
+      },
+      'TRANSFER_IN': { 
+        label: 'รับโอนจากแผนกอื่น', 
+        color: 'bg-blue-100 text-blue-800 border-blue-200' 
+      },
+      'TRANSFER_OUT': { 
+        label: 'ส่งโอนให้แผนกอื่น', 
+        color: 'bg-orange-100 text-orange-800 border-orange-200' 
+      },
+      'ADJUST_INCREASE': { 
+        label: 'ปรับเพิ่มสต็อก', 
+        color: 'bg-green-100 text-green-800 border-green-200' 
+      },
+      'ADJUST_DECREASE': { 
+        label: 'ปรับลดสต็อก', 
+        color: 'bg-red-100 text-red-800 border-red-200' 
+      },
+      'RESERVE': { 
+        label: 'จองยา', 
+        color: 'bg-yellow-100 text-yellow-800 border-yellow-200' 
+      },
+      'UNRESERVE': { 
+        label: 'ยกเลิกจอง', 
+        color: 'bg-gray-100 text-gray-800 border-gray-200' 
+      },
+      
+      // ✅ New enum badges
+      'MIN_STOCK_INCREASE': {
+        label: 'เพิ่มจำนวนขั้นต่ำ',
+        color: 'bg-blue-100 text-blue-800 border-blue-200'
+      },
+      'MIN_STOCK_DECREASE': {
+        label: 'ลดจำนวนขั้นต่ำ', 
+        color: 'bg-blue-100 text-blue-700 border-blue-200'
+      },
+      'MIN_STOCK_RESET': {
+        label: 'กำหนดจำนวนขั้นต่ำใหม่',
+        color: 'bg-indigo-100 text-indigo-800 border-indigo-200'
+      },
+      'DATA_UPDATE': {
+        label: 'อัปเดตข้อมูล',
+        color: 'bg-gray-100 text-gray-800 border-gray-200'
+      },
+      'PRICE_UPDATE': {
+        label: 'อัปเดตราคา',
+        color: 'bg-purple-100 text-purple-800 border-purple-200'
+      },
+      'INFO_CORRECTION': {
+        label: 'แก้ไขข้อมูล',
+        color: 'bg-orange-100 text-orange-800 border-orange-200'
+      }
     }
     
     const typeConfig = config[type as keyof typeof config] || { 
@@ -116,7 +195,23 @@ export function TransactionTableEnhanced({
   }
 
   const formatTransactionAmount = (type: string, quantity: number) => {
+    // ✅ Updated: รวม enum ใหม่
     const isIncoming = ['RECEIVE_EXTERNAL', 'TRANSFER_IN', 'ADJUST_INCREASE', 'UNRESERVE'].includes(type)
+    const isMinStockChange = ['MIN_STOCK_INCREASE', 'MIN_STOCK_DECREASE', 'MIN_STOCK_RESET'].includes(type)
+    const isDataUpdate = ['DATA_UPDATE', 'PRICE_UPDATE', 'INFO_CORRECTION'].includes(type)
+    
+    if (isDataUpdate) {
+      return <span className="text-gray-500 text-xs">-</span>
+    }
+    
+    if (isMinStockChange) {
+      return (
+        <span className="font-medium text-blue-600">
+          {type === 'MIN_STOCK_DECREASE' ? '-' : '+'}{Math.abs(quantity).toLocaleString()} ขั้นต่ำ
+        </span>
+      )
+    }
+    
     return (
       <span className={`font-medium ${isIncoming ? 'text-green-600' : 'text-red-600'}`}>
         {isIncoming ? '+' : '-'}{Math.abs(quantity).toLocaleString()}
@@ -124,7 +219,6 @@ export function TransactionTableEnhanced({
     )
   }
 
-  // ✅ Fixed: คำนวณต้นทุนด้วย pricePerBox แทน totalCost
   const calculateTransactionCost = (transaction: Transaction) => {
     const pricePerBox = transaction.drug?.pricePerBox || 0
     return Math.abs(transaction.quantity) * pricePerBox
@@ -137,6 +231,9 @@ export function TransactionTableEnhanced({
       'REFRIGERATED': 'bg-blue-100 text-blue-800 border-blue-200',
       'PSYCHIATRIC': 'bg-indigo-100 text-indigo-800 border-indigo-200',
       'FLUID': 'bg-cyan-100 text-cyan-800 border-cyan-200',
+      'REFER': 'bg-pink-100 text-pink-800 border-pink-200',
+      'ALERT': 'bg-orange-100 text-orange-800 border-orange-200',
+      'EXTEMP': 'bg-emerald-100 text-emerald-800 border-emerald-200',
       'GENERAL': 'bg-gray-100 text-gray-800 border-gray-200'
     }
     return colors[category as keyof typeof colors] || colors.GENERAL
@@ -149,7 +246,13 @@ export function TransactionTableEnhanced({
       'REFRIGERATED': 'ยาแช่เย็น',
       'PSYCHIATRIC': 'ยาจิตเวช',
       'FLUID': 'สารน้ำ',
-      'GENERAL': 'ยาทั่วไป'
+      'REFER': 'ยาส่งต่อ',
+      'ALERT': 'ยาเฝ้าระวัง',
+      'EXTEMP': 'ยาใช้ภายนอก',
+      'GENERAL': 'ยาทั่วไป',
+      'TABLET': 'ยาเม็ด',
+      'SYRUP': 'ยาน้ำ',
+      'INJECTION': 'ยาฉีด'
     }
     return labels[category as keyof typeof labels] || category
   }
@@ -171,7 +274,6 @@ export function TransactionTableEnhanced({
     setSortConfig({ field: direction ? field : null, direction })
   }
 
-  // Get sort icon for header
   const getSortIcon = (field: SortField) => {
     if (sortConfig.field !== field) {
       return <ArrowUpDown className="h-4 w-4 text-gray-400" />
@@ -210,7 +312,6 @@ export function TransactionTableEnhanced({
           bValue = Math.abs(b.quantity)
           break
         case 'totalCost':
-          // ✅ Fixed: Use pricePerBox for sorting
           aValue = calculateTransactionCost(a)
           bValue = calculateTransactionCost(b)
           break
@@ -274,7 +375,7 @@ export function TransactionTableEnhanced({
     })
   }, [sortedTransactions, searchTerm, typeFilter, dateFilter])
 
-  // ✅ Fixed: คำนวณ filtered stats ด้วย pricePerBox
+  // ✅ Updated: คำนวณ filtered stats รวม enum ใหม่
   const filteredStats = useMemo(() => {
     const totalTransactions = filteredTransactions.length
     const totalValue = filteredTransactions.reduce((sum, t) => sum + calculateTransactionCost(t), 0)
@@ -294,7 +395,6 @@ export function TransactionTableEnhanced({
     }
   }, [filteredStats, onFilteredStatsChange])
 
-  // Handlers
   const handleViewTransaction = (transaction: Transaction) => {
     setSelectedTransaction(transaction)
     setIsModalOpen(true)
@@ -307,7 +407,6 @@ export function TransactionTableEnhanced({
     setSortConfig({ field: null, direction: null })
   }
 
-  // Sortable Header Component
   const SortableHeader = ({ 
     field, 
     children, 
@@ -397,22 +496,29 @@ export function TransactionTableEnhanced({
               />
             </div>
 
-            {/* Type Filter */}
-            <div className="w-48">
+            {/* Type Filter - ✅ Updated: รวม enum ใหม่ */}
+            <div className="w-56">
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="ประเภทการเคลื่อนไหว" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">ทุกประเภท</SelectItem>
-                  <SelectItem value="RECEIVE_EXTERNAL">รับเข้า</SelectItem>
-                  <SelectItem value="DISPENSE_EXTERNAL">จ่ายออก</SelectItem>
-                  <SelectItem value="TRANSFER_IN">โอนเข้า</SelectItem>
-                  <SelectItem value="TRANSFER_OUT">โอนออก</SelectItem>
-                  <SelectItem value="ADJUST_INCREASE">ปรับเพิ่ม</SelectItem>
-                  <SelectItem value="ADJUST_DECREASE">ปรับลด</SelectItem>
-                  <SelectItem value="RESERVE">จอง</SelectItem>
+                  <SelectItem value="RECEIVE_EXTERNAL">รับจากภายนอก</SelectItem>
+                  <SelectItem value="DISPENSE_EXTERNAL">จ่ายให้ผู้ป่วย</SelectItem>
+                  <SelectItem value="TRANSFER_IN">รับโอนจากแผนกอื่น</SelectItem>
+                  <SelectItem value="TRANSFER_OUT">ส่งโอนให้แผนกอื่น</SelectItem>
+                  <SelectItem value="ADJUST_INCREASE">ปรับเพิ่มสต็อก</SelectItem>
+                  <SelectItem value="ADJUST_DECREASE">ปรับลดสต็อก</SelectItem>
+                  <SelectItem value="RESERVE">จองยา</SelectItem>
                   <SelectItem value="UNRESERVE">ยกเลิกจอง</SelectItem>
+                  {/* ✅ New enum options */}
+                  <SelectItem value="MIN_STOCK_INCREASE">เพิ่มจำนวนขั้นต่ำ</SelectItem>
+                  <SelectItem value="MIN_STOCK_DECREASE">ลดจำนวนขั้นต่ำ</SelectItem>
+                  <SelectItem value="MIN_STOCK_RESET">กำหนดจำนวนขั้นต่ำใหม่</SelectItem>
+                  <SelectItem value="DATA_UPDATE">อัปเดตข้อมูล</SelectItem>
+                  <SelectItem value="PRICE_UPDATE">อัปเดตราคา</SelectItem>
+                  <SelectItem value="INFO_CORRECTION">แก้ไขข้อมูล</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -468,14 +574,19 @@ export function TransactionTableEnhanced({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">ทุกประเภท</SelectItem>
-                    <SelectItem value="RECEIVE_EXTERNAL">รับเข้า</SelectItem>
-                    <SelectItem value="DISPENSE_EXTERNAL">จ่ายออก</SelectItem>
-                    <SelectItem value="TRANSFER_IN">โอนเข้า</SelectItem>
-                    <SelectItem value="TRANSFER_OUT">โอนออก</SelectItem>
-                    <SelectItem value="ADJUST_INCREASE">ปรับเพิ่ม</SelectItem>
-                    <SelectItem value="ADJUST_DECREASE">ปรับลด</SelectItem>
-                    <SelectItem value="RESERVE">จอง</SelectItem>
+                    <SelectItem value="RECEIVE_EXTERNAL">รับจากภายนอก</SelectItem>
+                    <SelectItem value="DISPENSE_EXTERNAL">จ่ายให้ผู้ป่วย</SelectItem>
+                    <SelectItem value="TRANSFER_IN">รับโอนจากแผนกอื่น</SelectItem>
+                    <SelectItem value="TRANSFER_OUT">ส่งโอนให้แผนกอื่น</SelectItem>
+                    <SelectItem value="ADJUST_INCREASE">ปรับเพิ่มสต็อก</SelectItem>
+                    <SelectItem value="ADJUST_DECREASE">ปรับลดสต็อก</SelectItem>
+                    <SelectItem value="RESERVE">จองยา</SelectItem>
                     <SelectItem value="UNRESERVE">ยกเลิกจอง</SelectItem>
+                    <SelectItem value="MIN_STOCK_INCREASE">เพิ่มจำนวนขั้นต่ำ</SelectItem>
+                    <SelectItem value="MIN_STOCK_DECREASE">ลดจำนวนขั้นต่ำ</SelectItem>
+                    <SelectItem value="DATA_UPDATE">อัปเดตข้อมูล</SelectItem>
+                    <SelectItem value="PRICE_UPDATE">อัปเดตราคา</SelectItem>
+                    <SelectItem value="INFO_CORRECTION">แก้ไขข้อมูล</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -560,7 +671,6 @@ export function TransactionTableEnhanced({
                   filteredTransactions.map((transaction) => {
                     const categoryColor = getCategoryColor(transaction.drug?.category)
                     const categoryLabel = getCategoryLabel(transaction.drug?.category)
-                    // ✅ Fixed: Calculate transaction cost properly with pricePerBox
                     const transactionCost = calculateTransactionCost(transaction)
 
                     return (
@@ -572,12 +682,10 @@ export function TransactionTableEnhanced({
                         {/* ชื่อยา */}
                         <TableCell className="font-medium">
                           <div className="space-y-2">
-                            {/* ชื่อยา */}
                             <div className="font-medium text-gray-900 leading-tight">
                               {transaction.drug?.name || 'ยาไม่ระบุ'}
                             </div>
                             
-                            {/* Category Badge + Hospital Drug Code */}
                             <div className="flex items-center gap-2 flex-wrap">
                               <Badge 
                                 variant="outline" 
@@ -590,7 +698,6 @@ export function TransactionTableEnhanced({
                               </span>
                             </div>
                             
-                            {/* Batch Number */}
                             {transaction.batchNumber && (
                               <div className="text-xs text-gray-500">
                                 LOT: {transaction.batchNumber}
@@ -627,13 +734,11 @@ export function TransactionTableEnhanced({
                         {/* ประเภท */}
                         <TableCell>
                           <div className="space-y-1">
-                            {/* Transaction Type Badge */}
                             <div className="flex items-center gap-1">
                               {getTransactionTypeIcon(transaction.type)}
                               {getTransactionTypeBadge(transaction.type)}
                             </div>
                             
-                            {/* ผู้ทำรายการ */}
                             <div className="text-xs text-gray-600">
                               โดย: {transaction.user.firstName} {transaction.user.lastName}
                             </div>
@@ -643,21 +748,24 @@ export function TransactionTableEnhanced({
                         {/* จำนวน */}
                         <TableCell className="text-center">
                           <div className="space-y-1">
-                            {/* จำนวนและทิศทาง */}
                             <div className="flex items-center justify-center gap-1">
                               {getTransactionTypeIcon(transaction.type)}
                               {formatTransactionAmount(transaction.type, transaction.quantity)}
                             </div>
                             
-                            {/* Before → After */}
-                            <div className="text-xs text-gray-500">
-                              {transaction.beforeQty.toLocaleString()} → {transaction.afterQty.toLocaleString()}
-                            </div>
+                            {/* ✅ แสดง Before → After เฉพาะกรณีที่มีการเปลี่ยนสต็อกจริง */}
+                            {!['MIN_STOCK_INCREASE', 'MIN_STOCK_DECREASE', 'MIN_STOCK_RESET', 'DATA_UPDATE', 'PRICE_UPDATE', 'INFO_CORRECTION'].includes(transaction.type) && (
+                              <div className="text-xs text-gray-500">
+                                {transaction.beforeQty.toLocaleString()} → {transaction.afterQty.toLocaleString()}
+                              </div>
+                            )}
 
-                            {/* มูลค่า - ✅ Fixed calculation with pricePerBox */}
-                            <div className="text-xs text-gray-500 font-mono">
-                              ฿{transactionCost.toLocaleString()}
-                            </div>
+                            {/* มูลค่า */}
+                            {transactionCost > 0 && (
+                              <div className="text-xs text-gray-500 font-mono">
+                                ฿{transactionCost.toLocaleString()}
+                              </div>
+                            )}
                           </div>
                         </TableCell>
 
@@ -729,8 +837,8 @@ export function TransactionTableEnhanced({
                 <span>จ่ายออก ({filteredStats.outgoingCount})</span>
               </div>
               <div className="flex items-center gap-1">
-                <RotateCcw className="w-3 h-3 text-blue-500" />
-                <span>ปรับสต็อก</span>
+                <Settings className="w-3 h-3 text-blue-500" />
+                <span>จัดการข้อมูล</span>
               </div>
             </div>
           </div>

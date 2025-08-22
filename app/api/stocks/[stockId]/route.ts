@@ -1,4 +1,4 @@
-// 📄 File: app/api/stocks/[stockId]/route.ts (OPTIMIZED - No Unnecessary Transaction Logs)
+// 📄 File: app/api/stocks/[stockId]/route.ts (ปรับปรุงให้รองรับ enum ใหม่)
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
@@ -9,24 +9,62 @@ import { z } from 'zod'
 const updateStockSchema = z.object({
   totalQuantity: z.number().min(0, 'จำนวนสต็อกต้องไม่น้อยกว่า 0'),
   minimumStock: z.number().min(0, 'จำนวนขั้นต่ำต้องไม่น้อยกว่า 0'),
-  adjustmentReason: z.string().optional(), // ทำให้เป็น optional
+  adjustmentReason: z.string().min(1, 'กรุณาระบุเหตุผล'),
   department: z.enum(['PHARMACY', 'OPD'])
 })
 
-// ✅ Context type สำหรับ Next.js 15
+// ✅ ฟังก์ชันสำหรับกำหนด TransactionType ตามการเปลี่ยนแปลง
+const determineTransactionType = (
+  quantityChange: number,
+  minimumStockChange: number,
+  reason: string
+): string => {
+  // กรณีเปลี่ยนสต็อกจริง
+  if (quantityChange !== 0) {
+    if (quantityChange > 0) return 'ADJUST_INCREASE'
+    if (quantityChange < 0) return 'ADJUST_DECREASE'
+  }
+  
+  // กรณีเปลี่ยน minimum stock เท่านั้น
+  if (quantityChange === 0 && minimumStockChange !== 0) {
+    if (minimumStockChange > 0) return 'MIN_STOCK_INCREASE'
+    if (minimumStockChange < 0) return 'MIN_STOCK_DECREASE'
+  }
+  
+  // กรณีไม่เปลี่ยนอะไรเลย
+  return 'DATA_UPDATE'
+}
+
+// ✅ ฟังก์ชันสำหรับสร้างเหตุผลอัตโนมัติ
+const generateAdjustmentReason = (
+  currentQty: number, 
+  newQty: number, 
+  currentMin: number, 
+  newMin: number
+): string => {
+  const qtyChange = newQty - currentQty
+  const minChange = newMin - currentMin
+
+  if (qtyChange === 0) {
+    if (minChange === 0) return 'อัพเดทข้อมูล'
+    if (minChange > 0) return 'ปรับเพิ่มขั้นต่ำ'
+    if (minChange < 0) return 'ปรับลดขั้นต่ำ'
+  }
+  
+  if (qtyChange > 0) return 'ปรับเพิ่มสต็อก'
+  if (qtyChange < 0) return 'ปรับลดสต็อก'
+
+  return 'อัพเดทข้อมูล'
+}
+
 interface RouteContext {
   params: Promise<{ stockId: string }>
 }
 
-// GET - ดึงข้อมูลสต็อกเฉพาะรายการ
-export async function GET(
-  request: NextRequest,
-  context: RouteContext
-) {
+export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { stockId } = await context.params
 
-    // Verify authentication
     const token = request.headers.get('authorization')?.replace('Bearer ', '') || 
                   request.cookies.get('auth-token')?.value;
     
@@ -39,7 +77,6 @@ export async function GET(
       return NextResponse.json({ error: 'Token ไม่ถูกต้อง' }, { status: 401 })
     }
 
-    // ดึงข้อมูลสต็อก
     const stock = await prisma.stock.findUnique({
       where: { id: stockId },
       include: {
@@ -90,15 +127,11 @@ export async function GET(
   }
 }
 
-// PATCH - อัปเดตข้อมูลสต็อก (ปรับปรุงแล้ว - ไม่บันทึกประวัติถ้าจำนวนไม่เปลี่ยน)
-export async function PATCH(
-  request: NextRequest,
-  context: RouteContext
-) {
+// ✅ PATCH - อัปเดตข้อมูลสต็อก (รองรับ enum ใหม่)
+export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { stockId } = await context.params
 
-    // Verify authentication
     const token = request.headers.get('authorization')?.replace('Bearer ', '') || 
                   request.cookies.get('auth-token')?.value;
     
@@ -113,11 +146,7 @@ export async function PATCH(
 
     const body = await request.json()
 
-    // Validate input data
-    const validatedData = updateStockSchema.parse(body)
-    const { totalQuantity, minimumStock, adjustmentReason, department } = validatedData
-
-    // ดึงข้อมูลสต็อกปัจจุบัน
+    // ดึงข้อมูลสต็อกปัจจุบันก่อน
     const currentStock = await prisma.stock.findUnique({
       where: { id: stockId },
       include: { drug: true }
@@ -127,25 +156,30 @@ export async function PATCH(
       return NextResponse.json({ error: 'ไม่พบข้อมูลสต็อก' }, { status: 404 })
     }
 
-    // ตรวจสอบว่าแผนกตรงกัน
+    // ✅ สร้างเหตุผลอัตโนมัติถ้าไม่มี
+    if (!body.adjustmentReason || !body.adjustmentReason.trim()) {
+      body.adjustmentReason = generateAdjustmentReason(
+        currentStock.totalQuantity,
+        body.totalQuantity || currentStock.totalQuantity,
+        currentStock.minimumStock,
+        body.minimumStock || currentStock.minimumStock
+      )
+    }
+
+    const validatedData = updateStockSchema.parse(body)
+    const { totalQuantity, minimumStock, adjustmentReason, department } = validatedData
+
     if (currentStock.department !== department) {
       return NextResponse.json({ error: 'แผนกไม่ตรงกับข้อมูลในระบบ' }, { status: 400 })
     }
 
     // คำนวณการเปลี่ยนแปลง
     const quantityChange = totalQuantity - currentStock.totalQuantity
-    const minimumStockChange = minimumStock !== currentStock.minimumStock
+    const minimumStockChange = minimumStock - currentStock.minimumStock
 
-    // ✅ ตรวจสอบว่าต้องการ adjustmentReason หรือไม่
-    const requiresAdjustmentReason = quantityChange !== 0
+    // ✅ กำหนด TransactionType ตามการเปลี่ยนแปลง
+    const transactionType = determineTransactionType(quantityChange, minimumStockChange, adjustmentReason)
 
-    if (requiresAdjustmentReason && (!adjustmentReason || !adjustmentReason.trim())) {
-      return NextResponse.json({ 
-        error: 'กรุณาระบุเหตุผลในการปรับสต็อก' 
-      }, { status: 400 })
-    }
-
-    // ใช้ transaction เพื่อความปลอดภัยของข้อมูล
     const result = await prisma.$transaction(async (tx) => {
       // อัปเดตข้อมูลสต็อก
       const updatedStock = await tx.stock.update({
@@ -154,7 +188,6 @@ export async function PATCH(
           totalQuantity,
           minimumStock,
           lastUpdated: new Date(),
-          // คำนวณมูลค่าใหม่ถ้าจำนวนเปลี่ยน
           ...(quantityChange !== 0 && {
             totalValue: (currentStock.totalValue / Math.max(currentStock.totalQuantity, 1)) * totalQuantity
           })
@@ -177,41 +210,68 @@ export async function PATCH(
         }
       })
 
-      // ✅ บันทึก transaction log เฉพาะเมื่อจำนวนสต็อกเปลี่ยนแปลง
-      if (quantityChange !== 0) {
-        const transactionType = quantityChange > 0 ? 'ADJUST_INCREASE' : 'ADJUST_DECREASE'
-        
-        await tx.stockTransaction.create({
-          data: {
-            stockId: currentStock.id,
-            userId: decoded.userId,
-            type: transactionType,
-            quantity: Math.abs(quantityChange),
-            beforeQty: currentStock.totalQuantity,
-            afterQty: totalQuantity,
-            unitCost: currentStock.totalValue / Math.max(currentStock.totalQuantity, 1),
-            totalCost: Math.abs(quantityChange) * (currentStock.totalValue / Math.max(currentStock.totalQuantity, 1)),
-            reference: `MANUAL_ADJUSTMENT_${Date.now()}`,
-            note: adjustmentReason || 'ปรับสต็อก'
-          }
-        })
+      // ✅ สร้าง transaction record ตาม enum ใหม่
+      let transactionNote = adjustmentReason
+      let recordQuantity = 0
+
+      // ปรับข้อมูลสำหรับ transaction record
+      switch (transactionType) {
+        case 'ADJUST_INCREASE':
+        case 'ADJUST_DECREASE':
+          recordQuantity = Math.abs(quantityChange)
+          break
+        case 'MIN_STOCK_INCREASE':
+          recordQuantity = minimumStockChange
+          transactionNote = `เพิ่มจำนวนขั้นต่ำจาก ${currentStock.minimumStock} เป็น ${minimumStock}`
+          break
+        case 'MIN_STOCK_DECREASE':
+          recordQuantity = Math.abs(minimumStockChange)
+          transactionNote = `ลดจำนวนขั้นต่ำจาก ${currentStock.minimumStock} เป็น ${minimumStock}`
+          break
+        case 'DATA_UPDATE':
+          recordQuantity = 0
+          transactionNote = 'อัปเดตข้อมูลทั่วไป'
+          break
       }
 
-      // ✅ ไม่บันทึก transaction log สำหรับการเปลี่ยน minimum stock เท่านั้น
-      // เนื่องจากไม่ส่งผลกระทบต่อจำนวนสต็อกจริง
+      // บันทึก transaction log (บันทึกทุกประเภท เพื่อติดตาม audit trail)
+      await tx.stockTransaction.create({
+        data: {
+          stockId: currentStock.id,
+          userId: decoded.userId,
+          type: transactionType,
+          quantity: recordQuantity,
+          beforeQty: currentStock.totalQuantity,
+          afterQty: totalQuantity,
+          unitCost: currentStock.totalValue / Math.max(currentStock.totalQuantity, 1),
+          totalCost: recordQuantity * (currentStock.totalValue / Math.max(currentStock.totalQuantity, 1)),
+          reference: `${transactionType}_${Date.now()}`,
+          note: transactionNote
+        }
+      })
 
       return updatedStock
     })
 
-    // สร้างข้อความตอบกลับที่ชัดเจน
-    let message = 'อัปเดตข้อมูลสต็อกสำเร็จ'
+    // สร้างข้อความตอบกลับ
+    let message = 'อัปเดตข้อมูลสำเร็จ'
     
-    if (quantityChange !== 0 && minimumStockChange) {
-      message = 'อัปเดตจำนวนสต็อกและจำนวนขั้นต่ำสำเร็จ'
-    } else if (quantityChange !== 0) {
-      message = 'ปรับจำนวนสต็อกสำเร็จ'
-    } else if (minimumStockChange) {
-      message = 'อัปเดตจำนวนขั้นต่ำสำเร็จ (ไม่มีการบันทึกประวัติ)'
+    switch (transactionType) {
+      case 'ADJUST_INCREASE':
+        message = `เพิ่มสต็อก ${quantityChange} หน่วยสำเร็จ`
+        break
+      case 'ADJUST_DECREASE':
+        message = `ลดสต็อก ${Math.abs(quantityChange)} หน่วยสำเร็จ`
+        break
+      case 'MIN_STOCK_INCREASE':
+        message = `เพิ่มจำนวนขั้นต่ำเป็น ${minimumStock} สำเร็จ`
+        break
+      case 'MIN_STOCK_DECREASE':
+        message = `ลดจำนวนขั้นต่ำเป็น ${minimumStock} สำเร็จ`
+        break
+      case 'DATA_UPDATE':
+        message = 'อัปเดตข้อมูลทั่วไปสำเร็จ'
+        break
     }
 
     return NextResponse.json({
@@ -221,19 +281,19 @@ export async function PATCH(
         lastUpdated: result.lastUpdated.toISOString()
       },
       message,
-      // ✅ ข้อมูลเพิ่มเติมสำหรับ debugging
-      changes: {
+      transactionInfo: {
+        type: transactionType,
         quantityChanged: quantityChange !== 0,
         quantityChange,
-        minimumStockChanged: minimumStockChange,
-        transactionLogged: quantityChange !== 0
+        minimumStockChanged: minimumStockChange !== 0,
+        minimumStockChange,
+        reason: adjustmentReason
       }
     })
 
   } catch (error: any) {
     console.error('Update stock error:', error)
     
-    // Handle validation errors
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { 
@@ -251,15 +311,10 @@ export async function PATCH(
   }
 }
 
-// DELETE - ลบข้อมูลสต็อก (ไม่จำกัดสิทธิ์)
-export async function DELETE(
-  request: NextRequest,
-  context: RouteContext
-) {
+export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
     const { stockId } = await context.params
 
-    // Verify authentication
     const token = request.headers.get('authorization')?.replace('Bearer ', '') || 
                   request.cookies.get('auth-token')?.value;
     
@@ -272,7 +327,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'Token ไม่ถูกต้อง' }, { status: 401 })
     }
 
-    // ตรวจสอบว่ามีข้อมูลสต็อกอยู่หรือไม่
     const existingStock = await prisma.stock.findUnique({
       where: { id: stockId },
       include: { 
@@ -285,14 +339,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'ไม่พบข้อมูลสต็อก' }, { status: 404 })
     }
 
-    // ตรวจสอบว่ายังมี transaction ที่เกี่ยวข้องอยู่หรือไม่
     if (existingStock.transactions.length > 0) {
       return NextResponse.json({ 
         error: 'ไม่สามารถลบข้อมูลสต็อกได้ เนื่องจากมีประวัติการเคลื่อนไหวแล้ว' 
       }, { status: 400 })
     }
 
-    // ลบข้อมูลสต็อก
     await prisma.stock.delete({
       where: { id: stockId }
     })

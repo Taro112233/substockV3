@@ -44,7 +44,9 @@ Directory structure:
     │   │   │   └── pharmacy/
     │   │   │       └── route.ts
     │   │   ├── drugs/
-    │   │   │   └── route.ts
+    │   │   │   ├── route.ts
+    │   │   │   └── [drugId]/
+    │   │   │       └── route.ts
     │   │   ├── stock/
     │   │   │   └── route.ts
     │   │   ├── stocks/
@@ -101,7 +103,11 @@ Directory structure:
     │   │   │   ├── stock-management-tab.tsx
     │   │   │   └── transfer-tab.tsx
     │   │   ├── stock/
+    │   │   │   ├── add-drug-modal.tsx
+    │   │   │   ├── stock-cards-mobile.tsx
     │   │   │   ├── stock-detail-modal.tsx
+    │   │   │   ├── stock-display-responsive.tsx
+    │   │   │   ├── stock-table-enhanced.tsx
     │   │   │   └── stock-table.tsx
     │   │   ├── transaction/
     │   │   │   ├── transaction-detail-modal.tsx
@@ -191,6 +197,7 @@ Directory structure:
     │       └── type-guards.ts
     ├── prisma/
     │   ├── schema.prisma
+    │   ├── seed.ts
     │   ├── schemas/
     │   │   ├── base.prisma
     │   │   ├── drug.prisma

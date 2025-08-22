@@ -1,57 +1,16 @@
 // 📄 File: app/api/transactions/opd/route.ts
+// ✅ Fixed to follow Stock API pattern - NO AUTHENTICATION REQUIRED
 
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { Department } from '@prisma/client'
-
-// Define string literal types for enums that match Prisma schema
-type DosageForm = 
-  | 'APP' | 'BAG' | 'CAP' | 'CR' | 'DOP' | 'ENE' | 'GEL' | 'HAN' | 'IMP' 
-  | 'INJ' | 'LIQ' | 'LOT' | 'LVP' | 'MDI' | 'MIX' | 'NAS' | 'NB' 
-  | 'OIN' | 'PAT' | 'POW' | 'PWD' | 'SAC' | 'SOL' | 'SPR' | 'SUP' 
-  | 'SUS' | 'SYR' | 'TAB' | 'TUR'
-
-type DrugCategory = 
-  | 'REFER' | 'HAD' | 'NARCOTIC' | 'REFRIGERATED' 
-  | 'PSYCHIATRIC' | 'FLUID' | 'GENERAL' | 'TABLET' | 'SYRUP' | 'INJECTION' | 'EXTEMP' | 'ALERT'
-
-// Define proper type for transaction mapping that matches actual Prisma return
-interface StockTransactionWithRelations {
-  id: string
-  type: string
-  quantity: number
-  beforeQty: number
-  afterQty: number
-  unitCost: number
-  totalCost: number
-  reference: string | null
-  note: string | null
-  createdAt: Date
-  stock: {
-    drug: {
-      hospitalDrugCode: string
-      name: string
-      genericName: string | null
-      dosageForm: string  // Prisma returns string, not enum
-      strength: string | null
-      unit: string
-      packageSize: string | null
-      category: string | null  // Prisma returns string | null, not enum
-    }
-  }
-  user: {
-    firstName: string
-    lastName: string
-  }
-}
 
 export async function GET() {
   try {
-    // ดึงข้อมูล transaction ของแผนก OPD
+    // ดึงข้อมูล transactions จากแผนก OPD
     const transactions = await prisma.stockTransaction.findMany({
       where: {
         stock: {
-          department: Department.OPD
+          department: 'OPD'
         }
       },
       include: {
@@ -66,6 +25,7 @@ export async function GET() {
                 strength: true,
                 unit: true,
                 packageSize: true,
+                pricePerBox: true,  // ✅ เพิ่ม pricePerBox
                 category: true
               }
             }
@@ -77,7 +37,6 @@ export async function GET() {
             lastName: true
           }
         }
-        // ⭐ ลบ transfer include ออกชั่วคราวจนกว่าจะ migrate DB
       },
       orderBy: {
         createdAt: 'desc'
@@ -87,7 +46,14 @@ export async function GET() {
 
     // คำนวณสถิติ
     const totalTransactions = transactions.length
-    const totalValue = transactions.reduce((sum, transaction) => sum + Math.abs(transaction.totalCost), 0)
+    
+    // ✅ คำนวณมูลค่าจริงด้วย pricePerBox
+    const totalValue = transactions.reduce((sum, transaction) => {
+      const pricePerBox = transaction.stock.drug.pricePerBox || 0
+      const actualCost = Math.abs(transaction.quantity) * pricePerBox
+      return sum + actualCost
+    }, 0)
+    
     const recentTransactions = transactions.filter(transaction => {
       const transactionDate = new Date(transaction.createdAt)
       const sevenDaysAgo = new Date()
@@ -95,41 +61,46 @@ export async function GET() {
       return transactionDate >= sevenDaysAgo
     }).length
 
-    // แปลงข้อมูลให้ตรงกับ interface - ใช้ type assertion เพื่อความปลอดภัย
-    const mappedTransactions = transactions.map((transaction: StockTransactionWithRelations) => ({
-      id: transaction.id,
-      type: transaction.type,
-      quantity: transaction.quantity,
-      beforeQty: transaction.beforeQty,
-      afterQty: transaction.afterQty,
-      unitCost: transaction.unitCost,
-      totalCost: transaction.totalCost,
-      reference: transaction.reference || '',
-      note: transaction.note || '',
-      batchNumber: '', // Empty string for now
-      createdAt: transaction.createdAt.toISOString(),
-      drug: {
-        hospitalDrugCode: transaction.stock.drug.hospitalDrugCode,
-        name: transaction.stock.drug.name,
-        genericName: transaction.stock.drug.genericName || '',
-        dosageForm: transaction.stock.drug.dosageForm as DosageForm,
-        strength: transaction.stock.drug.strength || '',
-        unit: transaction.stock.drug.unit,
-        packageSize: transaction.stock.drug.packageSize || '',
-        category: (transaction.stock.drug.category as DrugCategory) || 'GENERAL'
-      },
-      user: {
-        firstName: transaction.user.firstName,
-        lastName: transaction.user.lastName
-      },
-      transfer: null // ⭐ ตั้งเป็น null ชั่วคราวจนกว่าจะ migrate DB
-    }))
+    // ✅ แปลงข้อมูลให้ตรงกับ interface พร้อม pricePerBox
+    const mappedTransactions = transactions.map((transaction) => {
+      const pricePerBox = transaction.stock.drug.pricePerBox || 0
+      const calculatedTotalCost = Math.abs(transaction.quantity) * pricePerBox
+      
+      return {
+        id: transaction.id,
+        type: transaction.type,
+        quantity: transaction.quantity,
+        beforeQty: transaction.beforeQty,
+        afterQty: transaction.afterQty,
+        reference: transaction.reference,
+        note: transaction.note,
+        batchNumber: transaction.batchId,
+        createdAt: transaction.createdAt,
+        drug: {
+          hospitalDrugCode: transaction.stock.drug.hospitalDrugCode,
+          name: transaction.stock.drug.name,
+          genericName: transaction.stock.drug.genericName,
+          dosageForm: transaction.stock.drug.dosageForm,
+          strength: transaction.stock.drug.strength || '',  // ✅ Handle null
+          unit: transaction.stock.drug.unit,
+          packageSize: transaction.stock.drug.packageSize,
+          pricePerBox: pricePerBox,  // ✅ เพิ่ม pricePerBox ใน response
+          category: transaction.stock.drug.category
+        },
+        user: {
+          firstName: transaction.user.firstName,
+          lastName: transaction.user.lastName
+        },
+        // ✅ เพิ่ม calculated cost สำหรับ reference
+        calculatedCost: calculatedTotalCost
+      }
+    })
 
     const responseData = {
       transactions: mappedTransactions,
       stats: {
         totalTransactions,
-        totalValue,
+        totalValue,  // ✅ มูลค่าที่คำนวณจาก pricePerBox
         recentTransactions
       }
     }
@@ -150,5 +121,23 @@ export async function GET() {
     }, { 
       status: 500 
     })
+  } finally {
+    // ตรวจสอบการเชื่อมต่อ Prisma
+    await prisma.$disconnect()
   }
+}
+
+// ✅ OPTIONS method สำหรับ CORS
+export async function OPTIONS() {
+  return NextResponse.json(
+    {},
+    {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      },
+    }
+  )
 }

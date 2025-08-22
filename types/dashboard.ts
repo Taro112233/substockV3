@@ -1,5 +1,5 @@
-// 📄 File: types/dashboard.ts (Updated with pricePerBox)
-// Fixed Dashboard Types - ตรงกับ database schema
+// 📄 File: types/dashboard.ts (Updated Transaction type with pricePerBox)
+// ✅ เพิ่ม pricePerBox ใน Transaction drug object
 
 export interface DashboardStats {
   totalDrugs: number
@@ -70,10 +70,11 @@ export interface TransferItem {
     name: string
     strength: string
     unit: string
-    pricePerBox: number // ← เพิ่ม pricePerBox
+    pricePerBox: number
   }
 }
 
+// ✅ Updated Transaction interface with pricePerBox in drug object
 export interface Transaction {
   id: string
   type: 'RECEIVE_EXTERNAL' | 'DISPENSE_EXTERNAL' | 'TRANSFER_OUT' | 'TRANSFER_IN' | 'ADJUST_INCREASE' | 'ADJUST_DECREASE' | 'RESERVE' | 'UNRESERVE'
@@ -94,6 +95,7 @@ export interface Transaction {
     strength?: string
     unit: string
     packageSize?: string
+    pricePerBox: number  // ✅ เพิ่ม pricePerBox ใน Transaction drug object
     category: string
   }
   user: {

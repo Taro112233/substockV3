@@ -1,4 +1,5 @@
 // 📄 File: components/modules/transaction/transaction-detail-modal.tsx
+// ✅ Fixed to use pricePerBox from drug object
 
 import {
   Dialog,
@@ -145,6 +146,10 @@ export function TransactionDetailModal({
   const categoryLabel = getCategoryLabel(transaction.drug.category)
   const isPositive = ['RECEIVE_EXTERNAL', 'TRANSFER_IN', 'ADJUST_INCREASE', 'UNRESERVE'].includes(transaction.type)
 
+  // ✅ ใช้ pricePerBox จาก drug object แทน totalCost
+  const pricePerBox = transaction.drug.pricePerBox || 0
+  const calculatedTotalCost = Math.abs(transaction.quantity) * pricePerBox
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -268,22 +273,25 @@ export function TransactionDetailModal({
 
               <Separator />
 
-              {/* Cost Information */}
+              {/* Cost Information - ✅ Fixed: ใช้ pricePerBox แทน totalCost */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm text-gray-600 flex items-center gap-1">
                     <DollarSign className="h-4 w-4" />
-                    ต้นทุนต่อหน่วย
+                    ราคาต่อกล่อง
                   </label>
                   <p className="text-lg font-medium text-green-600">
-                    {formatCurrency(transaction.unitCost)}
+                    {formatCurrency(pricePerBox)}
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm text-gray-600">มูลค่ารวม</label>
                   <p className="text-lg font-bold text-green-600">
-                    {formatCurrency(Math.abs(transaction.totalCost))}
+                    {formatCurrency(calculatedTotalCost)}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {Math.abs(transaction.quantity).toLocaleString()} กล่อง × {formatCurrency(pricePerBox)}
                   </p>
                 </div>
               </div>

@@ -312,30 +312,6 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
               <p className="text-sm text-gray-600">
                 จัดการข้อมูลยาและสต็อกของแผนก
               </p>
-              
-              {/* ✅ New: Screen size indicator (desktop only) */}
-              {(screenSize === 'tablet' || screenSize === 'desktop') && (
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <div className="flex items-center gap-1">
-                    <div className={`w-2 h-2 rounded-full ${
-                      screenSize === 'desktop' ? 'bg-green-500' : 'bg-gray-300'
-                    }`} />
-                    <Smartphone className="h-3 w-3" />
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className={`w-2 h-2 rounded-full ${
-                      screenSize === 'tablet' ? 'bg-green-500' : 'bg-gray-300'
-                    }`} />
-                    <span>Tablet</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className={`w-2 h-2 rounded-full ${
-                      screenSize === 'desktop' ? 'bg-green-500' : 'bg-gray-300'
-                    }`} />
-                    <Monitor className="h-3 w-3" />
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 

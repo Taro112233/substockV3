@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { StockManagementTab } from '@/components/modules/dashboard/stock-management-tab'
 import { TransferTab } from '@/components/modules/dashboard/transfer-tab'
-import { HistoryTab } from '@/components/modules/dashboard/history-tab'
+import { HistoryTabEnhanced } from '@/components/modules/dashboard/history-tab-enhanced'
 import { TransferDetailModal } from '@/components/modules/transfer/transfer-detail-modal'
 import { Transfer } from '@/types/dashboard'
 import { Package, FileText, History, ArrowLeft, Home } from 'lucide-react'
@@ -210,12 +210,12 @@ export default function OpdDashboard() {
         <TabsContent value="transfers" className="space-y-4">
           <TransferTab 
             department="OPD"
-            onViewDetail={setActiveTransfer}
+            // onViewDetail={setActiveTransfer}
           />
         </TabsContent>
 
         <TabsContent value="history" className="space-y-4">
-          <HistoryTab 
+          <HistoryTabEnhanced 
             department="OPD"
           />
         </TabsContent>

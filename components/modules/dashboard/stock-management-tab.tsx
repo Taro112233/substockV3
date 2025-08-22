@@ -1,5 +1,5 @@
-// 📄 File: components/modules/dashboard/stock-management-tab.tsx (Updated)
-// Updated with Right-aligned Buttons and Add Drug Modal
+// 📄 File: components/modules/dashboard/stock-management-tab.tsx (Fixed)
+// =====================================================
 
 import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -126,7 +126,7 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
     }, 0);
   };
 
-  // ฟังก์ชันสำหรับอัปเดตสต็อกเมื่อมีการเปลี่ยนแปลงจาก modal
+  // ✅ Fixed: ฟังก์ชันสำหรับอัปเดตสต็อกเมื่อมีการเปลี่ยนแปลงจาก modal
   const handleStockUpdate = (updatedStock: Stock) => {
     if (!data) return;
 
@@ -142,8 +142,9 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
       return sum + (quantity * pricePerBox);
     }, 0);
 
+    // ✅ Fixed: Low stock count with minimumStock > 0 check
     const lowStockCount = updatedStocks.filter(
-      (stock) => stock.totalQuantity <= stock.minimumStock
+      (stock) => stock.totalQuantity < stock.minimumStock && stock.minimumStock > 0
     ).length;
 
     setData({
@@ -162,7 +163,7 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
     });
   };
 
-  // Handle new drug added
+  // ✅ Fixed: Handle new drug added
   const handleDrugAdded = (newStock: Stock) => {
     if (!data) return;
 
@@ -176,8 +177,9 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
       return sum + (quantity * pricePerBox);
     }, 0);
 
+    // ✅ Fixed: Low stock count with minimumStock > 0 check
     const lowStockCount = updatedStocks.filter(
-      (stock) => stock.totalQuantity <= stock.minimumStock
+      (stock) => stock.totalQuantity < stock.minimumStock && stock.minimumStock > 0
     ).length;
 
     setData({

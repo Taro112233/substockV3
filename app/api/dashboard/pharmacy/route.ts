@@ -1,14 +1,15 @@
-// 📄 File: app/api/dashboard/pharmacy/route.ts (Fixed ESLint warnings)
+// 📄 File: app/api/dashboard/opd/route.ts
+// =====================================================
 
-import { NextResponse } from 'next/server' // ✅ Fixed: ลบ NextRequest ที่ไม่ได้ใช้
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Department } from '@prisma/client'
 
-export async function GET() { // ✅ Fixed: ลบ request parameter ที่ไม่ได้ใช้
+export async function GET() {
   try {
-    const department = Department.PHARMACY
+    const department = Department.OPD
 
-    // 1. ดึงข้อมูลสต็อกทั้งหมดของแผนก PHARMACY
+    // 1. ดึงข้อมูลสต็อกทั้งหมดของแผนก OPD
     const stocks = await prisma.stock.findMany({
       where: {
         department,
@@ -37,7 +38,7 @@ export async function GET() { // ✅ Fixed: ลบ request parameter ที่�
       ]
     })
 
-    // 2. ดึงข้อมูล transfers ที่เกี่ยวข้องกับ PHARMACY
+    // 2. ดึงข้อมูล transfers ที่เกี่ยวข้องกับ OPD
     const transfers = await prisma.transfer.findMany({
       where: {
         OR: [
@@ -110,12 +111,12 @@ export async function GET() { // ✅ Fixed: ลบ request parameter ที่�
       take: 50 // ล่าสุด 50 รายการ
     })
 
-    // 4. คำนวณ dashboard stats
+    // 4. คำนวณ dashboard stats - ✅ Fixed: low stock calculation
     const stats = {
       totalDrugs: stocks.length,
       totalValue: stocks.reduce((sum, stock) => sum + stock.totalValue, 0),
       lowStockCount: stocks.filter(stock => 
-        stock.totalQuantity <= stock.minimumStock
+        stock.totalQuantity < stock.minimumStock && stock.minimumStock > 0
       ).length,
       totalTransfers: transfers.length,
       pendingTransfers: transfers.filter(t => t.status === 'PENDING').length,
@@ -210,11 +211,11 @@ export async function GET() { // ✅ Fixed: ลบ request parameter ที่�
     })
 
   } catch (error) {
-    console.error('Dashboard API Error:', error)
+    console.error('OPD Dashboard API Error:', error)
     return NextResponse.json(
       { 
         success: false, 
-        error: 'Failed to fetch dashboard data',
+        error: 'Failed to fetch OPD dashboard data',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }

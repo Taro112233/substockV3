@@ -115,7 +115,7 @@ export async function GET() { // ✅ Fixed: ลบ request parameter ที่�
       totalDrugs: stocks.length,
       totalValue: stocks.reduce((sum, stock) => sum + stock.totalValue, 0),
       lowStockCount: stocks.filter(stock => 
-        stock.totalQuantity <= stock.minimumStock
+        stock.totalQuantity < stock.minimumStock && stock.minimumStock > 0
       ).length,
       totalTransfers: transfers.length,
       pendingTransfers: transfers.filter(t => t.status === 'PENDING').length,

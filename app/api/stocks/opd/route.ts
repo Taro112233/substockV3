@@ -1,4 +1,5 @@
-// 📄 File: app/api/stocks/opd/route.ts (Fixed)
+// 📄 File: app/api/stocks/opd/route.ts
+// =====================================================
 
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
@@ -33,11 +34,11 @@ export async function GET() {
       ]
     })
 
-    // คำนวณสถิติ
+    // คำนวณสถิติ - ✅ Fixed: low stock calculation
     const totalDrugs = stocks.length
     const totalValue = stocks.reduce((sum, stock) => sum + stock.totalValue, 0)
     const lowStockCount = stocks.filter(stock => 
-      stock.totalQuantity <= stock.minimumStock
+      stock.totalQuantity < stock.minimumStock && stock.minimumStock > 0
     ).length
     const totalQuantity = stocks.reduce((sum, stock) => sum + stock.totalQuantity, 0)
 

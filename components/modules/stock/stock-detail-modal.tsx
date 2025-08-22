@@ -1,5 +1,5 @@
-// 📄 File: components/modules/stock/stock-detail-modal.tsx (Updated)
-// Enhanced Modal with Hospital Drug Code Edit
+// 📄 File: components/modules/stock/stock-detail-modal.tsx (Fixed)
+// =====================================================
 
 import { useState, useEffect } from 'react'
 import {
@@ -139,15 +139,23 @@ const getStockStatusIcon = (stock: Stock) => {
   }
 }
 
+// ✅ Fixed: getStockStatusInfo function with minimumStock > 0 check
 const getStockStatusInfo = (stock: Stock) => {
   const availableStock = calculateAvailableStock(stock)
-  const lowStock = isLowStock(stock)
+  // ✅ Fixed: Low stock check with minimumStock > 0
+  const isLow = stock.totalQuantity < stock.minimumStock && stock.minimumStock > 0
   
-  if (lowStock) {
+  if (isLow) {
     return {
       label: 'สต็อกต่ำ',
       color: 'bg-red-100 text-red-800 border-red-200',
       description: 'สต็อกคงเหลือต่ำกว่าจำนวนขั้นต่ำ ต้องเติมสต็อก'
+    }
+  } else if (stock.minimumStock === 0) {
+    return {
+      label: 'ไม่ได้ใช้งาน',
+      color: 'bg-gray-100 text-gray-800 border-gray-200',
+      description: 'ยาไม่ได้กำหนดระดับขั้นต่ำ อาจไม่ได้ใช้งาน'
     }
   } else if (availableStock > stock.minimumStock * 2) {
     return {

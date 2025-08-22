@@ -1,5 +1,5 @@
 // 📄 File: lib/utils/dashboard.ts
-// Updated with complete category mapping including PSYCHIATRIC
+// =====================================================
 
 import { Stock, Transfer, Transaction } from '@/types/dashboard'
 
@@ -10,11 +10,11 @@ export function calculateAvailableStock(stock: Stock): number {
   return Math.max(0, (stock.totalQuantity || 0) - (stock.reservedQty || 0))
 }
 
-// Check if stock is low
+// Check if stock is low - ✅ Fixed: only count if minimumStock > 0
 export function isLowStock(stock: Stock): boolean {
   const available = calculateAvailableStock(stock)
   const minimum = stock.minimumStock || 0
-  return available <= minimum && minimum > 0
+  return available < minimum && minimum > 0
 }
 
 // Get transfer status color
@@ -53,7 +53,7 @@ export function getCategoryColor(category: string): string {
     // Special Categories
     'HAD': 'bg-red-100 text-red-800 border-red-200',
     'NARCOTIC': 'bg-purple-100 text-purple-800 border-purple-200',
-    'PSYCHIATRIC': 'bg-indigo-100 text-indigo-800 border-indigo-200', // ✅ Added PSYCHIATRIC
+    'PSYCHIATRIC': 'bg-indigo-100 text-indigo-800 border-indigo-200',
     'REFRIGERATED': 'bg-blue-100 text-blue-800 border-blue-200',
     'FLUID': 'bg-cyan-100 text-cyan-800 border-cyan-200',
     
@@ -80,7 +80,7 @@ export function getCategoryLabel(category: string): string {
     // Special Categories
     'HAD': 'ยาเสี่ยงสูง',
     'NARCOTIC': 'ยาเสพติด',
-    'PSYCHIATRIC': 'ยาจิตเวช', // ✅ Added PSYCHIATRIC with Thai label
+    'PSYCHIATRIC': 'ยาจิตเวช',
     'REFRIGERATED': 'ยาเย็น',
     'FLUID': 'สารน้ำ',
     
@@ -94,32 +94,32 @@ export function getCategoryLabel(category: string): string {
   return labels[category] || category
 }
 
-// Get dosage form label in Thai
+// Get dosage form label in Eng
 export function getDosageFormLabel(dosageForm: string): string {
   const labels: Record<string, string> = {
-    'TAB': 'เม็ด',
-    'CAP': 'แคปซูล',
-    'SYR': 'น้ำเชื่อม',
-    'SUS': 'ยาแขวนตะกอน',
-    'INJ': 'ยาฉีด',
-    'SOL': 'สารละลาย',
-    'OIN': 'ครีม/ยาทา',
-    'GEL': 'เจล',
-    'LOT': 'โลชั่น',
-    'SPR': 'สเปรย์',
-    'SUP': 'ยาเหน็บ',
-    'ENE': 'ยาสวนลำไส้',
-    'POW': 'ผง',
-    'PWD': 'แป้ง',
-    'CR': 'ครีม',
-    'BAG': 'ถุง',
-    'APP': 'เครื่องมือ',
-    'LVP': 'ถุงใส่เลือด',
-    'MDI': 'พ่นสูดดม',
-    'NAS': 'พ่นจมูก',
-    'SAC': 'ซอง',
-    'LIQ': 'ของเหลว',
-    'MIX': 'ผสม'
+    'TAB': 'TAB',
+    'CAP': 'CAP',
+    'SYR': 'SYR',
+    'SUS': 'SUS',
+    'INJ': 'INJ',
+    'SOL': 'SOL',
+    'OIN': 'OIN',
+    'GEL': 'GEL',
+    'LOT': 'LOT',
+    'SPR': 'SPR',
+    'SUP': 'SUP',
+    'ENE': 'ENE',
+    'POW': 'POW',
+    'PWD': 'PWD',
+    'CR': 'CR',
+    'BAG': 'BAG',
+    'APP': 'APP',
+    'LVP': 'LVP',
+    'MDI': 'MDI',
+    'NAS': 'NAS',
+    'SAC': 'SAC',
+    'LIQ': 'LIQ',
+    'MIX': 'MIX'
   }
   return labels[dosageForm] || dosageForm
 }
@@ -265,16 +265,4 @@ export function isValidDrugCode(code: string): boolean {
   // Format: AAA000 (3 letters + 3 numbers)
   const pattern = /^[A-Z]{3}\d{3}$/
   return pattern.test(code)
-}
-
-// Generate next drug code
-export function generateNextDrugCode(prefix: string, existingCodes: string[]): string {
-  const codePattern = new RegExp(`^${prefix}(\\d{3})$`)
-  const numbers = existingCodes
-    .filter(code => codePattern.test(code))
-    .map(code => parseInt(code.replace(prefix, ''), 10))
-    .sort((a, b) => b - a)
-  
-  const nextNumber = numbers.length > 0 ? numbers[0] + 1 : 1
-  return `${prefix}${nextNumber.toString().padStart(3, '0')}`
 }

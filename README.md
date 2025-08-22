@@ -99,7 +99,7 @@ Directory structure:
     │   ├── modules/
     │   │   ├── dashboard/
     │   │   │   ├── dashboard-stats.tsx
-    │   │   │   ├── history-tab.tsx
+    │   │   │   ├── history-tab-enhanced.tsx
     │   │   │   ├── stock-management-tab.tsx
     │   │   │   └── transfer-tab.tsx
     │   │   ├── stock/
@@ -110,8 +110,11 @@ Directory structure:
     │   │   │   ├── stock-table-enhanced.tsx
     │   │   │   └── stock-table.tsx
     │   │   ├── transaction/
+    │   │   │   ├── transaction-cards-mobile.tsx
     │   │   │   ├── transaction-detail-modal.tsx
-    │   │   │   └── transaction-item.tsx
+    │   │   │   ├── transaction-display-responsive.tsx
+    │   │   │   ├── transaction-item.tsx
+    │   │   │   └── transaction-table-enhanced.tsx
     │   │   └── transfer/
     │   │       ├── status-badge.tsx
     │   │       ├── transfer-actions.tsx

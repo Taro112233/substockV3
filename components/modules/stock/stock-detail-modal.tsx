@@ -26,30 +26,14 @@ import { toast } from 'sonner'
 import { Stock } from '@/types/dashboard'
 import {
   calculateAvailableStock,
-  isLowStock,
-  formatCurrency,
-  getCategoryColor,
-  getCategoryLabel
 } from '@/lib/utils/dashboard'
 import { 
-  Package, 
-  AlertTriangle, 
-  TrendingUp, 
-  TrendingDown,
-  Calendar,
-  Building,
-  Hash,
+  Package,
   Pill,
   Save,
   X,
-  Edit3,
-  DollarSign,
-  FileText,
   RotateCcw,
-  Plus,
-  Minus,
   Target,
-  Info
 } from 'lucide-react'
 
 interface StockDetailModalProps {
@@ -153,20 +137,6 @@ const generateAdjustmentReason = (
   }
 
   return 'อัพเดทข้อมูล'
-}
-
-// Helper functions
-const getStockStatusIcon = (stock: Stock) => {
-  const availableStock = calculateAvailableStock(stock)
-  const lowStock = isLowStock(stock)
-  
-  if (lowStock) {
-    return <AlertTriangle className="h-5 w-5 text-red-600" />
-  } else if (availableStock > stock.minimumStock * 2) {
-    return <TrendingUp className="h-5 w-5 text-green-600" />
-  } else {
-    return <TrendingDown className="h-5 w-5 text-orange-600" />
-  }
 }
 
 // ✅ Fixed: getStockStatusInfo function with minimumStock > 0 check
@@ -278,11 +248,7 @@ export function StockDetailModalEnhanced({
 
   if (!stock) return null
 
-  const availableStock = calculateAvailableStock(stock)
-  const lowStock = isLowStock(stock)
   const stockStatusInfo = getStockStatusInfo(stock)
-  const categoryColor = getCategoryColor(stock.drug.category)
-  const categoryLabel = getCategoryLabel(stock.drug.category)
 
   // Quick stock adjustment handlers
   const handleQuickAdjustment = (delta: number) => {
@@ -399,7 +365,7 @@ export function StockDetailModalEnhanced({
         throw new Error(errorData.error || 'เกิดข้อผิดพลาดในการอัปเดต')
       }
 
-      const { data: updatedDrug, message, priceChanged, oldPrice, newPrice } = await response.json()
+      const { data: updatedDrug, priceChanged, oldPrice, newPrice } = await response.json()
 
       // แสดงข้อความที่เหมาะสม
       let toastDescription = "ข้อมูลยาถูกอัปเดตเรียบร้อยแล้ว"

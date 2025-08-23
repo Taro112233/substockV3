@@ -11,8 +11,6 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   RefreshCw,
-  AlertTriangle,
-  Trash2,
   ShoppingCart,
   Users,
   Bookmark

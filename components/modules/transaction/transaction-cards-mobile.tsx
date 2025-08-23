@@ -49,7 +49,6 @@ interface TransactionCardsMobileProps {
 
 export function TransactionCardsMobile({ 
   transactions,
-  onView,
   onFilteredStatsChange,
   loading = false 
 }: TransactionCardsMobileProps) {

@@ -19,8 +19,7 @@ import {
   getCategoryLabel
 } from '@/lib/utils/dashboard'
 import { 
-  AlertTriangle, 
-  Edit,
+  AlertTriangle,
   Search,
   Filter
 } from 'lucide-react'
@@ -38,7 +37,6 @@ interface StockTableProps {
 
 export function StockTable({ 
   stocks,
-  onAdjust, 
   onUpdate,
   loading = false 
 }: StockTableProps) {
@@ -65,22 +63,9 @@ export function StockTable({
     return matchesSearch && matchesLowStock
   })
 
-  const handleAdjust = (stock: Stock) => {
-    setSelectedStock(stock)
-    setIsModalOpen(true)
-  }
-
   const handleView = (stock: Stock) => {
     setSelectedStock(stock)
     setIsModalOpen(true)
-  }
-
-  const handleQuickEdit = (stock: Stock) => {
-    if (onAdjust) {
-      onAdjust(stock)
-    } else {
-      handleAdjust(stock)
-    }
   }
 
   const handleModalClose = () => {

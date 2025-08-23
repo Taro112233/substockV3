@@ -21,17 +21,10 @@ import {
 } from "@/lib/utils/dashboard";
 import {
   AlertTriangle,
-  Edit,
   Search,
-  Filter,
-  TrendingUp,
   Clock,
   Package,
-  DollarSign,
-  Eye,
   ChevronRight,
-  Boxes,
-  Calendar,
 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { StockDetailModalEnhanced } from "./stock-detail-modal";
@@ -107,7 +100,6 @@ interface StockCardsMobileProps {
 
 export function StockCardsMobile({
   stocks,
-  onAdjust,
   onUpdate,
   onFilteredStatsChange,
   loading = false,
@@ -121,7 +113,6 @@ export function StockCardsMobile({
     category: "all",
     dosageForm: "all",
   });
-  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
 
   // Category options with Thai labels
   const categoryOptions = [
@@ -287,16 +278,6 @@ export function StockCardsMobile({
   const handleCardClick = (stock: Stock) => {
     setSelectedStock(stock);
     setIsModalOpen(true);
-  };
-
-  const handleQuickAdjust = (e: React.MouseEvent, stock: Stock) => {
-    e.stopPropagation();
-    if (onAdjust) {
-      onAdjust(stock);
-    } else {
-      setSelectedStock(stock);
-      setIsModalOpen(true);
-    }
   };
 
   const clearFilters = () => {

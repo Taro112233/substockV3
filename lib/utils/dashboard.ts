@@ -1,7 +1,7 @@
 // 📄 File: lib/utils/dashboard.ts
 // =====================================================
 
-import { Stock, Transfer, Transaction } from '@/types/dashboard'
+import { Stock } from '@/types/dashboard'
 
 // ✅ Export all utility functions for use across components
 

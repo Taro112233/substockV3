@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/app/utils/auth-client';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -50,7 +50,7 @@ export default function RegisterPage() {
     message: string;
   }>({ show: false, requiresApproval: false, message: '' });
   
-  const { register, user, loading } = useAuth();
+  const { register, loading } = useAuth();
   const router = useRouter();
 
   const validateForm = () => {

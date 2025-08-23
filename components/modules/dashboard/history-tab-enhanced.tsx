@@ -5,18 +5,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Transaction } from '@/types/dashboard'
-import { TransactionDisplayResponsive, useTransactionViewMode } from '../transaction/transaction-display-responsive'
+import { TransactionDisplayResponsive } from '../transaction/transaction-display-responsive'
 import { 
   History, 
   RefreshCw,
   Download,
-  Filter,
   TrendingUp,
   TrendingDown,
   DollarSign,
-  Clock,
-  Package,
-  BarChart3
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
@@ -50,9 +46,6 @@ export function HistoryTabEnhanced({
   const [isFiltered, setIsFiltered] = useState(false)
   const [hasInitialLoad, setHasInitialLoad] = useState(false)
   const { toast } = useToast()
-  
-  // Get view mode info for display
-  const { viewMode, screenSize, isCardsView, setViewMode } = useTransactionViewMode()
 
   // ✅ Fixed: Calculate transaction cost using pricePerBox
   const calculateTransactionCost = (transaction: Transaction) => {

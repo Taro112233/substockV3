@@ -27,14 +27,11 @@ import {
   getCategoryLabel
 } from '@/lib/utils/dashboard'
 import { 
-  AlertTriangle, 
-  Edit,
+  AlertTriangle,
   Search,
-  Filter,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  TrendingUp
 } from 'lucide-react'
 import { useState, useMemo, useEffect } from 'react'
 import { StockDetailModalEnhanced } from './stock-detail-modal'

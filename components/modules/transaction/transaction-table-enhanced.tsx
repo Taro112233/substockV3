@@ -26,17 +26,13 @@ import {
   TrendingUp,
   TrendingDown,
   Search,
-  Filter,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
   RotateCcw,
-  Eye,
-  Clock,
   Package,
   ShoppingCart,
   Users,
-  AlertTriangle,
   Bookmark,
   Settings,
   Edit,
@@ -70,7 +66,6 @@ interface TransactionTableProps {
 
 export function TransactionTableEnhanced({ 
   transactions,
-  onView,
   onFilteredStatsChange,
   loading = false 
 }: TransactionTableProps) {

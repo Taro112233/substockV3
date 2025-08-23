@@ -11,11 +11,9 @@ import {
   Plus,
   Package,
   AlertTriangle,
-  TrendingUp,
-  Filter,
   DollarSign
 } from "lucide-react";
-import { StockDisplayResponsive, useStockViewMode } from "../stock/stock-display-responsive";
+import { StockDisplayResponsive } from "../stock/stock-display-responsive";
 import { AddDrugModal } from "../stock/add-drug-modal";
 
 interface StockData {
@@ -46,8 +44,6 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const { toast } = useToast();
-  
-  const { viewMode, screenSize, isCardsView, setViewMode } = useStockViewMode();
 
   const fetchStockData = useCallback(async (isRefresh = false) => {
     if (isRefresh) {

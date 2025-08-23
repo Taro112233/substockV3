@@ -1,7 +1,7 @@
 // app/login/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/app/utils/auth-client';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,7 +21,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const { login, user, loading } = useAuth();
+  const { login, loading } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -209,7 +209,7 @@ export default function LoginPage() {
                   </Button>
                 </div>
               </div>
-              
+
               {error && (
                 <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />

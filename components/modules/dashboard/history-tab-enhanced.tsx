@@ -1,5 +1,5 @@
 // 📄 File: components/modules/dashboard/history-tab-enhanced.tsx
-// ✅ Enhanced History Tab with Fixed Price Calculation using pricePerBox
+// ✅ Enhanced History Tab with Filtering Stats Cards (Updated to Match Stock Pattern)
 
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
@@ -13,15 +13,12 @@ import {
   Filter,
   TrendingUp,
   TrendingDown,
-  Smartphone,
-  Monitor,
-  Grid3X3,
-  List,
   DollarSign,
-  Clock
+  Clock,
+  Package,
+  BarChart3
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-// ✅ ลบ debug utility import เพราะไม่ต้องใช้แล้ว
 
 interface TransactionData {
   transactions: Transaction[]
@@ -51,7 +48,7 @@ export function HistoryTabEnhanced({
   const [refreshing, setRefreshing] = useState(false)
   const [filteredStats, setFilteredStats] = useState<FilteredStatsData | null>(null)
   const [isFiltered, setIsFiltered] = useState(false)
-  const [hasInitialLoad, setHasInitialLoad] = useState(false) // ✅ เพิ่ม flag สำหรับ track initial load
+  const [hasInitialLoad, setHasInitialLoad] = useState(false)
   const { toast } = useToast()
   
   // Get view mode info for display
@@ -68,6 +65,26 @@ export function HistoryTabEnhanced({
     return transactions.reduce((sum, transaction) => sum + calculateTransactionCost(transaction), 0)
   }
 
+  // Calculate original stats from data (used for comparison when filtered)
+  const calculateOriginalStats = useCallback(() => {
+    if (!data) return null
+    
+    const originalTotalValue = calculateTotalValue(data.transactions)
+    const originalIncomingCount = data.transactions.filter(t => 
+      ['RECEIVE_EXTERNAL', 'ADJUST_INCREASE', 'TRANSFER_IN', 'UNRESERVE'].includes(t.type)
+    ).length
+    const originalOutgoingCount = data.transactions.filter(t => 
+      ['DISPENSE_EXTERNAL', 'ADJUST_DECREASE', 'TRANSFER_OUT', 'RESERVE'].includes(t.type)
+    ).length
+    
+    return {
+      totalTransactions: data.stats.totalTransactions,
+      totalValue: originalTotalValue,
+      incomingCount: originalIncomingCount,
+      outgoingCount: originalOutgoingCount
+    }
+  }, [data, calculateTotalValue])
+
   const fetchTransactionData = useCallback(async (showRefreshToast = false) => {
     try {
       if (showRefreshToast) {
@@ -78,7 +95,6 @@ export function HistoryTabEnhanced({
         ? '/api/transactions/pharmacy' 
         : '/api/transactions/opd'
 
-      // ✅ ใช้ fetch ปกติไม่ต้อง authentication
       const response = await fetch(apiEndpoint, {
         method: 'GET',
         headers: {
@@ -107,7 +123,7 @@ export function HistoryTabEnhanced({
       }
 
       setData(recalculatedData)
-      setHasInitialLoad(true) // ✅ Mark ว่าได้ดึงข้อมูลแล้ว
+      setHasInitialLoad(true)
 
       if (showRefreshToast) {
         toast({
@@ -154,25 +170,24 @@ export function HistoryTabEnhanced({
     })
   }
 
-  // Handle filtered stats from responsive component
+  // ✅ Enhanced: Handle filtered stats from responsive component (similar to stock pattern)
   const handleFilteredStatsChange = useCallback((stats: FilteredStatsData) => {
     setFilteredStats(stats)
     
-    // Check if filters are active
+    // Check if filters are active (different from original data)
     if (data) {
-      const isCurrentlyFiltered = 
-        stats.totalTransactions !== data.stats.totalTransactions ||
-        Math.abs(stats.totalValue - data.stats.totalValue) > 0.01 ||
-        stats.incomingCount + stats.outgoingCount !== stats.totalTransactions
-      
-      setIsFiltered(isCurrentlyFiltered)
+      const originalStats = calculateOriginalStats()
+      if (originalStats) {
+        const isCurrentlyFiltered = 
+          stats.totalTransactions !== originalStats.totalTransactions ||
+          Math.abs(stats.totalValue - originalStats.totalValue) > 0.01 ||
+          stats.incomingCount !== originalStats.incomingCount ||
+          stats.outgoingCount !== originalStats.outgoingCount
+        
+        setIsFiltered(isCurrentlyFiltered)
+      }
     }
-  }, [data])
-
-  // Handle view mode toggle for mobile
-  const handleViewModeToggle = () => {
-    setViewMode(isCardsView ? 'table' : 'cards')
-  }
+  }, [data, calculateOriginalStats])
 
   // Loading state
   if (loading || !data) {
@@ -225,10 +240,11 @@ export function HistoryTabEnhanced({
     )
   }
 
-  // ✅ Fixed: Use filtered stats if available, otherwise calculate original stats with correct pricing
-  const displayStats = filteredStats || {
+  // ✅ Enhanced: Calculate display stats similar to stock pattern
+  const originalStats = calculateOriginalStats()
+  const displayStats = filteredStats || originalStats || {
     totalTransactions: data.stats.totalTransactions,
-    totalValue: data.stats.totalValue, // Already recalculated above with pricePerBox
+    totalValue: data.stats.totalValue,
     incomingCount: data.transactions.filter(t => 
       ['RECEIVE_EXTERNAL', 'ADJUST_INCREASE', 'TRANSFER_IN', 'UNRESERVE'].includes(t.type)
     ).length,
@@ -246,23 +262,6 @@ export function HistoryTabEnhanced({
             <h2 className="text-xl font-semibold text-gray-900">
               ประวัติการเคลื่อนไหว - {department === 'PHARMACY' ? 'แผนกเภสัชกรรม' : 'แผนก OPD'}
             </h2>
-            
-            {/* View mode indicator for mobile */}
-            {screenSize === 'mobile' && (
-              <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-lg text-xs">
-                {isCardsView ? (
-                  <>
-                    <Grid3X3 className="h-3 w-3" />
-                    <span>การ์ด</span>
-                  </>
-                ) : (
-                  <>
-                    <List className="h-3 w-3" />
-                    <span>ตาราง</span>
-                  </>
-                )}
-              </div>
-            )}
           </div>
           
           <div className="flex items-center gap-4 mt-1">
@@ -274,28 +273,6 @@ export function HistoryTabEnhanced({
 
         {/* Right-aligned Action Buttons */}
         <div className="flex gap-2 flex-wrap justify-end">
-          {/* View mode toggle for mobile */}
-          {screenSize === 'mobile' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleViewModeToggle}
-              className="flex items-center gap-2"
-            >
-              {isCardsView ? (
-                <>
-                  <List className="h-4 w-4" />
-                  <span>ตาราง</span>
-                </>
-              ) : (
-                <>
-                  <Grid3X3 className="h-4 w-4" />
-                  <span>การ์ด</span>
-                </>
-              )}
-            </Button>
-          )}
-
           <Button
             variant="outline"
             size="sm"
@@ -321,19 +298,7 @@ export function HistoryTabEnhanced({
         </div>
       </div>
 
-      {/* Filter Indicator */}
-      {isFiltered && filteredStats && (
-        <div className={`${department === 'PHARMACY' ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'} border rounded-lg p-3`}>
-          <div className={`flex items-center gap-2 ${department === 'PHARMACY' ? 'text-blue-600' : 'text-green-600'}`}>
-            <Filter className="h-4 w-4" />
-            <span className="text-sm font-medium">
-              กำลังแสดงข้อมูลที่กรองแล้ว - สถิติด้านล่างแสดงเฉพาะรายการที่ผ่านการกรอง
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Enhanced Statistics Cards */}
+      {/* ✅ Enhanced Statistics Cards - Updated with Stock Pattern */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Total Transactions Card */}
         <Card className={`transition-all duration-200 hover:shadow-md ${
@@ -349,9 +314,9 @@ export function HistoryTabEnhanced({
                   <p className="text-2xl font-bold text-blue-900">
                     {displayStats.totalTransactions.toLocaleString()}
                   </p>
-                  {isFiltered && (
+                  {isFiltered && originalStats && (
                     <span className="text-sm text-blue-600">
-                      / {data.stats.totalTransactions.toLocaleString()}
+                      / {originalStats.totalTransactions.toLocaleString()}
                     </span>
                   )}
                 </div>
@@ -375,11 +340,9 @@ export function HistoryTabEnhanced({
                   <p className="text-2xl font-bold text-green-900">
                     {displayStats.incomingCount.toLocaleString()}
                   </p>
-                  {isFiltered && (
+                  {isFiltered && originalStats && (
                     <span className="text-sm text-green-600">
-                      / {data.transactions.filter(t => 
-                        ['RECEIVE_EXTERNAL', 'ADJUST_INCREASE', 'TRANSFER_IN', 'UNRESERVE'].includes(t.type)
-                      ).length.toLocaleString()}
+                      / {originalStats.incomingCount.toLocaleString()}
                     </span>
                   )}
                 </div>
@@ -403,11 +366,9 @@ export function HistoryTabEnhanced({
                   <p className="text-2xl font-bold text-red-900">
                     {displayStats.outgoingCount.toLocaleString()}
                   </p>
-                  {isFiltered && (
+                  {isFiltered && originalStats && (
                     <span className="text-sm text-red-600">
-                      / {data.transactions.filter(t => 
-                        ['DISPENSE_EXTERNAL', 'ADJUST_DECREASE', 'TRANSFER_OUT', 'RESERVE'].includes(t.type)
-                      ).length.toLocaleString()}
+                      / {originalStats.outgoingCount.toLocaleString()}
                     </span>
                   )}
                 </div>
@@ -417,7 +378,7 @@ export function HistoryTabEnhanced({
           </CardContent>
         </Card>
 
-        {/* Total Value Card - ✅ Fixed with pricePerBox calculation */}
+        {/* Total Value Card - ✅ Enhanced without comparison in value */}
         <Card className={`transition-all duration-200 hover:shadow-md ${
           isFiltered ? 'border-purple-300 bg-purple-50' : 'border-gray-200'
         }`}>
@@ -431,15 +392,7 @@ export function HistoryTabEnhanced({
                   <p className="text-2xl font-bold text-purple-600">
                     ฿{displayStats.totalValue.toLocaleString()}
                   </p>
-                  {isFiltered && (
-                    <span className="text-sm text-purple-600">
-                      / ฿{data.stats.totalValue.toLocaleString()}
-                    </span>
-                  )}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  คำนวณจาก pricePerBox
-                </p>
               </div>
               <DollarSign className={`h-8 w-8 shrink-0 ${isFiltered ? 'text-purple-500' : 'text-gray-500'}`} />
             </div>
@@ -455,7 +408,7 @@ export function HistoryTabEnhanced({
         onFilteredStatsChange={handleFilteredStatsChange}
       />
 
-      {/* Additional Info Bar */}
+      {/* Enhanced Info Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1">

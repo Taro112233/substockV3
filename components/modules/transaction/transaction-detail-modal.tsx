@@ -123,13 +123,13 @@ const getTransactionTypeInfo = (type: string) => {
     
     // ⭐ New enum configurations
     'MIN_STOCK_INCREASE': {
-      label: 'เพิ่มจำนวนขั้นต่ำ',
+      label: 'ปรับเพิ่มขั้นต่ำ',
       color: 'bg-blue-100 text-blue-800 border-blue-200',
       description: 'การปรับเพิ่มระดับสต็อกขั้นต่ำ เพื่อให้เหมาะสมกับการใช้งาน'
     },
     'MIN_STOCK_DECREASE': {
-      label: 'ลดจำนวนขั้นต่ำ', 
-      color: 'bg-blue-100 text-blue-700 border-blue-200',
+      label: 'ปรับลดขั้นต่ำ', 
+      color: 'bg-orange-100 text-orange-800 border-orange-200',
       description: 'การปรับลดระดับสต็อกขั้นต่ำ เพื่อให้เหมาะสมกับการใช้งาน'
     },
     'MIN_STOCK_RESET': {
@@ -380,7 +380,6 @@ export function TransactionDetailModal({
                 <>
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <Target className="h-5 w-5 text-blue-600" />
                       <h4 className="font-medium text-blue-900">การปรับระดับสต็อกขั้นต่ำ</h4>
                     </div>
                     
@@ -394,14 +393,13 @@ export function TransactionDetailModal({
                       </div>
 
                       <div className="text-center">
-                        <label className="text-sm text-blue-600">การเปลี่ยนแปลงขั้นต่ำ</label>
+                        <label className="text-sm text-blue-600">การเปลี่ยนแปลง</label>
                         <div className="flex items-center justify-center gap-1 mt-1">
-                          <Target className="h-4 w-4 text-blue-500" />
                           <p className={`text-lg font-semibold ${
                             (transaction.minStockChange ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'
                           }`}>
                             {/* ⭐ แสดงเฉพาะ minStockChange สำหรับ minimum stock adjustment */}
-                            {(transaction.minStockChange ?? 0) >= 0 ? '+' : ''}
+                            {(transaction.minStockChange ?? 0) >= 0 ? '+' : '-'}
                             {Math.abs(transaction.minStockChange ?? 0).toLocaleString()}
                           </p>
                         </div>
@@ -426,7 +424,7 @@ export function TransactionDetailModal({
                           <span className="text-blue-600">จำนวนสต็อกปัจจุบัน (ไม่เปลี่ยนแปลง):</span>
                           <span className="font-medium text-gray-700">
                             {/* ⭐ แสดงสต็อกปัจจุบันที่ไม่เปลี่ยนแปลง */}
-                            {transaction.beforeQty.toLocaleString()} {transaction.drug.unit}
+                            {transaction.beforeQty.toLocaleString()}
                           </span>
                         </div>
                       </div>

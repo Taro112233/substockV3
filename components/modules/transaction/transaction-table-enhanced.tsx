@@ -103,7 +103,7 @@ export function TransactionTableEnhanced({
       case 'MIN_STOCK_INCREASE':
         return <Target className="h-4 w-4 text-blue-600" />
       case 'MIN_STOCK_DECREASE':
-        return <Target className="h-4 w-4 text-blue-400" />
+        return <Target className="h-4 w-4 text-orange-400" />
       case 'MIN_STOCK_RESET':
         return <Target className="h-4 w-4 text-indigo-600" />
       case 'DATA_UPDATE':
@@ -152,12 +152,12 @@ export function TransactionTableEnhanced({
         color: 'bg-gray-100 text-gray-800 border-gray-200' 
       },
       'MIN_STOCK_INCREASE': {
-        label: 'เพิ่มจำนวนขั้นต่ำ',
+        label: 'ปรับเพิ่มขั้นต่ำ',
         color: 'bg-blue-100 text-blue-800 border-blue-200'
       },
       'MIN_STOCK_DECREASE': {
-        label: 'ลดจำนวนขั้นต่ำ', 
-        color: 'bg-blue-100 text-blue-700 border-blue-200'
+        label: 'ปรับลดขั้นต่ำ', 
+        color: 'bg-orange-100 text-orange-800 border-orange-200'
       },
       'MIN_STOCK_RESET': {
         label: 'กำหนดจำนวนขั้นต่ำใหม่',
@@ -201,7 +201,7 @@ export function TransactionTableEnhanced({
     if (isMinStockChange) {
       const changeAmount = transaction.minStockChange ?? quantity
       return (
-        <span className="font-medium text-blue-600">
+        <span className={`font-medium ${changeAmount >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
           {changeAmount >= 0 ? '+' : ''}{changeAmount.toLocaleString()} ขั้นต่ำ
         </span>
       )
@@ -450,7 +450,6 @@ export function TransactionTableEnhanced({
                 <TableHead>ประเภท</TableHead>
                 <TableHead>จำนวน</TableHead>
                 <TableHead>วันเวลา</TableHead>
-                <TableHead>ดู</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -505,8 +504,8 @@ export function TransactionTableEnhanced({
                   <SelectItem value="ADJUST_DECREASE">ปรับลดสต็อก</SelectItem>
                   <SelectItem value="RESERVE">จองยา</SelectItem>
                   <SelectItem value="UNRESERVE">ยกเลิกจอง</SelectItem>
-                  <SelectItem value="MIN_STOCK_INCREASE">เพิ่มจำนวนขั้นต่ำ</SelectItem>
-                  <SelectItem value="MIN_STOCK_DECREASE">ลดจำนวนขั้นต่ำ</SelectItem>
+                  <SelectItem value="MIN_STOCK_INCREASE">ปรับเพิ่มขั้นต่ำ</SelectItem>
+                  <SelectItem value="MIN_STOCK_DECREASE">ปรับลดขั้นต่ำ</SelectItem>
                   <SelectItem value="MIN_STOCK_RESET">กำหนดจำนวนขั้นต่ำใหม่</SelectItem>
                   <SelectItem value="DATA_UPDATE">อัปเดตข้อมูล</SelectItem>
                   <SelectItem value="PRICE_UPDATE">อัปเดตราคา</SelectItem>
@@ -569,8 +568,8 @@ export function TransactionTableEnhanced({
                     <SelectItem value="ADJUST_DECREASE">ปรับลดสต็อก</SelectItem>
                     <SelectItem value="RESERVE">จองยา</SelectItem>
                     <SelectItem value="UNRESERVE">ยกเลิกจอง</SelectItem>
-                    <SelectItem value="MIN_STOCK_INCREASE">เพิ่มจำนวนขั้นต่ำ</SelectItem>
-                    <SelectItem value="MIN_STOCK_DECREASE">ลดจำนวนขั้นต่ำ</SelectItem>
+                    <SelectItem value="MIN_STOCK_INCREASE">ปรับเพิ่มขั้นต่ำ</SelectItem>
+                    <SelectItem value="MIN_STOCK_DECREASE">ปรับลดขั้นต่ำ</SelectItem>
                     <SelectItem value="DATA_UPDATE">อัปเดตข้อมูล</SelectItem>
                     <SelectItem value="PRICE_UPDATE">อัปเดตราคา</SelectItem>
                     <SelectItem value="INFO_CORRECTION">แก้ไขข้อมูล</SelectItem>
@@ -628,7 +627,6 @@ export function TransactionTableEnhanced({
                   <SortableHeader field="createdAt" className="w-[140px]" align="center">
                     วันเวลา
                   </SortableHeader>
-                  <TableHead className="w-[80px] text-center">ดู</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -759,7 +757,7 @@ export function TransactionTableEnhanced({
                                 if (beforeMin !== undefined && beforeMin !== null && afterMin !== undefined && afterMin !== null) {
                                   // มีข้อมูลครบ แสดง before → after
                                   return (
-                                    <div className="text-xs text-blue-600">
+                                    <div className="text-xs text-gray-500">
                                       ขั้นต่ำ: {beforeMin} → {afterMin}
                                     </div>
                                   )
@@ -774,7 +772,7 @@ export function TransactionTableEnhanced({
                               } else {
                                 // ไม่แสดงอะไรสำหรับ data update
                                 return (
-                                  <div className="text-xs text-gray-400">
+                                  <div className="text-xs text-gray-500">
                                     ไม่เปลี่ยนแปลงสต็อก
                                   </div>
                                 )
@@ -812,20 +810,6 @@ export function TransactionTableEnhanced({
                             <span className="text-gray-400">-</span>
                           )}
                         </TableCell>
-
-                        {/* ดู */}
-                        <TableCell>
-                          <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={() => handleViewTransaction(transaction)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
                       </TableRow>
                     )
                   })
@@ -858,7 +842,7 @@ export function TransactionTableEnhanced({
                 <span>จ่ายออก ({filteredStats.outgoingCount})</span>
               </div>
               <div className="flex items-center gap-1">
-                <Target className="w-3 h-3 text-blue-500" />
+                <Target className="w-3 h-3 text-orange-500" />
                 <span>จัดการขั้นต่ำ</span>
               </div>
             </div>

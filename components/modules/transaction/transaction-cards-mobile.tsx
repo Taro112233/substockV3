@@ -1,5 +1,5 @@
-// 📄 File: components/modules/transaction/transaction-cards-mobile.tsx (ปรับปรุงแล้ว)
-// ✅ Mobile-First Transaction Cards Layout with New TransactionType Enum
+// 📄 File: components/modules/transaction/transaction-cards-mobile.tsx
+// ⭐ ENHANCED: Mobile transaction cards with minimum stock support - FIXED LAYOUT
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -59,7 +59,7 @@ export function TransactionCardsMobile({
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // ✅ Updated Helper functions รองรับ enum ใหม่
+  // ✅ Helper functions รองรับ enum ใหม่
   const getTransactionTypeIcon = (type: string) => {
     switch (type) {
       case 'RECEIVE_EXTERNAL':
@@ -78,8 +78,6 @@ export function TransactionCardsMobile({
         return <Bookmark className="h-4 w-4 text-yellow-600" />
       case 'UNRESERVE':
         return <RotateCcw className="h-4 w-4 text-gray-600" />
-      
-      // ✅ New enum icons
       case 'MIN_STOCK_INCREASE':
         return <Target className="h-4 w-4 text-blue-600" />
       case 'MIN_STOCK_DECREASE':
@@ -92,7 +90,6 @@ export function TransactionCardsMobile({
         return <DollarSign className="h-4 w-4 text-purple-600" />
       case 'INFO_CORRECTION':
         return <Edit className="h-4 w-4 text-orange-600" />
-        
       default:
         return <Settings className="h-4 w-4 text-gray-600" />
     }
@@ -132,15 +129,13 @@ export function TransactionCardsMobile({
         label: 'ยกเลิกจอง', 
         color: 'bg-gray-100 text-gray-800 border-gray-200' 
       },
-      
-      // ✅ New enum badges
       'MIN_STOCK_INCREASE': {
-        label: 'เพิ่มจำนวนขั้นต่ำ',
+        label: 'ปรับเพิ่มขั้นต่ำ',
         color: 'bg-blue-100 text-blue-800 border-blue-200'
       },
       'MIN_STOCK_DECREASE': {
-        label: 'ลดจำนวนขั้นต่ำ', 
-        color: 'bg-blue-100 text-blue-700 border-blue-200'
+        label: 'ปรับลดขั้นต่ำ', 
+        color: 'bg-orenge-100 text-orenge-700 border-orenge-200'
       },
       'MIN_STOCK_RESET': {
         label: 'กำหนดจำนวนขั้นต่ำใหม่',
@@ -172,20 +167,21 @@ export function TransactionCardsMobile({
     )
   }
 
-  const formatTransactionAmount = (type: string, quantity: number) => {
-    // ✅ Updated: รวม enum ใหม่
+  const formatTransactionAmount = (type: string, quantity: number, transaction: Transaction) => {
     const isIncoming = ['RECEIVE_EXTERNAL', 'TRANSFER_IN', 'ADJUST_INCREASE', 'UNRESERVE'].includes(type)
     const isMinStockChange = ['MIN_STOCK_INCREASE', 'MIN_STOCK_DECREASE', 'MIN_STOCK_RESET'].includes(type)
     const isDataUpdate = ['DATA_UPDATE', 'PRICE_UPDATE', 'INFO_CORRECTION'].includes(type)
     
     if (isDataUpdate) {
-      return <span className="text-gray-500 text-xs">อัปเดตข้อมูล</span>
+      return <span className="text-gray-500 text-xs">ไม่เปลี่ยนแปลง</span>
     }
     
     if (isMinStockChange) {
+      // ⭐ ใช้ minStockChange ถ้ามี หรือใช้ quantity แทน
+      const changeAmount = transaction.minStockChange ?? quantity
       return (
         <span className="font-medium text-blue-600">
-          {type === 'MIN_STOCK_DECREASE' ? '-' : '+'}{Math.abs(quantity).toLocaleString()} ขั้นต่ำ
+          {changeAmount >= 0 ? '+' : ''}{changeAmount.toLocaleString()} ขั้นต่ำ
         </span>
       )
     }
@@ -197,7 +193,6 @@ export function TransactionCardsMobile({
     )
   }
 
-  // ✅ Fixed: Calculate transaction cost using pricePerBox
   const calculateTransactionCost = (transaction: Transaction) => {
     const pricePerBox = transaction.drug?.pricePerBox || 0
     return Math.abs(transaction.quantity) * pricePerBox
@@ -295,7 +290,7 @@ export function TransactionCardsMobile({
     })
   }, [transactions, searchTerm, typeFilter, dateFilter])
 
-  // ✅ Fixed: คำนวณ filtered stats ด้วย pricePerBox
+  // Calculate filtered stats
   const filteredStats = useMemo(() => {
     const totalTransactions = filteredTransactions.length
     const totalValue = filteredTransactions.reduce((sum, t) => sum + calculateTransactionCost(t), 0)
@@ -395,8 +390,8 @@ export function TransactionCardsMobile({
                   <SelectItem value="ADJUST_DECREASE">ปรับลดสต็อก</SelectItem>
                   <SelectItem value="RESERVE">จองยา</SelectItem>
                   <SelectItem value="UNRESERVE">ยกเลิกจอง</SelectItem>
-                  <SelectItem value="MIN_STOCK_INCREASE">เพิ่มจำนวนขั้นต่ำ</SelectItem>
-                  <SelectItem value="MIN_STOCK_DECREASE">ลดจำนวนขั้นต่ำ</SelectItem>
+                  <SelectItem value="MIN_STOCK_INCREASE">ปรับเพิ่มขั้นต่ำ</SelectItem>
+                  <SelectItem value="MIN_STOCK_DECREASE">ปรับลดขั้นต่ำ</SelectItem>
                   <SelectItem value="MIN_STOCK_RESET">กำหนดจำนวนขั้นต่ำใหม่</SelectItem>
                   <SelectItem value="DATA_UPDATE">อัปเดตข้อมูล</SelectItem>
                   <SelectItem value="PRICE_UPDATE">อัปเดตราคา</SelectItem>
@@ -460,6 +455,11 @@ export function TransactionCardsMobile({
               const categoryColor = getCategoryColor(transaction.drug?.category)
               const categoryLabel = getCategoryLabel(transaction.drug?.category)
               const transactionCost = calculateTransactionCost(transaction)
+              
+              // ⭐ Check transaction types
+              const isStockMovement = ['RECEIVE_EXTERNAL', 'DISPENSE_EXTERNAL', 'TRANSFER_IN', 'TRANSFER_OUT', 'ADJUST_INCREASE', 'ADJUST_DECREASE', 'RESERVE', 'UNRESERVE'].includes(transaction.type)
+              const isMinStockAdjustment = ['MIN_STOCK_INCREASE', 'MIN_STOCK_DECREASE', 'MIN_STOCK_RESET'].includes(transaction.type)
+              const isDataUpdate = ['DATA_UPDATE', 'PRICE_UPDATE', 'INFO_CORRECTION'].includes(transaction.type)
 
               return (
                 <Card 
@@ -516,12 +516,12 @@ export function TransactionCardsMobile({
                         <div className="text-sm text-gray-600">จำนวน:</div>
                         <div className="flex items-center gap-1">
                           {getTransactionTypeIcon(transaction.type)}
-                          {formatTransactionAmount(transaction.type, transaction.quantity)}
+                          {formatTransactionAmount(transaction.type, transaction.quantity, transaction)}
                         </div>
                       </div>
 
-                      {/* Transaction Value - ✅ Fixed with pricePerBox */}
-                      {transactionCost > 0 && (
+                      {/* Transaction Value - แสดงเฉพาะ stock movement */}
+                      {transactionCost > 0 && isStockMovement && (
                         <div className="text-right">
                           <div className="font-bold text-sm text-purple-600">
                             ฿{transactionCost.toLocaleString()}
@@ -533,19 +533,68 @@ export function TransactionCardsMobile({
                       )}
                     </div>
 
-                    {/* Stock Change Row - ✅ แสดงเฉพาะกรณีที่มีการเปลี่ยนสต็อกจริง */}
-                    {!['MIN_STOCK_INCREASE', 'MIN_STOCK_DECREASE', 'MIN_STOCK_RESET', 'DATA_UPDATE', 'PRICE_UPDATE', 'INFO_CORRECTION'].includes(transaction.type) && (
-                      <div className="flex justify-between items-center mb-3 text-sm">
-                        <div className="text-gray-600">
-                          สต็อก: {transaction.beforeQty.toLocaleString()} → {transaction.afterQty.toLocaleString()}
-                        </div>
-                        {transaction.batchNumber && (
-                          <div className="text-xs text-gray-500 font-mono">
-                            LOT: {transaction.batchNumber}
+                    {/* ⭐ ENHANCED Stock/Minimum Change Display */}
+                    <div className="flex justify-between items-center mb-3 text-sm">
+                      {isStockMovement && (
+                        <>
+                          <div className="text-gray-600">
+                            สต็อก: {transaction.beforeQty.toLocaleString()} → {transaction.afterQty.toLocaleString()}
                           </div>
-                        )}
-                      </div>
-                    )}
+                          {transaction.batchNumber && (
+                            <div className="text-xs text-gray-500 font-mono">
+                              LOT: {transaction.batchNumber}
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {isMinStockAdjustment && (
+                        <div className="flex-1 bg-blue-50 rounded-lg p-3 border border-blue-200">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Target className="h-4 w-4 text-blue-600" />
+                            <span className="text-sm font-medium text-blue-900">การปรับระดับขั้นต่ำ</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-xs">
+                            <div className="text-center">
+                              <div className="text-blue-600">ขั้นต่ำเดิม</div>
+                              <div className="font-semibold text-blue-900">
+                                {transaction.beforeMinStock?.toLocaleString() || 'N/A'}
+                              </div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-blue-600">เปลี่ยน</div>
+                              <div className={`font-semibold ${
+                                (transaction.minStockChange ?? transaction.quantity) >= 0 ? 'text-green-600' : 'text-red-600'
+                              }`}>
+                                {(transaction.minStockChange ?? transaction.quantity) >= 0 ? '+' : ''}
+                                {Math.abs(transaction.minStockChange ?? transaction.quantity)}
+                              </div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-blue-600">ขั้นต่ำใหม่</div>
+                              <div className="font-semibold text-blue-900">
+                                {transaction.afterMinStock?.toLocaleString() || 'N/A'}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-xs text-blue-600 mt-2 pt-2 border-t border-blue-200">
+                            สต็อกปัจจุบัน: {transaction.beforeQty.toLocaleString()} (ไม่เปลี่ยน)
+                          </div>
+                        </div>
+                      )}
+
+                      {isDataUpdate && (
+                        <div className="flex-1 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Settings className="h-4 w-4 text-gray-600" />
+                            <span className="text-sm font-medium text-gray-900">อัปเดตข้อมูล</span>
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            ไม่มีการเปลี่ยนแปลงจำนวนสต็อกหรือระดับขั้นต่ำ
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
                     {/* Bottom Row: User + Time + View Button */}
                     <div className="flex justify-between items-center pt-3 border-t border-gray-100">
@@ -554,7 +603,7 @@ export function TransactionCardsMobile({
                         <span>{transaction.user.firstName} {transaction.user.lastName}</span>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
                         <div className="text-xs text-gray-500">
                           {transaction.createdAt ? getTimeAgo(transaction.createdAt) : '-'}
                         </div>
@@ -607,8 +656,8 @@ export function TransactionCardsMobile({
                 <span>จ่ายออก ({filteredStats.outgoingCount})</span>
               </div>
               <div className="flex items-center gap-1">
-                <Settings className="w-3 h-3 text-blue-500" />
-                <span>จัดการข้อมูล</span>
+                <Target className="w-3 h-3 text-blue-500" />
+                <span>จัดการขั้นต่ำ</span>
               </div>
             </div>
           </div>

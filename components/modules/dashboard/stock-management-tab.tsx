@@ -1,5 +1,5 @@
-// 📄 File: components/modules/dashboard/stock-management-tab.tsx (Updated with Responsive)
-// =====================================================
+// 📄 File: components/modules/dashboard/stock-management-tab.tsx
+// ✅ Updated Stock Management Tab - Total Value without Comparison
 
 import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,12 +13,8 @@ import {
   AlertTriangle,
   TrendingUp,
   Filter,
-  Smartphone,
-  Monitor,
-  Grid3X3,
-  List
+  DollarSign
 } from "lucide-react";
-// ✅ Updated: Import the new responsive component
 import { StockDisplayResponsive, useStockViewMode } from "../stock/stock-display-responsive";
 import { AddDrugModal } from "../stock/add-drug-modal";
 
@@ -51,10 +47,8 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
 
   const { toast } = useToast();
   
-  // ✅ New: Get view mode info for display
   const { viewMode, screenSize, isCardsView, setViewMode } = useStockViewMode();
 
-  // ดึงข้อมูลสต็อก - wrapped with useCallback to fix hook dependency warning
   const fetchStockData = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
@@ -71,7 +65,7 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include", // ใช้ cookies แทน Authorization header
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -109,11 +103,11 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [department, toast]); // Add dependencies to useCallback
+  }, [department, toast]);
 
   useEffect(() => {
     fetchStockData();
-  }, [fetchStockData]); // Use fetchStockData in dependency array
+  }, [fetchStockData]);
 
   const handleRefresh = () => {
     fetchStockData(true);
@@ -123,7 +117,6 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
     setIsAddModalOpen(true);
   };
 
-  // ฟังก์ชันสำหรับคำนวณมูลค่ารวมใหม่ (totalQuantity × pricePerBox)
   const calculateTotalValue = () => {
     if (!data || !data.stocks) return 0;
     
@@ -134,23 +127,19 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
     }, 0);
   };
 
-  // ✅ Fixed: ฟังก์ชันสำหรับอัปเดตสต็อกเมื่อมีการเปลี่ยนแปลงจาก modal
   const handleStockUpdate = (updatedStock: Stock) => {
     if (!data) return;
 
-    // อัปเดตข้อมูลสต็อกใน state
     const updatedStocks = data.stocks.map((stock) =>
       stock.id === updatedStock.id ? updatedStock : stock
     );
 
-    // คำนวณ stats ใหม่
     const newTotalValue = updatedStocks.reduce((sum, stock) => {
       const quantity = stock.totalQuantity || 0;
       const pricePerBox = stock.drug?.pricePerBox || 0;
       return sum + (quantity * pricePerBox);
     }, 0);
 
-    // ✅ Fixed: Low stock count with minimumStock > 0 check
     const lowStockCount = updatedStocks.filter(
       (stock) => stock.totalQuantity < stock.minimumStock && stock.minimumStock > 0
     ).length;
@@ -171,21 +160,17 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
     });
   };
 
-  // ✅ Fixed: Handle new drug added
   const handleDrugAdded = (newStock: Stock) => {
     if (!data) return;
 
-    // เพิ่มยาใหม่เข้าใน state (เฉพาะแผนกปัจจุบัน)
     const updatedStocks = [...data.stocks, newStock];
 
-    // คำนวณ stats ใหม่
     const newTotalValue = updatedStocks.reduce((sum, stock) => {
       const quantity = stock.totalQuantity || 0;
       const pricePerBox = stock.drug?.pricePerBox || 0;
       return sum + (quantity * pricePerBox);
     }, 0);
 
-    // ✅ Fixed: Low stock count with minimumStock > 0 check
     const lowStockCount = updatedStocks.filter(
       (stock) => stock.totalQuantity < stock.minimumStock && stock.minimumStock > 0
     ).length;
@@ -206,11 +191,9 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
     });
   };
 
-  // Handle filtered stats from table
   const handleFilteredStatsChange = useCallback((stats: FilteredStatsData) => {
     setFilteredStats(stats);
     
-    // Check if filters are active (different from original data)
     if (data) {
       const originalTotalValue = calculateTotalValue();
       const isCurrentlyFiltered = 
@@ -222,16 +205,9 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
     }
   }, [data]);
 
-  // ✅ New: Handle view mode toggle for mobile
-  const handleViewModeToggle = () => {
-    setViewMode(isCardsView ? 'table' : 'cards');
-  };
-
-  // กรณี loading หรือไม่มีข้อมูล
   if (loading || !data) {
     return (
       <div className="space-y-6">
-        {/* Header Actions */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
@@ -244,7 +220,6 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
           </div>
         </div>
 
-        {/* Loading State */}
         <Card>
           <CardContent>
             <div className="space-y-4">
@@ -268,10 +243,8 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
     );
   }
 
-  // คำนวณมูลค่ารวมแบบใหม่
   const totalValueCalculated = calculateTotalValue();
   
-  // ใช้ filtered stats หากมีการกรอง หรือใช้ original stats
   const displayStats = filteredStats || {
     totalDrugs: data.stats.totalDrugs,
     totalValue: totalValueCalculated,
@@ -281,7 +254,6 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
   return (
     <>
       <div className="space-y-6">
-        {/* Header Actions - Updated Layout with View Mode Info */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-3">
@@ -289,23 +261,6 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
                 จัดการสต็อกยา -{" "}
                 {department === "PHARMACY" ? "แผนกเภสัชกรรม" : "แผนก OPD"}
               </h2>
-              
-              {/* ✅ New: View mode indicator for mobile */}
-              {screenSize === 'mobile' && (
-                <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-lg text-xs">
-                  {isCardsView ? (
-                    <>
-                      <Grid3X3 className="h-3 w-3" />
-                      <span>การ์ด</span>
-                    </>
-                  ) : (
-                    <>
-                      <List className="h-3 w-3" />
-                      <span>ตาราง</span>
-                    </>
-                  )}
-                </div>
-              )}
             </div>
             
             <div className="flex items-center gap-4 mt-1">
@@ -315,30 +270,7 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
             </div>
           </div>
 
-          {/* Right-aligned Action Buttons */}
           <div className="flex gap-2 flex-wrap justify-end">
-            {/* ✅ New: View mode toggle for mobile */}
-            {screenSize === 'mobile' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleViewModeToggle}
-                className="flex items-center gap-2"
-              >
-                {isCardsView ? (
-                  <>
-                    <List className="h-4 w-4" />
-                    <span>ตาราง</span>
-                  </>
-                ) : (
-                  <>
-                    <Grid3X3 className="h-4 w-4" />
-                    <span>การ์ด</span>
-                  </>
-                )}
-              </Button>
-            )}
-
             <Button
               variant="outline"
               size="sm"
@@ -363,7 +295,6 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
           </div>
         </div>
 
-        {/* Dynamic Statistics Cards - Enhanced with Mobile Optimization */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Total Drugs Card */}
           <Card className={`transition-all duration-200 ${
@@ -429,7 +360,7 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
             </CardContent>
           </Card>
 
-          {/* Total Value Card */}
+          {/* Total Value Card - ✅ Updated without comparison */}
           <Card className={`transition-all duration-200 ${
             isFiltered ? 'border-purple-300 bg-purple-50' : 'border-gray-200'
           }`}>
@@ -443,20 +374,14 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
                     <p className="text-2xl font-bold text-purple-600">
                       ฿{displayStats.totalValue.toLocaleString()}
                     </p>
-                    {isFiltered && (
-                      <span className="text-sm text-purple-600">
-                        / ฿{totalValueCalculated.toLocaleString()}
-                      </span>
-                    )}
                   </div>
                 </div>
-                <TrendingUp className={`h-8 w-8 shrink-0 ${isFiltered ? 'text-purple-500' : 'text-gray-500'}`} />
+                <DollarSign className={`h-8 w-8 shrink-0 ${isFiltered ? 'text-purple-500' : 'text-gray-500'}`} />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* ✅ Updated: Use Responsive Stock Display */}
         <StockDisplayResponsive
           stocks={data.stocks}
           department={department}
@@ -465,11 +390,9 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
           onFilteredStatsChange={handleFilteredStatsChange}
         />
 
-        {/* ✅ New: Mobile Bottom Spacing for FAB and Navigation */}
         <div className="h-16 sm:h-0" />
       </div>
 
-      {/* Add Drug Modal */}
       <AddDrugModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}

@@ -166,7 +166,7 @@ export function StockCardsMobile({
     return 'text-green-500'
   }
 
-  // Sorting logic
+  // Sorting logic - ✅ Fixed: เรียงตาม lastUpdated จาก aTime - bTime (เก่าก่อน)
   const sortedStocks = useMemo(() => {
     return [...stocks].sort((a, b) => {
       switch (sortBy) {
@@ -179,7 +179,7 @@ export function StockCardsMobile({
         case 'lastUpdated':
           const aTime = a.lastUpdated ? new Date(a.lastUpdated).getTime() : 0
           const bTime = b.lastUpdated ? new Date(b.lastUpdated).getTime() : 0
-          return bTime - aTime
+          return aTime - bTime // ✅ Fixed: เรียงจากน้อยไปมาก (เก่าก่อน)
         case 'category':
           return (a.drug?.category || '').localeCompare(b.drug?.category || '', 'th')
         default:
@@ -358,7 +358,7 @@ export function StockCardsMobile({
                 <AlertTriangle className="h-4 w-4" />
               </Button>
 
-              {/* Sort by Last Updated Button */}
+              {/* Sort by Last Updated Button - ✅ Fixed Tooltip */}
               <Button
                 variant={sortBy === 'lastUpdated' ? "default" : "outline"}
                 size="sm"
@@ -390,18 +390,37 @@ export function StockCardsMobile({
 
           {/* Small Screen: Mobile Layout */}
           <div className="lg:hidden">
-            {/* Row 1: Search Bar */}
-            <div className="relative mb-3">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="ค้นหายา (ชื่อ, รหัส, ชื่อสามัญ)..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+            {/* Row 1: Search Bar + Clear Button */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="ค้นหายา (ชื่อ, รหัส, ชื่อสามัญ)..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
+              {/* Clear Filters Button - Show when filters are active */}
+              {(filterConfig.category !== 'all' || 
+                filterConfig.dosageForm !== 'all' || 
+                searchTerm || 
+                showLowStockOnly ||
+                sortBy !== 'name') && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="flex items-center justify-center shrink-0 w-10 h-10 bg-red-500 text-white hover:bg-red-600 border-red-500"
+                  title="ล้างตัวกรอง"
+                >
+                  ✕
+                </Button>
+              )}
             </div>
             
-            {/* Row 2: Filters and Buttons */}
+            {/* Row 2: Filters and Action Buttons */}
             <div className="flex items-center gap-2">
               {/* Category Filter */}
               <div className="flex-1">
@@ -447,7 +466,7 @@ export function StockCardsMobile({
                 </Select>
               </div>
 
-              {/* Action Buttons - Icon only */}
+              {/* Low Stock Filter Button */}
               <Button
                 variant={showLowStockOnly ? "default" : "outline"}
                 size="sm"
@@ -458,22 +477,16 @@ export function StockCardsMobile({
                 <AlertTriangle className="h-4 w-4" />
               </Button>
 
-              {/* Clear Filters Button - Icon only */}
-              {(filterConfig.category !== 'all' || 
-                filterConfig.dosageForm !== 'all' || 
-                searchTerm || 
-                showLowStockOnly ||
-                sortBy !== 'name') && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={clearFilters}
-                  className="flex items-center justify-center shrink-0 w-10 h-10 bg-red-500 text-white hover:bg-red-600 border-red-500"
-                  title="ล้างตัวกรอง"
-                >
-                  ✕
-                </Button>
-              )}
+              {/* Sort by Last Updated Button */}
+              <Button
+                variant={sortBy === 'lastUpdated' ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSortBy(sortBy === 'lastUpdated' ? 'name' : 'lastUpdated')}
+                className="flex items-center justify-center shrink-0 w-10 h-10"
+                title="เรียงตามเวลาอัพเดท (เก่าที่สุดก่อน)"
+              >
+                <Clock className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </div>

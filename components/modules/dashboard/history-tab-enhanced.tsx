@@ -197,7 +197,7 @@ export function HistoryTabEnhanced({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
-              ประวัติการเคลื่อนไหว - {department === 'PHARMACY' ? 'แผนกเภสัชกรรม' : 'แผนก OPD'}
+              ประวัติการเคลื่อนไหว
             </h2>
             <p className="text-sm text-gray-600 mt-1">
               กำลังโหลดประวัติการเคลื่อนไหว...
@@ -260,13 +260,13 @@ export function HistoryTabEnhanced({
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-semibold text-gray-900">
-              ประวัติการเคลื่อนไหว - {department === 'PHARMACY' ? 'แผนกเภสัชกรรม' : 'แผนก OPD'}
+              ประวัติการเคลื่อนไหว
             </h2>
           </div>
           
           <div className="flex items-center gap-4 mt-1">
             <p className="text-sm text-gray-600">
-              ประวัติการเคลื่อนไหวสต็อกยา • อัปเดตล่าสุด: {new Date().toLocaleString('th-TH')}
+              อัปเดตล่าสุด: {new Date().toLocaleString('th-TH')}
             </p>
           </div>
         </div>
@@ -386,7 +386,7 @@ export function HistoryTabEnhanced({
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-gray-600 truncate">
-                  มูลค่ารวม{isFiltered ? ' (กรองแล้ว)' : ''}
+                  มูลค่าการเคลื่อนไหว{isFiltered ? ' (กรองแล้ว)' : ''}
                 </p>
                 <div className="flex items-center gap-2">
                   <p className="text-2xl font-bold text-purple-600">
@@ -407,39 +407,6 @@ export function HistoryTabEnhanced({
         loading={loading}
         onFilteredStatsChange={handleFilteredStatsChange}
       />
-
-      {/* Enhanced Info Bar */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            <span>อัปเดต: {new Date().toLocaleString('th-TH')}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span>เชื่อมต่อแล้ว</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <DollarSign className="h-3 w-3" />
-            <span>ใช้ pricePerBox</span>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span>รับเข้า</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-            <span>จ่ายออก</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-            <span>ปรับสต็อก</span>
-          </div>
-        </div>
-      </div>
 
       {/* Mobile Bottom Spacing for FAB and Navigation */}
       <div className="h-16 sm:h-0" />

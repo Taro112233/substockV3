@@ -12,7 +12,7 @@ interface TransferInfoCardProps {
 
 export function TransferInfoCard({ transfer }: TransferInfoCardProps) {
   const getDepartmentLabel = (dept: string) => {
-    return dept === 'PHARMACY' ? 'แผนกเภสัชกรรม' : 'แผนก OPD'
+    return dept === 'PHARMACY' ? 'แผนกคลังยา' : 'แผนก OPD'
   }
 
   const formatDateTime = (dateString: string) => {

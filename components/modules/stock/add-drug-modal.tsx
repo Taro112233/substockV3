@@ -223,7 +223,7 @@ export function AddDrugModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Plus className="h-5 w-5" />
-            เพิ่มยาใหม่ - {department === 'PHARMACY' ? 'แผนกเภสัชกรรม' : 'แผนก OPD'}
+            เพิ่มยาใหม่ - {department === 'PHARMACY' ? 'แผนกคลังยา' : 'แผนก OPD'}
           </DialogTitle>
         </DialogHeader>
 

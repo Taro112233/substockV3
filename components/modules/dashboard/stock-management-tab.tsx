@@ -211,8 +211,7 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
-              จัดการสต็อกยา -{" "}
-              {department === "PHARMACY" ? "แผนกเภสัชกรรม" : "แผนก OPD"}
+              จัดการสต็อกยา
             </h2>
             <p className="text-sm text-gray-600 mt-1">
               กำลังโหลดข้อมูลสต็อกยา...
@@ -258,16 +257,15 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
           <div className="flex-1">
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-semibold text-gray-900">
-                จัดการสต็อกยา -{" "}
-                {department === "PHARMACY" ? "แผนกเภสัชกรรม" : "แผนก OPD"}
+                จัดการสต็อกยา
               </h2>
             </div>
             
             <div className="flex items-center gap-4 mt-1">
-              <p className="text-sm text-gray-600">
-                จัดการข้อมูลยาและสต็อกของแผนก
-              </p>
-            </div>
+            <p className="text-sm text-gray-600">
+              อัปเดตล่าสุด: {new Date().toLocaleString('th-TH')}
+            </p>
+          </div>
           </div>
 
           <div className="flex gap-2 flex-wrap justify-end">

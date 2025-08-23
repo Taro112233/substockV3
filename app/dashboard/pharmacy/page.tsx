@@ -154,16 +154,13 @@ export default function PharmacyDashboard() {
             <div className="flex items-center gap-2">
               <Package className="h-6 w-6 text-blue-600" />
               <h1 className="text-2xl font-bold text-gray-900">
-                ระบบจัดการสต็อกยา - แผนกเภสัชกรรม
+                แผนกคลังยา
               </h1>
             </div>
           </div>
           <p className="text-gray-600 mt-1">
             ยินดีต้อนรับ คุณ{user.firstName} {user.lastName}
             {user.position && ` (${user.position})`}
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            อัปเดตล่าสุด: {new Date().toLocaleString('th-TH')}
           </p>
         </div>
         

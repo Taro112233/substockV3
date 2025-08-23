@@ -373,13 +373,13 @@ export default function TransferActionPage({ params }: TransferActionPageProps) 
             <div>
               <span className="text-gray-500">จาก:</span>
               <p className="font-medium">
-                {transfer.fromDept === 'PHARMACY' ? 'แผนกเภสัชกรรม' : 'แผนก OPD'}
+                {transfer.fromDept === 'PHARMACY' ? 'แผนกคลังยา' : 'แผนก OPD'}
               </p>
             </div>
             <div>
               <span className="text-gray-500">ไปยัง:</span>
               <p className="font-medium">
-                {transfer.toDept === 'PHARMACY' ? 'แผนกเภสัชกรรม' : 'แผนก OPD'}
+                {transfer.toDept === 'PHARMACY' ? 'แผนกคลังยา' : 'แผนก OPD'}
               </p>
             </div>
             <div>

@@ -25,7 +25,7 @@ export function getStatusConfig(status: TransferStatusType): StatusConfig {
       color: 'bg-yellow-100 text-yellow-700 border-yellow-200',
       text: 'รออนุมัติ',
       icon: Clock,
-      description: 'รอแผนกเภสัชกรรมอนุมัติ'
+      description: 'รอแผนกคลังยาอนุมัติ'
     },
     'APPROVED': { 
       color: 'bg-blue-100 text-blue-700 border-blue-200',

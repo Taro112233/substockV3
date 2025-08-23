@@ -12,7 +12,7 @@ interface TransferDeliveryInfoProps {
 
 export function TransferDeliveryInfo({ transfer }: TransferDeliveryInfoProps) {
   const getDepartmentLabel = (dept: string) => {
-    return dept === 'PHARMACY' ? 'แผนกเภสัชกรรม' : 'แผนก OPD'
+    return dept === 'PHARMACY' ? 'แผนกคลังยา' : 'แผนก OPD'
   }
 
   const formatDate = (dateString?: string) => {

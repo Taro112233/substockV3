@@ -17,7 +17,7 @@ interface TransferTabProps {
 }
 
 export function TransferTab({ department }: TransferTabProps) {
-  const departmentName = department === 'PHARMACY' ? 'แผนกเภสัชกรรม' : 'แผนก OPD'
+  const departmentName = department === 'PHARMACY' ? 'แผนกคลังยา' : 'แผนก OPD'
 
 
   return (

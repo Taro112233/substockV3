@@ -65,7 +65,7 @@ export async function updateStockAfterTransfer(
             unitCost: item.unitPrice,
             totalCost: -(item.receivedQty * item.unitPrice),
             reference: requisitionNumber,
-            note: `จ่ายให้ ${fromDept === 'PHARMACY' ? 'แผนกเภสัชกรรม' : 'แผนก OPD'}`
+            note: `จ่ายให้ ${fromDept === 'PHARMACY' ? 'แผนกคลังยา' : 'แผนก OPD'}`
           }
         })
       }
@@ -107,7 +107,7 @@ export async function updateStockAfterTransfer(
             unitCost: item.unitPrice,
             totalCost: item.receivedQty * item.unitPrice,
             reference: requisitionNumber,
-            note: `รับจาก ${toDept === 'PHARMACY' ? 'แผนกเภสัชกรรม' : 'แผนก OPD'}`
+            note: `รับจาก ${toDept === 'PHARMACY' ? 'แผนกคลังยา' : 'แผนก OPD'}`
           }
         })
       } else {
@@ -134,7 +134,7 @@ export async function updateStockAfterTransfer(
             unitCost: item.unitPrice,
             totalCost: item.receivedQty * item.unitPrice,
             reference: requisitionNumber,
-            note: `รับจาก ${toDept === 'PHARMACY' ? 'แผนกเภสัชกรรม' : 'แผนก OPD'} (สต็อกใหม่)`
+            note: `รับจาก ${toDept === 'PHARMACY' ? 'แผนกคลังยา' : 'แผนก OPD'} (สต็อกใหม่)`
           }
         })
       }

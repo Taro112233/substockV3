@@ -1,5 +1,5 @@
 // 📄 File: components/modules/stock/add-drug-modal.tsx
-// Modal สำหรับเพิ่มยาใหม่
+// Modal สำหรับเพิ่มยาใหม่ with Sonner Toast
 
 import { useState } from 'react'
 import {
@@ -19,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useToast } from '@/hooks/use-toast'
 import { Stock } from '@/types/dashboard'
 import { 
   Package, 
@@ -28,8 +27,13 @@ import {
   X,
   RotateCcw,
   Plus,
-  AlertCircle
+  AlertCircle,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  Loader2
 } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface AddDrugModalProps {
   isOpen: boolean
@@ -103,64 +107,107 @@ export function AddDrugModal({
   const [formData, setFormData] = useState<NewDrugData>(initialFormData)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const { toast } = useToast()
-
   // Reset form when modal opens/closes
   const handleClose = () => {
     setFormData(initialFormData)
     setErrors({})
     onClose()
+    
+    // Show toast when closing without saving
+    if (!loading) {
+      toast.info('ยกเลิกการเพิ่มยา', {
+        description: 'การเพิ่มยาใหม่ถูกยกเลิก',
+        duration: 2000,
+      })
+    }
   }
 
   const handleReset = () => {
     setFormData(initialFormData)
     setErrors({})
+    
+    toast.info('รีเซ็ตฟอร์มแล้ว', {
+      description: 'ข้อมูลทั้งหมดถูกล้างเรียบร้อยแล้ว',
+      icon: <RotateCcw className="w-4 h-4" />,
+      duration: 2000,
+    })
   }
 
-  // Validation
+  // Validation with detailed toast messages
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
+    let firstErrorField = ''
 
     if (!formData.hospitalDrugCode.trim()) {
       newErrors.hospitalDrugCode = 'รหัสยาโรงพยาบาลเป็นข้อมูลที่จำเป็น'
+      if (!firstErrorField) firstErrorField = 'hospitalDrugCode'
     }
 
     if (!formData.name.trim()) {
       newErrors.name = 'ชื่อยาเป็นข้อมูลที่จำเป็น'
+      if (!firstErrorField) firstErrorField = 'name'
     }
 
     if (!formData.unit.trim()) {
       newErrors.unit = 'หน่วยเป็นข้อมูลที่จำเป็น'
+      if (!firstErrorField) firstErrorField = 'unit'
     }
 
     if (formData.pricePerBox < 0) {
       newErrors.pricePerBox = 'ราคาต้องไม่น้อยกว่า 0'
+      if (!firstErrorField) firstErrorField = 'pricePerBox'
     }
 
     if (formData.initialQuantity < 0) {
       newErrors.initialQuantity = 'จำนวนเริ่มต้นต้องไม่น้อยกว่า 0'
+      if (!firstErrorField) firstErrorField = 'initialQuantity'
     }
 
     if (formData.minimumStock < 0) {
       newErrors.minimumStock = 'จำนวนขั้นต่ำต้องไม่น้อยกว่า 0'
+      if (!firstErrorField) firstErrorField = 'minimumStock'
     }
 
     setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    
+    // Show validation toast with specific error
+    if (Object.keys(newErrors).length > 0) {
+      const errorCount = Object.keys(newErrors).length
+      const firstError = newErrors[firstErrorField]
+      
+      toast.error('ข้อมูลไม่ถูกต้อง', {
+        description: errorCount === 1 ? firstError : `พบข้อผิดพลาด ${errorCount} รายการ กรุณาตรวจสอบ`,
+        icon: <AlertTriangle className="w-4 h-4" />,
+        duration: 5000,
+        action: {
+          label: "แก้ไข",
+          onClick: () => {
+            // Focus on first error field
+            const element = document.querySelector(`[name="${firstErrorField}"]`) as HTMLInputElement
+            element?.focus()
+          },
+        },
+      })
+      
+      return false
+    }
+
+    return true
   }
 
-  // Handle form submission
+  // Handle form submission with enhanced toast feedback
   const handleSubmit = async () => {
     if (!validateForm()) {
-      toast({
-        title: "ข้อมูลไม่ถูกต้อง",
-        description: "กรุณาตรวจสอบข้อมูลและลองใหม่",
-        variant: "destructive"
-      })
       return
     }
 
     setLoading(true)
+
+    // Show loading toast
+    const loadingToast = toast.loading('กำลังเพิ่มยาใหม่', {
+      description: `เพิ่มยา "${formData.name}" เข้าสู่ระบบ...`,
+    })
+
     try {
       const response = await fetch('/api/drugs', {
         method: 'POST',
@@ -174,36 +221,87 @@ export function AddDrugModal({
         }),
       })
 
+      // Dismiss loading toast
+      toast.dismiss(loadingToast)
+
       if (!response.ok) {
         const errorData = await response.json()
+        
+        // Handle specific error cases
+        if (errorData.error?.includes('รหัสยา') || errorData.error?.includes('duplicate')) {
+          toast.error('รหัสยาซ้ำ!', {
+            description: `รหัสยา "${formData.hospitalDrugCode}" มีอยู่ในระบบแล้ว`,
+            icon: <XCircle className="w-4 h-4" />,
+            duration: 6000,
+            action: {
+              label: "แก้ไขรหัส",
+              onClick: () => {
+                const element = document.querySelector('[name="hospitalDrugCode"]') as HTMLInputElement
+                element?.focus()
+                element?.select()
+              },
+            },
+          })
+        } else {
+          toast.error('ไม่สามารถเพิ่มยาได้', {
+            description: errorData.error || 'เกิดข้อผิดพลาดในการเพิ่มยา',
+            icon: <XCircle className="w-4 h-4" />,
+            duration: 5000,
+            action: {
+              label: "ลองอีกครั้ง",
+              onClick: () => handleSubmit(),
+            },
+          })
+        }
+        
         throw new Error(errorData.error || 'เกิดข้อผิดพลาดในการเพิ่มยา')
       }
 
       const { data: newStock } = await response.json()
 
-      toast({
-        title: "เพิ่มยาสำเร็จ",
-        description: `เพิ่มยา "${formData.name}" เรียบร้อยแล้ว`,
-        variant: "default"
+      // Success toast with drug details
+      toast.success('เพิ่มยาสำเร็จ!', {
+        description: `เพิ่ม "${formData.name}" (${formData.hospitalDrugCode}) เรียบร้อยแล้ว`,
+        icon: <CheckCircle2 className="w-4 h-4" />,
+        duration: 4000,
       })
+
+      // Show stock info if initial quantity > 0
+      if (formData.initialQuantity > 0) {
+        setTimeout(() => {
+          toast.info('ข้อมูลสต็อกเริ่มต้น', {
+            description: `จำนวน ${formData.initialQuantity} หน่วย มูลค่า ฿${(formData.initialQuantity * formData.pricePerBox).toLocaleString()}`,
+            icon: <Package className="w-4 h-4" />,
+            duration: 3000,
+          })
+        }, 500)
+      }
 
       onDrugAdded?.(newStock)
       handleClose()
       
     } catch (error) {
       console.error('Error adding drug:', error)
-      toast({
-        title: "เกิดข้อผิดพลาด",
-        description: error instanceof Error ? error.message : 'ไม่สามารถเพิ่มยาได้',
-        variant: "destructive",
-        duration: 5000
-      })
+      
+      // Only show connection error toast if no specific error was shown above
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      if (!errorMessage.includes('รหัสยา')) {
+        toast.error('เชื่อมต่อไม่ได้', {
+          description: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบอินเทอร์เน็ต',
+          icon: <XCircle className="w-4 h-4" />,
+          duration: 6000,
+          action: {
+            label: "ลองอีกครั้ง",
+            onClick: () => handleSubmit(),
+          },
+        })
+      }
     } finally {
       setLoading(false)
     }
   }
 
-  // Handle input changes
+  // Handle input changes with real-time validation feedback
   const handleInputChange = (field: keyof NewDrugData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     
@@ -214,6 +312,17 @@ export function AddDrugModal({
         delete newErrors[field]
         return newErrors
       })
+      
+      // Show success toast when fixing required fields
+      if (['hospitalDrugCode', 'name', 'unit'].includes(field) && value?.toString().trim()) {
+        toast.dismiss() // Dismiss any existing validation toasts
+        toast.success('ข้อมูลถูกต้อง', {
+          description: `${field === 'hospitalDrugCode' ? 'รหัสยา' : 
+                        field === 'name' ? 'ชื่อยา' : 'หน่วย'} ได้รับการแก้ไขแล้ว`,
+          icon: <CheckCircle2 className="w-4 h-4" />,
+          duration: 2000,
+        })
+      }
     }
   }
 
@@ -244,10 +353,12 @@ export function AddDrugModal({
                     รหัสยาโรงพยาบาล *
                   </label>
                   <Input
+                    name="hospitalDrugCode"
                     value={formData.hospitalDrugCode}
                     onChange={(e) => handleInputChange('hospitalDrugCode', e.target.value)}
                     placeholder="ระบุรหัสยา เช่น TAB001"
                     className={errors.hospitalDrugCode ? 'border-red-500' : ''}
+                    disabled={loading}
                   />
                   {errors.hospitalDrugCode && (
                     <p className="text-sm text-red-600 flex items-center gap-1">
@@ -261,10 +372,12 @@ export function AddDrugModal({
                 <div className="space-y-2">
                   <label className="text-sm font-medium">ชื่อยา *</label>
                   <Input
+                    name="name"
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
                     placeholder="ระบุชื่อยา"
                     className={errors.name ? 'border-red-500' : ''}
+                    disabled={loading}
                   />
                   {errors.name && (
                     <p className="text-sm text-red-600 flex items-center gap-1">
@@ -281,6 +394,7 @@ export function AddDrugModal({
                     value={formData.genericName || ''}
                     onChange={(e) => handleInputChange('genericName', e.target.value || null)}
                     placeholder="ระบุชื่อสามัญ"
+                    disabled={loading}
                   />
                 </div>
 
@@ -290,6 +404,7 @@ export function AddDrugModal({
                   <Select
                     value={formData.dosageForm}
                     onValueChange={(value) => handleInputChange('dosageForm', value)}
+                    disabled={loading}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="เลือกรูปแบบ" />
@@ -313,12 +428,15 @@ export function AddDrugModal({
                       onChange={(e) => handleInputChange('strength', e.target.value || null)}
                       placeholder="เช่น 500"
                       className="flex-1"
+                      disabled={loading}
                     />
                     <Input
+                      name="unit"
                       value={formData.unit}
                       onChange={(e) => handleInputChange('unit', e.target.value)}
                       placeholder="หน่วย"
                       className={`w-20 ${errors.unit ? 'border-red-500' : ''}`}
+                      disabled={loading}
                     />
                   </div>
                   {errors.unit && (
@@ -336,6 +454,7 @@ export function AddDrugModal({
                     value={formData.packageSize || ''}
                     onChange={(e) => handleInputChange('packageSize', e.target.value || null)}
                     placeholder="เช่น 100"
+                    disabled={loading}
                   />
                 </div>
 
@@ -350,6 +469,7 @@ export function AddDrugModal({
                     onChange={(e) => handleInputChange('pricePerBox', parseFloat(e.target.value) || 0)}
                     placeholder="0.00"
                     className={errors.pricePerBox ? 'border-red-500' : ''}
+                    disabled={loading}
                   />
                   {errors.pricePerBox && (
                     <p className="text-sm text-red-600 flex items-center gap-1">
@@ -366,6 +486,7 @@ export function AddDrugModal({
                 <Select
                   value={formData.category}
                   onValueChange={(value) => handleInputChange('category', value)}
+                  disabled={loading}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="เลือกประเภท" />
@@ -388,6 +509,7 @@ export function AddDrugModal({
                   onChange={(e) => handleInputChange('notes', e.target.value || null)}
                   placeholder="หมายเหตุเพิ่มเติม..."
                   className="min-h-[80px]"
+                  disabled={loading}
                 />
               </div>
             </CardContent>
@@ -413,6 +535,7 @@ export function AddDrugModal({
                     onChange={(e) => handleInputChange('initialQuantity', parseInt(e.target.value) || 0)}
                     placeholder="0"
                     className={errors.initialQuantity ? 'border-red-500' : ''}
+                    disabled={loading}
                   />
                   {errors.initialQuantity && (
                     <p className="text-sm text-red-600 flex items-center gap-1">
@@ -432,6 +555,7 @@ export function AddDrugModal({
                     onChange={(e) => handleInputChange('minimumStock', parseInt(e.target.value) || 0)}
                     placeholder="10"
                     className={errors.minimumStock ? 'border-red-500' : ''}
+                    disabled={loading}
                   />
                   {errors.minimumStock && (
                     <p className="text-sm text-red-600 flex items-center gap-1">
@@ -477,10 +601,19 @@ export function AddDrugModal({
             <Button
               onClick={handleSubmit}
               disabled={loading || !formData.hospitalDrugCode.trim() || !formData.name.trim() || !formData.unit.trim()}
-              className="flex-1"
+              className="flex-1 bg-green-600 hover:bg-green-700"
             >
-              <Save className="h-4 w-4 mr-2" />
-              {loading ? 'กำลังบันทึก...' : 'บันทึก'}
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  กำลังบันทึก...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  บันทึก
+                </>
+              )}
             </Button>
           </div>
         </div>

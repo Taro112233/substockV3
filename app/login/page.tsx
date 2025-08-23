@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Hospital, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Hospital, Eye, EyeOff, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function LoginPage() {
@@ -24,36 +24,77 @@ export default function LoginPage() {
   const { login, user, loading } = useAuth();
   const router = useRouter();
 
-  // Redirect ถ้า login แล้ว
-  useEffect(() => {
-    if (!loading && user) {
-      router.push('/dashboard');
-    }
-  }, [user, loading, router]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.username || !formData.password) {
-      setError('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
+      setError('กรุณากรอกUsernameและรหัสผ่าน');
+      toast.error('กรุณากรอกข้อมูลให้ครบถ้วน', {
+        description: 'Username และรหัสผ่านจำเป็นต้องกรอก',
+        icon: <AlertTriangle className="w-4 h-4" />,
+        duration: 4000,
+      });
       return;
     }
 
     setIsLoading(true);
     setError('');
 
+    // Show loading toast
+    const loadingToast = toast.loading('กำลังเข้าสู่ระบบ...', {
+      description: 'กรุณารอสักครู่',
+    });
+
     try {
       const result = await login(formData.username, formData.password);
       
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
+      
       if (result.success) {
-        toast('เข้าสู่ระบบสำเร็จ!');
+        toast.success('เข้าสู่ระบบสำเร็จ!', {
+          description: `ยินดีต้อนรับเข้าสู่ระบบจัดการสต็อกยา`,
+          icon: <CheckCircle2 className="w-4 h-4" />,
+          duration: 3000,
+        });
         // Navigation จะเกิดขึ้นใน AuthProvider
       } else {
-        setError(result.error || 'เข้าสู่ระบบไม่สำเร็จ');
+        const errorMsg = result.error || 'เข้าสู่ระบบไม่สำเร็จ';
+        setError(errorMsg);
+        toast.error('เข้าสู่ระบบไม่สำเร็จ', {
+          description: errorMsg === 'เข้าสู่ระบบไม่สำเร็จ' 
+            ? 'กรุณาตรวจสอบ Username และรหัสผ่าน' 
+            : errorMsg,
+          icon: <XCircle className="w-4 h-4" />,
+          duration: 5000,
+          action: {
+            label: "ลองอีกครั้ง",
+            onClick: () => {
+              setError('');
+              setFormData({ username: '', password: '' });
+            },
+          },
+        });
       }
     } catch (error) {
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
+      
       console.error('Login error:', error);
-      setError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      const errorMsg = 'เกิดข้อผิดพลาดในการเชื่อมต่อ';
+      setError(errorMsg);
+      toast.error('ไม่สามารถเชื่อมต่อได้', {
+        description: 'กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตและลองใหม่อีกครั้ง',
+        icon: <XCircle className="w-4 h-4" />,
+        duration: 6000,
+        action: {
+          label: "ลองอีกครั้ง",
+          onClick: () => {
+            setError('');
+            handleSubmit(e);
+          },
+        },
+      });
     } finally {
       setIsLoading(false);
     }
@@ -70,11 +111,22 @@ export default function LoginPage() {
     if (error) setError('');
   };
 
+  const handleRegisterClick = () => {
+    toast.info('กำลังไปหน้าสมัครสมาชิก', {
+      description: 'จะนำไปยังหน้าลงทะเบียนในอีกสักครู่',
+      duration: 2000,
+    });
+    router.push('/register');
+  };
+
   // Loading spinner ขณะตรวจสอบ auth status
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          <p className="text-gray-600 text-sm">กำลังตรวจสอบสิทธิ์...</p>
+        </div>
       </div>
     );
   }
@@ -103,27 +155,22 @@ export default function LoginPage() {
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-xl text-center">เข้าสู่ระบบ</CardTitle>
             <CardDescription className="text-center">
-              กรอกชื่อผู้ใช้และรหัสผ่านเพื่อเข้าสู่ระบบ
+              กรอก Username และรหัสผ่านเพื่อเข้าสู่ระบบ
             </CardDescription>
           </CardHeader>
           
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
 
               <div className="space-y-2">
-                <Label htmlFor="username">ชื่อผู้ใช้</Label>
+                <Label htmlFor="username">Username</Label>
                 <Input
                   id="username"
                   name="username"
                   type="text"
                   value={formData.username}
                   onChange={handleInputChange}
-                  placeholder="กรอกชื่อผู้ใช้"
+                  placeholder="กรอก Username"
                   disabled={isLoading}
                   className="h-11"
                   autoComplete="username"
@@ -132,7 +179,7 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">รหัสผ่าน</Label>
+                <Label htmlFor="password">Password</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -162,10 +209,17 @@ export default function LoginPage() {
                   </Button>
                 </div>
               </div>
+              
+              {error && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
               <Button 
                 type="submit" 
-                className="w-full h-11 text-base"
+                className="w-full h-11 text-base bg-blue-500 hover:bg-blue-600"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -186,7 +240,7 @@ export default function LoginPage() {
                 <Button
                   variant="link"
                   className="p-0 h-auto text-blue-600 hover:text-blue-800"
-                  onClick={() => router.push('/register')}
+                  onClick={handleRegisterClick}
                   disabled={isLoading}
                 >
                   สมัครสมาชิก

@@ -1,4 +1,4 @@
-// 📄 File: components/modules/stock/stock-detail-modal.tsx (ปรับปรุงแล้ว - ปุ่มกดได้ตลอด + เหตุผลอัตโนมัติ)
+// 📄 File: components/modules/stock/stock-detail-modal.tsx (ปรับปรุงแล้ว - ใช้ Sonner Toast)
 // =====================================================
 
 import { useState, useEffect } from 'react'
@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useToast } from '@/hooks/use-toast'
+import { toast } from 'sonner'
 import { Stock } from '@/types/dashboard'
 import {
   calculateAvailableStock,
@@ -232,8 +232,6 @@ export function StockDetailModalEnhanced({
     notes: null
   })
 
-  const { toast } = useToast()
-
   // Reset form เมื่อเปิด modal ใหม่
   useEffect(() => {
     if (stock && isOpen) {
@@ -350,10 +348,9 @@ export function StockDetailModalEnhanced({
 
       const { data: updatedStock, message } = await response.json()
 
-      toast({
-        title: "อัปเดตสต็อกสำเร็จ",
-        description: message || "ข้อมูลสต็อกถูกอัปเดตเรียบร้อยแล้ว",
-        variant: "default"
+      // ✅ ใช้ Sonner toast notification
+      toast.success('บันทึกสต็อกสำเร็จ!', {
+        description: message || "ข้อมูลสต็อกถูกอัปเดตเรียบร้อยแล้ว"
       })
 
       onUpdate?.(updatedStock)
@@ -361,10 +358,9 @@ export function StockDetailModalEnhanced({
       
     } catch (error) {
       console.error('Error updating stock:', error)
-      toast({
-        title: "เกิดข้อผิดพลาด",
-        description: error instanceof Error ? error.message : 'ไม่สามารถอัปเดตข้อมูลได้',
-        variant: "destructive"
+      // ✅ ใช้ Sonner toast notification สำหรับ error
+      toast.error('เกิดข้อผิดพลาด!', {
+        description: error instanceof Error ? error.message : 'ไม่สามารถอัปเดตข้อมูลได้'
       })
     } finally {
       setLoading(false)
@@ -374,19 +370,15 @@ export function StockDetailModalEnhanced({
   // Save drug changes
   const handleSaveDrug = async () => {
     if (!drugFormData.name.trim()) {
-      toast({
-        title: "กรุณาระบุชื่อยา",
-        description: "ชื่อยาเป็นข้อมูลที่จำเป็น",
-        variant: "destructive"
+      toast.error('กรุณาระบุชื่อยา', {
+        description: "ชื่อยาเป็นข้อมูลที่จำเป็น"
       })
       return
     }
 
     if (!drugFormData.hospitalDrugCode.trim()) {
-      toast({
-        title: "กรุณาระบุรหัสยา",
-        description: "รหัสยาโรงพยาบาลเป็นข้อมูลที่จำเป็น",
-        variant: "destructive"
+      toast.error('กรุณาระบุรหัสยา', {
+        description: "รหัสยาโรงพยาบาลเป็นข้อมูลที่จำเป็น"
       })
       return
     }
@@ -415,10 +407,9 @@ export function StockDetailModalEnhanced({
         toastDescription += `\nราคาเปลี่ยนจาก ฿${oldPrice?.toFixed(2)} เป็น ฿${newPrice?.toFixed(2)}`
       }
 
-      toast({
-        title: "อัปเดตข้อมูลยาสำเร็จ",
-        description: toastDescription,
-        variant: "default"
+      // ✅ ใช้ Sonner toast notification
+      toast.success('บันทึกข้อมูลยาสำเร็จ!', {
+        description: toastDescription
       })
 
       // Update stock with new drug info and recalculated values
@@ -463,10 +454,9 @@ export function StockDetailModalEnhanced({
       
     } catch (error) {
       console.error('Error updating drug:', error)
-      toast({
-        title: "เกิดข้อผิดพลาด",
+      // ✅ ใช้ Sonner toast notification สำหรับ error
+      toast.error('เกิดข้อผิดพลาด!', {
         description: error instanceof Error ? error.message : 'ไม่สามารถอัปเดตข้อมูลได้',
-        variant: "destructive",
         duration: 5000
       })
     } finally {

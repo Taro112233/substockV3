@@ -1,4 +1,3 @@
-// app/register/page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -9,7 +8,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Hospital, Eye, EyeOff, Clock } from 'lucide-react';
+import { 
+  Loader2, 
+  Hospital, 
+  Eye, 
+  EyeOff, 
+  Clock, 
+  CheckCircle2, 
+  XCircle, 
+  AlertTriangle,
+  UserPlus
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 type RegisterFormData = {
@@ -44,31 +53,48 @@ export default function RegisterPage() {
   const { register, user, loading } = useAuth();
   const router = useRouter();
 
-  // Redirect ถ้า login แล้ว
-  useEffect(() => {
-    if (!loading && user) {
-      router.push('/dashboard');
-    }
-  }, [user, loading, router]);
-
   const validateForm = () => {
     if (!formData.username || formData.username.length < 3) {
-      setError('ชื่อผู้ใช้ต้องมีอย่างน้อย 3 ตัวอักษร');
+      const errorMsg = 'Username ต้องมีอย่างน้อย 3 ตัวอักษร';
+      setError(errorMsg);
+      toast.error('ข้อมูลไม่ถูกต้อง', {
+        description: errorMsg,
+        icon: <AlertTriangle className="w-4 h-4" />,
+        duration: 4000,
+      });
       return false;
     }
 
     if (!formData.password || formData.password.length < 6) {
-      setError('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+      const errorMsg = 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
+      setError(errorMsg);
+      toast.error('รหัสผ่านไม่ถูกต้อง', {
+        description: errorMsg,
+        icon: <AlertTriangle className="w-4 h-4" />,
+        duration: 4000,
+      });
       return false;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('รหัสผ่านไม่ตรงกัน');
+      const errorMsg = 'รหัสผ่านไม่ตรงกัน';
+      setError(errorMsg);
+      toast.error('รหัสผ่านไม่ตรงกัน', {
+        description: 'กรุณาตรวจสอบรหัสผ่านและการยืนยันรหัสผ่าน',
+        icon: <XCircle className="w-4 h-4" />,
+        duration: 4000,
+      });
       return false;
     }
 
     if (!formData.firstName || !formData.lastName) {
-      setError('กรุณากรอกชื่อ-นามสกุล');
+      const errorMsg = 'กรุณากรอกชื่อ-นามสกุล';
+      setError(errorMsg);
+      toast.error('ข้อมูลไม่ครบถ้วน', {
+        description: errorMsg,
+        icon: <AlertTriangle className="w-4 h-4" />,
+        duration: 4000,
+      });
       return false;
     }
 
@@ -85,6 +111,11 @@ export default function RegisterPage() {
     setIsLoading(true);
     setError('');
 
+    // Show loading toast
+    const loadingToast = toast.loading('กำลังสร้างบัญชีผู้ใช้', {
+      description: 'กรุณารอสักครู่...',
+    });
+
     try {
       const result = await register({
         username: formData.username,
@@ -94,6 +125,9 @@ export default function RegisterPage() {
         position: formData.position || undefined,
       });
       
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
+      
       if (result.success) {
         // ⭐ ทุกกรณีจะเป็น UNAPPROVED และต้องรออนุมัติ
         setSuccess({
@@ -102,18 +136,67 @@ export default function RegisterPage() {
           message: 'สมัครสมาชิกสำเร็จ! กรุณารอการอนุมัติจากผู้ดูแลระบบ'
         });
         
-        toast('สมัครสมาชิกสำเร็จ! กรุณารอการอนุมัติ');
+        toast.success('สมัครสมาชิกสำเร็จ!', {
+          description: 'บัญชีของคุณได้รับการสร้างแล้ว กรุณารอการอนุมัติจากผู้ดูแลระบบ',
+          icon: <UserPlus className="w-4 h-4" />,
+          duration: 5000,
+        });
         
         // ⭐ Auto redirect ไป /login หลัง 3 วินาทีเสมอ
         setTimeout(() => {
           router.push('/login');
-        }, 3000);
+        }, 30000);
       } else {
-        setError(result.error || 'สมัครสมาชิกไม่สำเร็จ');
+        const errorMsg = result.error || 'สมัครสมาชิกไม่สำเร็จ';
+        setError(errorMsg);
+        
+        // Show specific error messages
+        if (errorMsg.includes('username')) {
+          toast.error('Username นี้มีคนใช้แล้ว', {
+            description: 'กรุณาเลือก Username อื่น',
+            icon: <XCircle className="w-4 h-4" />,
+            duration: 5000,
+            action: {
+              label: "แก้ไข",
+              onClick: () => {
+                setError('');
+                document.getElementById('username')?.focus();
+              },
+            },
+          });
+        } else {
+          toast.error('สมัครสมาชิกไม่สำเร็จ', {
+            description: errorMsg,
+            icon: <XCircle className="w-4 h-4" />,
+            duration: 5000,
+            action: {
+              label: "ลองอีกครั้ง",
+              onClick: () => {
+                setError('');
+              },
+            },
+          });
+        }
       }
     } catch (error) {
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
+      
       console.error('Registration error:', error);
-      setError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      const errorMsg = 'เกิดข้อผิดพลาดในการเชื่อมต่อ';
+      setError(errorMsg);
+      toast.error('ไม่สามารถเชื่อมต่อได้', {
+        description: 'กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตและลองใหม่อีกครั้ง',
+        icon: <XCircle className="w-4 h-4" />,
+        duration: 6000,
+        action: {
+          label: "ลองอีกครั้ง",
+          onClick: () => {
+            setError('');
+            handleSubmit(e);
+          },
+        },
+      });
     } finally {
       setIsLoading(false);
     }
@@ -129,11 +212,22 @@ export default function RegisterPage() {
     if (error) setError('');
   };
 
+  const handleLoginClick = () => {
+    toast.info('กำลังไปหน้าเข้าสู่ระบบ', {
+      description: 'จะนำไปยังหน้าเข้าสู่ระบบในอีกสักครู่',
+      duration: 2000,
+    });
+    router.push('/login');
+  };
+
   // Loading spinner ขณะตรวจสอบ auth status
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          <p className="text-gray-600 text-sm">กำลังตรวจสอบสิทธิ์...</p>
+        </div>
       </div>
     );
   }
@@ -145,12 +239,24 @@ export default function RegisterPage() {
         <Card className="w-full max-w-md shadow-xl border-0 bg-white/80 backdrop-blur-sm">
           <CardContent className="pt-6 text-center">
             <div className="mb-4">
-              <Clock className="w-16 h-16 text-orange-500 mx-auto mb-4" />
+              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Clock className="w-8 h-8 text-orange-600" />
+              </div>
             </div>
             
-            <h3 className="text-xl font-semibold mb-2">รอการอนุมัติ</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">รอการอนุมัติ</h3>
             
             <p className="text-gray-600 mb-4">{success.message}</p>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-blue-700">
+                <CheckCircle2 className="w-4 h-4 inline mr-1" />
+                บัญชีของคุณได้รับการสร้างเรียบร้อยแล้ว
+              </p>
+              <p className="text-sm text-blue-600 mt-1">
+                ติดต่อผู้ดูแลระบบเพื่อขออนุมัติการใช้งาน
+              </p>
+            </div>
             
             <p className="text-sm text-gray-500 mb-6">
               กำลังนำคุณไปยังหน้าเข้าสู่ระบบ...
@@ -158,7 +264,7 @@ export default function RegisterPage() {
             
             <Button
               onClick={() => router.push('/login')}
-              className="w-full"
+              className="w-full bg-blue-500 hover:bg-blue-600"
             >
               ไปหน้าเข้าสู่ระบบ
             </Button>
@@ -200,20 +306,21 @@ export default function RegisterPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
                 <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
 
               {/* Username */}
               <div className="space-y-2">
-                <Label htmlFor="username">ชื่อผู้ใช้ *</Label>
+                <Label htmlFor="username">Username *</Label>
                 <Input
                   id="username"
                   name="username"
                   type="text"
                   value={formData.username}
                   onChange={handleInputChange}
-                  placeholder="ชื่อผู้ใช้ (อย่างน้อย 3 ตัวอักษร)"
+                  placeholder="Username (อย่างน้อย 3 ตัวอักษร)"
                   disabled={isLoading}
                   className="h-11"
                   autoComplete="username"
@@ -273,7 +380,7 @@ export default function RegisterPage() {
 
               {/* Password */}
               <div className="space-y-2">
-                <Label htmlFor="password">รหัสผ่าน *</Label>
+                <Label htmlFor="password">Password *</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -306,7 +413,7 @@ export default function RegisterPage() {
 
               {/* Confirm Password */}
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">ยืนยันรหัสผ่าน *</Label>
+                <Label htmlFor="confirmPassword">Confirm password *</Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
@@ -339,16 +446,19 @@ export default function RegisterPage() {
 
               <Button 
                 type="submit" 
-                className="w-full h-11 text-base"
+                className="w-full h-11 text-base bg-blue-500 hover:bg-blue-600"
                 disabled={isLoading}
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    กำลังสมัครสมาชิก...
+                    กำลังสร้างบัญชี...
                   </>
                 ) : (
-                  'สมัครสมาชิก'
+                  <>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    สมัครสมาชิก
+                  </>
                 )}
               </Button>
             </form>
@@ -360,7 +470,7 @@ export default function RegisterPage() {
                 <Button
                   variant="link"
                   className="p-0 h-auto text-blue-600 hover:text-blue-800"
-                  onClick={() => router.push('/login')}
+                  onClick={handleLoginClick}
                   disabled={isLoading}
                 >
                   เข้าสู่ระบบ

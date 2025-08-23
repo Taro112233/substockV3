@@ -57,17 +57,6 @@ export function DashboardStatsCards({
 
   return (
     <div className="space-y-4">
-      {/* Filter Indicator */}
-      {isFiltered && filteredStats && (
-        <div className={`${colors.bg} border ${colors.border} rounded-lg p-3`}>
-          <div className={`flex items-center gap-2 ${colors.primary}`}>
-            <Filter className="h-4 w-4" />
-            <span className="text-sm font-medium">
-              กำลังแสดงข้อมูลที่กรองแล้ว - สถิติด้านล่างแสดงเฉพาะรายการที่ผ่านการกรอง
-            </span>
-          </div>
-        </div>
-      )}
 
       {/* Stats Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

@@ -77,16 +77,29 @@ export interface TransferItem {
 // ✅ Updated Transaction interface with pricePerBox in drug object
 export interface Transaction {
   id: string
-  type: 'RECEIVE_EXTERNAL' | 'DISPENSE_EXTERNAL' | 'TRANSFER_OUT' | 'TRANSFER_IN' | 'ADJUST_INCREASE' | 'ADJUST_DECREASE' | 'RESERVE' | 'UNRESERVE'
-  quantity: number
-  beforeQty: number
-  afterQty: number
+  type: 'RECEIVE_EXTERNAL' | 'DISPENSE_EXTERNAL' | 'TRANSFER_OUT' | 'TRANSFER_IN' | 'ADJUST_INCREASE' | 'ADJUST_DECREASE' | 'RESERVE' | 'UNRESERVE' | 'MIN_STOCK_INCREASE' | 'MIN_STOCK_DECREASE' | 'MIN_STOCK_RESET' | 'DATA_UPDATE' | 'PRICE_UPDATE' | 'INFO_CORRECTION'
+  
+  // 📦 STOCK QUANTITY FIELDS (จำนวนสต็อกจริง)
+  quantity: number      // การเปลี่ยนแปลงสต็อก (+/-)
+  beforeQty: number     // จำนวนสต็อกก่อนทำรายการ
+  afterQty: number      // จำนวนสต็อกหลังทำรายการ
+
+  // 🎯 MINIMUM STOCK FIELDS (ระดับสต็อกขั้นต่ำ) - ⭐ เพิ่มใหม่
+  minStockChange?: number    // การเปลี่ยนแปลงขั้นต่ำ (+/-)
+  beforeMinStock?: number    // ขั้นต่ำก่อนทำรายการ
+  afterMinStock?: number     // ขั้นต่ำหลังทำรายการ
+
+  // 💰 FINANCIAL FIELDS
   unitCost: number
   totalCost: number
+
+  // 📄 REFERENCE & AUDIT FIELDS
   reference?: string
   note?: string
   batchNumber?: string
   createdAt: string
+
+  // 🧬 RELATED DATA
   drug: {
     hospitalDrugCode: string
     name: string
@@ -95,7 +108,7 @@ export interface Transaction {
     strength?: string
     unit: string
     packageSize?: string
-    pricePerBox: number  // ✅ เพิ่ม pricePerBox ใน Transaction drug object
+    pricePerBox: number
     category: string
   }
   user: {

@@ -1,5 +1,5 @@
-// ===================================================================
-// 📄 File: components/modules/transaction/transaction-table-enhanced.tsx (ปรับปรุง enum ใหม่)
+// 📄 File: components/modules/transaction/transaction-table-enhanced.tsx
+// ⭐ COMPLETE VERSION: Enhanced transaction table with minimum stock support
 
 import {
   Table,
@@ -81,7 +81,7 @@ export function TransactionTableEnhanced({
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [sortConfig, setSortConfig] = useState<SortConfig>({ field: null, direction: null })
 
-  // ✅ Updated Helper functions รองรับ enum ใหม่
+  // ✅ Helper functions รองรับ enum ใหม่
   const getTransactionTypeIcon = (type: string) => {
     switch (type) {
       case 'RECEIVE_EXTERNAL':
@@ -100,8 +100,6 @@ export function TransactionTableEnhanced({
         return <Bookmark className="h-4 w-4 text-yellow-600" />
       case 'UNRESERVE':
         return <RotateCcw className="h-4 w-4 text-gray-600" />
-      
-      // ✅ New enum icons
       case 'MIN_STOCK_INCREASE':
         return <Target className="h-4 w-4 text-blue-600" />
       case 'MIN_STOCK_DECREASE':
@@ -114,7 +112,6 @@ export function TransactionTableEnhanced({
         return <DollarSign className="h-4 w-4 text-purple-600" />
       case 'INFO_CORRECTION':
         return <Edit className="h-4 w-4 text-orange-600" />
-        
       default:
         return <Package className="h-4 w-4 text-gray-600" />
     }
@@ -154,8 +151,6 @@ export function TransactionTableEnhanced({
         label: 'ยกเลิกจอง', 
         color: 'bg-gray-100 text-gray-800 border-gray-200' 
       },
-      
-      // ✅ New enum badges
       'MIN_STOCK_INCREASE': {
         label: 'เพิ่มจำนวนขั้นต่ำ',
         color: 'bg-blue-100 text-blue-800 border-blue-200'
@@ -194,20 +189,20 @@ export function TransactionTableEnhanced({
     )
   }
 
-  const formatTransactionAmount = (type: string, quantity: number) => {
-    // ✅ Updated: รวม enum ใหม่
+  const formatTransactionAmount = (type: string, quantity: number, transaction: Transaction) => {
     const isIncoming = ['RECEIVE_EXTERNAL', 'TRANSFER_IN', 'ADJUST_INCREASE', 'UNRESERVE'].includes(type)
     const isMinStockChange = ['MIN_STOCK_INCREASE', 'MIN_STOCK_DECREASE', 'MIN_STOCK_RESET'].includes(type)
     const isDataUpdate = ['DATA_UPDATE', 'PRICE_UPDATE', 'INFO_CORRECTION'].includes(type)
     
     if (isDataUpdate) {
-      return <span className="text-gray-500 text-xs">-</span>
+      return <span className="text-gray-500 text-xs">ไม่เปลี่ยนแปลง</span>
     }
     
     if (isMinStockChange) {
+      const changeAmount = transaction.minStockChange ?? quantity
       return (
         <span className="font-medium text-blue-600">
-          {type === 'MIN_STOCK_DECREASE' ? '-' : '+'}{Math.abs(quantity).toLocaleString()} ขั้นต่ำ
+          {changeAmount >= 0 ? '+' : ''}{changeAmount.toLocaleString()} ขั้นต่ำ
         </span>
       )
     }
@@ -375,7 +370,7 @@ export function TransactionTableEnhanced({
     })
   }, [sortedTransactions, searchTerm, typeFilter, dateFilter])
 
-  // ✅ Updated: คำนวณ filtered stats รวม enum ใหม่
+  // Calculate filtered stats
   const filteredStats = useMemo(() => {
     const totalTransactions = filteredTransactions.length
     const totalValue = filteredTransactions.reduce((sum, t) => sum + calculateTransactionCost(t), 0)
@@ -481,11 +476,10 @@ export function TransactionTableEnhanced({
   return (
     <>
       <div className="space-y-4">
-        {/* Enhanced Search and Filter Section */}
+        {/* Search and Filter Section */}
         <div className="space-y-3">
-          {/* Large Screen: Everything in one row */}
+          {/* Desktop Layout */}
           <div className="hidden lg:flex items-center gap-3">
-            {/* Search Bar */}
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -496,7 +490,6 @@ export function TransactionTableEnhanced({
               />
             </div>
 
-            {/* Type Filter - ✅ Updated: รวม enum ใหม่ */}
             <div className="w-56">
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger>
@@ -512,7 +505,6 @@ export function TransactionTableEnhanced({
                   <SelectItem value="ADJUST_DECREASE">ปรับลดสต็อก</SelectItem>
                   <SelectItem value="RESERVE">จองยา</SelectItem>
                   <SelectItem value="UNRESERVE">ยกเลิกจอง</SelectItem>
-                  {/* ✅ New enum options */}
                   <SelectItem value="MIN_STOCK_INCREASE">เพิ่มจำนวนขั้นต่ำ</SelectItem>
                   <SelectItem value="MIN_STOCK_DECREASE">ลดจำนวนขั้นต่ำ</SelectItem>
                   <SelectItem value="MIN_STOCK_RESET">กำหนดจำนวนขั้นต่ำใหม่</SelectItem>
@@ -523,7 +515,6 @@ export function TransactionTableEnhanced({
               </Select>
             </div>
 
-            {/* Date Filter */}
             <div className="w-40">
               <Select value={dateFilter} onValueChange={setDateFilter}>
                 <SelectTrigger>
@@ -538,7 +529,6 @@ export function TransactionTableEnhanced({
               </Select>
             </div>
 
-            {/* Clear Filters Button */}
             {(searchTerm || typeFilter !== 'all' || dateFilter !== 'all' || sortConfig.field) && (
               <Button
                 variant="outline"
@@ -551,9 +541,8 @@ export function TransactionTableEnhanced({
             )}
           </div>
 
-          {/* Small Screen: Mobile Layout */}
+          {/* Mobile Layout */}
           <div className="lg:hidden">
-            {/* Row 1: Search Bar */}
             <div className="relative mb-3">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -564,9 +553,7 @@ export function TransactionTableEnhanced({
               />
             </div>
             
-            {/* Row 2: Filters and Buttons */}
             <div className="flex items-center gap-2">
-              {/* Type Filter */}
               <div className="flex-1">
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
                   <SelectTrigger>
@@ -591,7 +578,6 @@ export function TransactionTableEnhanced({
                 </Select>
               </div>
 
-              {/* Date Filter */}
               <div className="flex-1">
                 <Select value={dateFilter} onValueChange={setDateFilter}>
                   <SelectTrigger>
@@ -606,7 +592,6 @@ export function TransactionTableEnhanced({
                 </Select>
               </div>
 
-              {/* Clear Filters Button - Icon only */}
               {(searchTerm || typeFilter !== 'all' || dateFilter !== 'all' || sortConfig.field) && (
                 <Button
                   variant="outline"
@@ -622,7 +607,7 @@ export function TransactionTableEnhanced({
           </div>
         </div>
 
-        {/* Enhanced Table with Sortable Headers */}
+        {/* Table */}
         <div className="border rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
@@ -745,23 +730,59 @@ export function TransactionTableEnhanced({
                           </div>
                         </TableCell>
 
-                        {/* จำนวน */}
+                        {/* ⭐ ENHANCED จำนวน - แสดงข้อมูลที่ถูกต้องตามประเภท */}
                         <TableCell className="text-center">
                           <div className="space-y-1">
                             <div className="flex items-center justify-center gap-1">
                               {getTransactionTypeIcon(transaction.type)}
-                              {formatTransactionAmount(transaction.type, transaction.quantity)}
+                              {formatTransactionAmount(transaction.type, transaction.quantity, transaction)}
                             </div>
                             
-                            {/* ✅ แสดง Before → After เฉพาะกรณีที่มีการเปลี่ยนสต็อกจริง */}
-                            {!['MIN_STOCK_INCREASE', 'MIN_STOCK_DECREASE', 'MIN_STOCK_RESET', 'DATA_UPDATE', 'PRICE_UPDATE', 'INFO_CORRECTION'].includes(transaction.type) && (
-                              <div className="text-xs text-gray-500">
-                                {transaction.beforeQty.toLocaleString()} → {transaction.afterQty.toLocaleString()}
-                              </div>
-                            )}
+                            {/* ⭐ ENHANCED: แยกการแสดง Before → After ตามประเภท transaction */}
+                            {(() => {
+                              const isStockMovement = ['RECEIVE_EXTERNAL', 'DISPENSE_EXTERNAL', 'TRANSFER_IN', 'TRANSFER_OUT', 'ADJUST_INCREASE', 'ADJUST_DECREASE', 'RESERVE', 'UNRESERVE'].includes(transaction.type)
+                              const isMinStockAdjustment = ['MIN_STOCK_INCREASE', 'MIN_STOCK_DECREASE', 'MIN_STOCK_RESET'].includes(transaction.type)
+                              
+                              if (isStockMovement) {
+                                // แสดง stock movement: beforeQty → afterQty
+                                return (
+                                  <div className="text-xs text-gray-500">
+                                    สต็อก: {transaction.beforeQty.toLocaleString()} → {transaction.afterQty.toLocaleString()}
+                                  </div>
+                                )
+                              } else if (isMinStockAdjustment) {
+                                // ⭐ แสดง minimum stock change
+                                const beforeMin = transaction.beforeMinStock
+                                const afterMin = transaction.afterMinStock
+                                const changeAmount = transaction.minStockChange ?? transaction.quantity
+                                
+                                if (beforeMin !== undefined && beforeMin !== null && afterMin !== undefined && afterMin !== null) {
+                                  // มีข้อมูลครบ แสดง before → after
+                                  return (
+                                    <div className="text-xs text-blue-600">
+                                      ขั้นต่ำ: {beforeMin} → {afterMin}
+                                    </div>
+                                  )
+                                } else {
+                                  // ไม่มีข้อมูลครบ แสดงการเปลี่ยนแปลง
+                                  return (
+                                    <div className="text-xs text-blue-600">
+                                      เปลี่ยนขั้นต่ำ: {changeAmount >= 0 ? '+' : ''}{changeAmount}
+                                    </div>
+                                  )
+                                }
+                              } else {
+                                // ไม่แสดงอะไรสำหรับ data update
+                                return (
+                                  <div className="text-xs text-gray-400">
+                                    ไม่เปลี่ยนแปลงสต็อก
+                                  </div>
+                                )
+                              }
+                            })()}
 
-                            {/* มูลค่า */}
-                            {transactionCost > 0 && (
+                            {/* ✅ มูลค่า - แสดงเฉพาะกรณีที่ไม่ใช่การปรับขั้นต่ำและอัปเดตข้อมูล */}
+                            {transactionCost > 0 && !['MIN_STOCK_INCREASE', 'MIN_STOCK_DECREASE', 'MIN_STOCK_RESET', 'DATA_UPDATE', 'PRICE_UPDATE', 'INFO_CORRECTION'].includes(transaction.type) && (
                               <div className="text-xs text-gray-500 font-mono">
                                 ฿{transactionCost.toLocaleString()}
                               </div>
@@ -814,7 +835,7 @@ export function TransactionTableEnhanced({
           </div>
         </div>
 
-        {/* Enhanced Footer Info */}
+        {/* Footer Info */}
         {filteredTransactions.length > 0 && (
           <div className="flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-gray-500">
             <div className="flex flex-col sm:flex-row gap-2 text-center sm:text-left">
@@ -837,8 +858,8 @@ export function TransactionTableEnhanced({
                 <span>จ่ายออก ({filteredStats.outgoingCount})</span>
               </div>
               <div className="flex items-center gap-1">
-                <Settings className="w-3 h-3 text-blue-500" />
-                <span>จัดการข้อมูล</span>
+                <Target className="w-3 h-3 text-blue-500" />
+                <span>จัดการขั้นต่ำ</span>
               </div>
             </div>
           </div>

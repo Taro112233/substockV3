@@ -60,7 +60,7 @@ export interface DrugBatch {
 
 export type TransactionType = 
   | 'RECEIVE_EXTERNAL' | 'DISPENSE_EXTERNAL' | 'TRANSFER_OUT' | 'TRANSFER_IN'
-  | 'ADJUST_INCREASE' | 'ADJUST_DECREASE' | 'RESERVE' | 'UNRESERVE'
+  | 'ADJUST_INCREASE' | 'ADJUST_DECREASE' | 'RESERVE' | 'UNRESERVE' | 'MIN_STOCK_INCREASE' | 'MIN_STOCK_DECREASE' | 'DATA_UPDATE'
 
 export interface StockTransaction {
   id: string

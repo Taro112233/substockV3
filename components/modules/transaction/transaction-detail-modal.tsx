@@ -1,5 +1,5 @@
 // 📄 File: components/modules/transaction/transaction-detail-modal.tsx
-// ✅ Fixed to use pricePerBox from drug object
+// ⭐ ENHANCED VERSION: Supports new minimum stock fields
 
 import {
   Dialog,
@@ -24,7 +24,13 @@ import {
   DollarSign,
   X,
   ArrowRight,
-  RotateCcw
+  RotateCcw,
+  Target,
+  Settings,
+  Edit,
+  ShoppingCart,
+  Users,
+  Bookmark
 } from 'lucide-react'
 
 interface TransactionDetailModalProps {
@@ -33,21 +39,42 @@ interface TransactionDetailModalProps {
   onClose: () => void
 }
 
-// Helper functions
+// ✅ Updated Helper functions รองรับ enum ใหม่
 const getTransactionTypeIcon = (type: string) => {
   switch (type) {
     case 'RECEIVE_EXTERNAL':
-    case 'TRANSFER_IN':
-    case 'ADJUST_INCREASE':
-    case 'UNRESERVE':
-      return <TrendingUp className="h-5 w-5 text-green-600" />
+      return <ShoppingCart className="h-5 w-5 text-green-600" />
     case 'DISPENSE_EXTERNAL':
+      return <Users className="h-5 w-5 text-red-600" />
+    case 'TRANSFER_IN':
+      return <TrendingUp className="h-5 w-5 text-blue-600" />
     case 'TRANSFER_OUT':
+      return <TrendingDown className="h-5 w-5 text-orange-600" />
+    case 'ADJUST_INCREASE':
+      return <TrendingUp className="h-5 w-5 text-green-600" />
     case 'ADJUST_DECREASE':
-    case 'RESERVE':
       return <TrendingDown className="h-5 w-5 text-red-600" />
+    case 'RESERVE':
+      return <Bookmark className="h-5 w-5 text-yellow-600" />
+    case 'UNRESERVE':
+      return <RotateCcw className="h-5 w-5 text-gray-600" />
+    
+    // ⭐ New enum icons
+    case 'MIN_STOCK_INCREASE':
+      return <Target className="h-5 w-5 text-blue-600" />
+    case 'MIN_STOCK_DECREASE':
+      return <Target className="h-5 w-5 text-blue-400" />
+    case 'MIN_STOCK_RESET':
+      return <Target className="h-5 w-5 text-indigo-600" />
+    case 'DATA_UPDATE':
+      return <Settings className="h-5 w-5 text-gray-600" />
+    case 'PRICE_UPDATE':
+      return <DollarSign className="h-5 w-5 text-purple-600" />
+    case 'INFO_CORRECTION':
+      return <Edit className="h-5 w-5 text-orange-600" />
+      
     default:
-      return <RotateCcw className="h-5 w-5 text-blue-600" />
+      return <Package className="h-5 w-5 text-gray-600" />
   }
 }
 
@@ -92,6 +119,38 @@ const getTransactionTypeInfo = (type: string) => {
       label: 'ยกเลิกการจอง', 
       color: 'bg-gray-100 text-gray-800 border-gray-200',
       description: 'การยกเลิกการจองยาที่เคยจองไว้'
+    },
+    
+    // ⭐ New enum configurations
+    'MIN_STOCK_INCREASE': {
+      label: 'เพิ่มจำนวนขั้นต่ำ',
+      color: 'bg-blue-100 text-blue-800 border-blue-200',
+      description: 'การปรับเพิ่มระดับสต็อกขั้นต่ำ เพื่อให้เหมาะสมกับการใช้งาน'
+    },
+    'MIN_STOCK_DECREASE': {
+      label: 'ลดจำนวนขั้นต่ำ', 
+      color: 'bg-blue-100 text-blue-700 border-blue-200',
+      description: 'การปรับลดระดับสต็อกขั้นต่ำ เพื่อให้เหมาะสมกับการใช้งาน'
+    },
+    'MIN_STOCK_RESET': {
+      label: 'กำหนดจำนวนขั้นต่ำใหม่',
+      color: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+      description: 'การกำหนดระดับสต็อกขั้นต่ำใหม่ตามนโยบายหรือความต้องการ'
+    },
+    'DATA_UPDATE': {
+      label: 'อัปเดตข้อมูล',
+      color: 'bg-gray-100 text-gray-800 border-gray-200',
+      description: 'การอัปเดตข้อมูลทั่วไป ไม่มีผลต่อจำนวนสต็อก'
+    },
+    'PRICE_UPDATE': {
+      label: 'อัปเดตราคา',
+      color: 'bg-purple-100 text-purple-800 border-purple-200',
+      description: 'การอัปเดตราคายาตามข้อมูลล่าสุด'
+    },
+    'INFO_CORRECTION': {
+      label: 'แก้ไขข้อมูล',
+      color: 'bg-orange-100 text-orange-800 border-orange-200',
+      description: 'การแก้ไขข้อมูลยาที่ไม่ถูกต้อง เช่น ชื่อ, รหัส, หรือรายละเอียด'
     }
   }
   
@@ -109,6 +168,9 @@ const getCategoryColor = (category: string) => {
     'REFRIGERATED': 'bg-blue-100 text-blue-800 border-blue-200',
     'PSYCHIATRIC': 'bg-indigo-100 text-indigo-800 border-indigo-200',
     'FLUID': 'bg-cyan-100 text-cyan-800 border-cyan-200',
+    'REFER': 'bg-pink-100 text-pink-800 border-pink-200',
+    'ALERT': 'bg-orange-100 text-orange-800 border-orange-200',
+    'EXTEMP': 'bg-emerald-100 text-emerald-800 border-emerald-200',
     'GENERAL': 'bg-gray-100 text-gray-800 border-gray-200'
   }
   return colors[category as keyof typeof colors] || colors.GENERAL
@@ -121,7 +183,13 @@ const getCategoryLabel = (category: string) => {
     'REFRIGERATED': 'ยาแช่เย็น',
     'PSYCHIATRIC': 'ยาจิตเวช',
     'FLUID': 'สารน้ำ',
-    'GENERAL': 'ยาทั่วไป'
+    'REFER': 'ยาส่งต่อ',
+    'ALERT': 'ยาเฝ้าระวัง',
+    'EXTEMP': 'ยาใช้ภายนอก',
+    'GENERAL': 'ยาทั่วไป',
+    'TABLET': 'ยาเม็ด',
+    'SYRUP': 'ยาน้ำ',
+    'INJECTION': 'ยาฉีด'
   }
   return labels[category as keyof typeof labels] || category
 }
@@ -144,9 +212,15 @@ export function TransactionDetailModal({
   const transactionTypeInfo = getTransactionTypeInfo(transaction.type)
   const categoryColor = getCategoryColor(transaction.drug.category)
   const categoryLabel = getCategoryLabel(transaction.drug.category)
-  const isPositive = ['RECEIVE_EXTERNAL', 'TRANSFER_IN', 'ADJUST_INCREASE', 'UNRESERVE'].includes(transaction.type)
+  
+  // ⭐ ENHANCED: ตรวจสอบประเภท transaction ให้แม่นยำ
+  const isStockMovement = ['RECEIVE_EXTERNAL', 'DISPENSE_EXTERNAL', 'TRANSFER_IN', 'TRANSFER_OUT', 'ADJUST_INCREASE', 'ADJUST_DECREASE', 'RESERVE', 'UNRESERVE'].includes(transaction.type)
+  const isMinStockAdjustment = ['MIN_STOCK_INCREASE', 'MIN_STOCK_DECREASE', 'MIN_STOCK_RESET'].includes(transaction.type)
+  const isDataUpdate = ['DATA_UPDATE', 'PRICE_UPDATE', 'INFO_CORRECTION'].includes(transaction.type)
+  
+  const isPositive = ['RECEIVE_EXTERNAL', 'TRANSFER_IN', 'ADJUST_INCREASE', 'UNRESERVE', 'MIN_STOCK_INCREASE'].includes(transaction.type)
 
-  // ✅ ใช้ pricePerBox จาก drug object แทน totalCost
+  // ✅ ใช้ pricePerBox จาก drug object
   const pricePerBox = transaction.drug.pricePerBox || 0
   const calculatedTotalCost = Math.abs(transaction.quantity) * pricePerBox
 
@@ -244,57 +318,150 @@ export function TransactionDetailModal({
               <CardTitle className="text-lg">รายละเอียดการเคลื่อนไหว</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Quantity Change */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-600">จำนวนก่อนหน้า</label>
-                  <p className="text-lg font-medium text-gray-700">
-                    {transaction.beforeQty.toLocaleString()}
-                  </p>
-                </div>
+              
+              {/* ⭐ ENHANCED: Stock Movement Details */}
+              {isStockMovement && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm text-gray-600">จำนวนสต็อกก่อนหน้า</label>
+                      <p className="text-lg font-medium text-gray-700">
+                        {transaction.beforeQty.toLocaleString()}
+                      </p>
+                    </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-600">การเปลี่ยนแปลง</label>
-                  <div className="flex items-center gap-2">
-                    {getTransactionTypeIcon(transaction.type)}
-                    <p className={`text-lg font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                      {isPositive ? '+' : '-'}{Math.abs(transaction.quantity).toLocaleString()}
-                    </p>
+                    <div className="space-y-2">
+                      <label className="text-sm text-gray-600">การเปลี่ยนแปลงสต็อก</label>
+                      <div className="flex items-center gap-2">
+                        {getTransactionTypeIcon(transaction.type)}
+                        <p className={`text-lg font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                          {isPositive ? '+' : '-'}{Math.abs(transaction.quantity).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm text-gray-600">จำนวนสต็อกใหม่</label>
+                      <p className="text-lg font-medium text-blue-600">
+                        {transaction.afterQty.toLocaleString()}
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-600">จำนวนหลังการเปลี่ยนแปลง</label>
-                  <p className="text-lg font-medium text-blue-600">
-                    {transaction.afterQty.toLocaleString()}
-                  </p>
-                </div>
-              </div>
+                  <Separator />
 
-              <Separator />
+                  {/* Cost Information - แสดงเฉพาะกรณี stock movement */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm text-gray-600 flex items-center gap-1">
+                        <DollarSign className="h-4 w-4" />
+                        ราคาต่อกล่อง
+                      </label>
+                      <p className="text-lg font-medium text-green-600">
+                        {formatCurrency(pricePerBox)}
+                      </p>
+                    </div>
 
-              {/* Cost Information - ✅ Fixed: ใช้ pricePerBox แทน totalCost */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-600 flex items-center gap-1">
-                    <DollarSign className="h-4 w-4" />
-                    ราคาต่อกล่อง
-                  </label>
-                  <p className="text-lg font-medium text-green-600">
-                    {formatCurrency(pricePerBox)}
-                  </p>
-                </div>
+                    <div className="space-y-2">
+                      <label className="text-sm text-gray-600">มูลค่ารวม</label>
+                      <p className="text-lg font-bold text-green-600">
+                        {formatCurrency(calculatedTotalCost)}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {Math.abs(transaction.quantity).toLocaleString()} กล่อง × {formatCurrency(pricePerBox)}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
 
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-600">มูลค่ารวม</label>
-                  <p className="text-lg font-bold text-green-600">
-                    {formatCurrency(calculatedTotalCost)}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {Math.abs(transaction.quantity).toLocaleString()} กล่อง × {formatCurrency(pricePerBox)}
-                  </p>
-                </div>
-              </div>
+              {/* ⭐ ENHANCED: Minimum Stock Adjustment Details */}
+              {isMinStockAdjustment && (
+                <>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Target className="h-5 w-5 text-blue-600" />
+                      <h4 className="font-medium text-blue-900">การปรับระดับสต็อกขั้นต่ำ</h4>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="text-center">
+                        <label className="text-sm text-blue-600">ขั้นต่ำเดิม</label>
+                        <p className="text-lg font-semibold text-blue-900 mt-1">
+                          {/* ⭐ แสดงเฉพาะ beforeMinStock สำหรับ minimum stock adjustment */}
+                          {transaction.beforeMinStock?.toLocaleString() || 'N/A'}
+                        </p>
+                      </div>
+
+                      <div className="text-center">
+                        <label className="text-sm text-blue-600">การเปลี่ยนแปลงขั้นต่ำ</label>
+                        <div className="flex items-center justify-center gap-1 mt-1">
+                          <Target className="h-4 w-4 text-blue-500" />
+                          <p className={`text-lg font-semibold ${
+                            (transaction.minStockChange ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {/* ⭐ แสดงเฉพาะ minStockChange สำหรับ minimum stock adjustment */}
+                            {(transaction.minStockChange ?? 0) >= 0 ? '+' : ''}
+                            {Math.abs(transaction.minStockChange ?? 0).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-center">
+                        <label className="text-sm text-blue-600">ขั้นต่ำใหม่</label>
+                        <p className="text-lg font-semibold text-blue-900 mt-1">
+                          {/* ⭐ แสดงเฉพาะ afterMinStock สำหรับ minimum stock adjustment */}
+                          {transaction.afterMinStock?.toLocaleString() || 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* หมายเหตุเพิ่มเติม */}
+                    <div className="mt-4 pt-3 border-t border-blue-200">
+                      <div className="bg-white p-3 rounded border text-sm">
+                        <div className="text-blue-700 mb-2">
+                          <span className="font-medium">หมายเหตุ:</span> การดำเนินการนี้ปรับเปลี่ยนระดับสต็อกขั้นต่ำเท่านั้น
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-blue-600">จำนวนสต็อกปัจจุบัน (ไม่เปลี่ยนแปลง):</span>
+                          <span className="font-medium text-gray-700">
+                            {/* ⭐ แสดงสต็อกปัจจุบันที่ไม่เปลี่ยนแปลง */}
+                            {transaction.beforeQty.toLocaleString()} {transaction.drug.unit}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* ⭐ Data Update Details */}
+              {isDataUpdate && (
+                <>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Settings className="h-5 w-5 text-gray-600" />
+                      <h4 className="font-medium text-gray-900">การอัปเดตข้อมูล</h4>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">สต็อกปัจจุบัน:</span>
+                        <span className="font-medium">{transaction.afterQty.toLocaleString()}</span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">การเปลี่ยนแปลงสต็อก:</span>
+                        <span className="text-gray-500">0 (ไม่มีการเปลี่ยนแปลง)</span>
+                      </div>
+
+                      <div className="text-xs text-gray-500 bg-white p-3 rounded border">
+                        <span className="font-medium">หมายเหตุ:</span> การดำเนินการนี้ไม่มีผลต่อจำนวนสต็อกยา เป็นการอัปเดตข้อมูลเท่านั้น
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
 
               <Separator />
 

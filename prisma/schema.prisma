@@ -1,6 +1,6 @@
 // This file is auto-generated. Do not edit manually.
 // Edit files in prisma/schemas/ directory instead.
-// Last generated: 2025-08-22T19:11:59.278Z
+// Last generated: 2025-08-23T09:40:55.335Z
 // Hospital Pharmacy Stock Management System V3.0
 
 generator client {
@@ -186,7 +186,7 @@ model DrugBatch {
 // ==========================================
 
 // prisma/schemas/stock.prisma
-// ===== 4. STOCK MANAGEMENT SCHEMA =====
+// ===== 4. STOCK MANAGEMENT SCHEMA - ENHANCED V3.0 =====
 
 // Stock with Department Isolation & Batch Tracking
 model Stock {
@@ -213,7 +213,7 @@ model Stock {
   @@map("stocks")
 }
 
-// Enhanced Transaction Tracking
+// ⭐ Enhanced Transaction Tracking with Minimum Stock Support
 model StockTransaction {
   id         String  @id @default(cuid())
   stockId    String
@@ -222,13 +222,22 @@ model StockTransaction {
   transferId String? // Link to transfer if applicable
 
   type      TransactionType
-  quantity  Int // จำนวน (+/-)
-  beforeQty Int // จำนวนก่อนทำรายการ
-  afterQty  Int // จำนวนหลังทำรายการ
+  
+  // 📦 STOCK QUANTITY FIELDS (จำนวนสต็อกจริง)
+  quantity  Int // จำนวน (+/-) การเปลี่ยนแปลงสต็อก
+  beforeQty Int // จำนวนสต็อกก่อนทำรายการ
+  afterQty  Int // จำนวนสต็อกหลังทำรายการ
 
+  // 🎯 MINIMUM STOCK FIELDS (ระดับสต็อกขั้นต่ำ) - ⭐ เพิ่มใหม่
+  minStockChange    Int? @default(0) // การเปลี่ยนแปลงขั้นต่ำ (+/-)
+  beforeMinStock    Int? // ขั้นต่ำก่อนทำรายการ
+  afterMinStock     Int? // ขั้นต่ำหลังทำรายการ
+
+  // 💰 FINANCIAL FIELDS
   unitCost  Float @default(0)
   totalCost Float @default(0)
 
+  // 📄 REFERENCE & AUDIT FIELDS
   reference String? // เลขที่อ้างอิง
   note      String? // หมายเหตุ
   createdAt DateTime @default(now())
@@ -237,7 +246,7 @@ model StockTransaction {
   stock    Stock      @relation(fields: [stockId], references: [id], onDelete: Cascade)
   user     User       @relation(fields: [userId], references: [id])
   batch    DrugBatch? @relation(fields: [batchId], references: [id])
-  transfer Transfer?  @relation(fields: [transferId], references: [id]) // ⭐ เพิ่มใหม่
+  transfer Transfer?  @relation(fields: [transferId], references: [id])
 
   // Indexes สำหรับ Performance & Reporting
   @@index([stockId])

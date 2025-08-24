@@ -1,5 +1,6 @@
 // 📄 File: components/modules/stock/stock-cards-mobile.tsx
 // Mobile-First Stock Cards Layout with Enhanced UX
+// ✅ Updated: เริ่มต้นด้วยการเรียงชื่อยาจาก A-Z
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -108,6 +109,7 @@ export function StockCardsMobile({
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // ✅ Updated: เริ่มต้นด้วย 'name' เพื่อเรียงชื่อยา A-Z
   const [sortBy, setSortBy] = useState<SortOption>("name");
   const [filterConfig, setFilterConfig] = useState<FilterConfig>({
     category: "all",
@@ -200,7 +202,7 @@ export function StockCardsMobile({
     return "text-green-500"; // เขียว < 7 วัน
   };
 
-  // Sorting logic - ✅ Fixed: เรียงตาม lastUpdated จาก aTime - bTime (เก่าก่อน)
+  // Sorting logic - เรียงชื่อยา A-Z เป็นค่าเริ่มต้น
   const sortedStocks = useMemo(() => {
     return [...stocks].sort((a, b) => {
       switch (sortBy) {
@@ -213,7 +215,7 @@ export function StockCardsMobile({
         case "lastUpdated":
           const aTime = a.lastUpdated ? new Date(a.lastUpdated).getTime() : 0;
           const bTime = b.lastUpdated ? new Date(b.lastUpdated).getTime() : 0;
-          return aTime - bTime; // ✅ Fixed: เรียงจากน้อยไปมาก (เก่าก่อน)
+          return aTime - bTime; // เรียงจากน้อยไปมาก (เก่าก่อน)
         case "category":
           return (a.drug?.category || "").localeCompare(
             b.drug?.category || "",
@@ -284,7 +286,7 @@ export function StockCardsMobile({
     setSearchTerm("");
     setShowLowStockOnly(false);
     setFilterConfig({ category: "all", dosageForm: "all" });
-    setSortBy("name");
+    setSortBy("name"); // ✅ Updated: กลับไปที่การเรียง A-Z
   };
 
   if (loading) {

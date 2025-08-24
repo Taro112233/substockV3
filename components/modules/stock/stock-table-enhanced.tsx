@@ -1,6 +1,6 @@
 // 📄 File: components/modules/stock/stock-table-enhanced.tsx
 // Enhanced Stock Table with Total Value Display and Date Color Coding
-// ✅ Fixed TypeScript and ESLint errors - removed unused variables
+// ✅ Updated: เริ่มต้นด้วยการเรียงชื่อยาจาก A-Z
 
 import {
   Table,
@@ -90,7 +90,8 @@ export function StockTableEnhanced({
   const [showLowStockOnly, setShowLowStockOnly] = useState(false)
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ field: null, direction: null })
+  // ✅ Updated: เริ่มต้นด้วยการเรียงชื่อยา A-Z
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ field: 'name', direction: 'asc' })
   const [filterConfig, setFilterConfig] = useState<FilterConfig>({ 
     category: 'all', 
     dosageForm: 'all' 
@@ -195,7 +196,10 @@ export function StockTableEnhanced({
   // ✅ Fixed: Type-safe sorting logic
   const sortedStocks = useMemo(() => {
     if (!sortConfig.field || !sortConfig.direction) {
-      return stocks
+      // ✅ Updated: เมื่อไม่มี sort config จะเรียงชื่อยา A-Z เป็นค่าเริ่มต้น
+      return [...stocks].sort((a, b) => 
+        (a.drug?.name?.toLowerCase() || '').localeCompare(b.drug?.name?.toLowerCase() || '', 'th')
+      )
     }
 
     return [...stocks].sort((a, b) => {
@@ -471,7 +475,8 @@ export function StockTableEnhanced({
                 filterConfig.dosageForm !== 'all' || 
                 searchTerm || 
                 showLowStockOnly ||
-                sortConfig.field) && (
+                sortConfig.field !== 'name' || 
+                sortConfig.direction !== 'asc') && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -479,7 +484,8 @@ export function StockTableEnhanced({
                     setSearchTerm('')
                     setShowLowStockOnly(false)
                     setFilterConfig({ category: 'all', dosageForm: 'all' })
-                    setSortConfig({ field: null, direction: null })
+                    // ✅ Updated: กลับไปที่การเรียงชื่อยา A-Z
+                    setSortConfig({ field: 'name', direction: 'asc' })
                   }}
                   className="flex items-center gap-2 text-xs bg-red-500 text-white hover:bg-red-600"
                 >
@@ -564,7 +570,8 @@ export function StockTableEnhanced({
                 filterConfig.dosageForm !== 'all' || 
                 searchTerm || 
                 showLowStockOnly ||
-                sortConfig.field) && (
+                sortConfig.field !== 'name' || 
+                sortConfig.direction !== 'asc') && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -572,7 +579,8 @@ export function StockTableEnhanced({
                     setSearchTerm('')
                     setShowLowStockOnly(false)
                     setFilterConfig({ category: 'all', dosageForm: 'all' })
-                    setSortConfig({ field: null, direction: null })
+                    // ✅ Updated: กลับไปที่การเรียงชื่อยา A-Z
+                    setSortConfig({ field: 'name', direction: 'asc' })
                   }}
                   className="flex items-center justify-center shrink-0 w-10 h-10 bg-red-500 text-white hover:bg-red-600 border-red-500"
                   title="ล้างตัวกรอง"

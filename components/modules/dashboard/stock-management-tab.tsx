@@ -325,7 +325,7 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
               className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700 hover:text-white"
             >
               <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Excel</span>
+              <span>Excel</span>
             </Button>
           </div>
         </div>

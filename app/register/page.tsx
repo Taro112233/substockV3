@@ -19,7 +19,6 @@ import {
   XCircle, 
   AlertTriangle,
   UserPlus,
-  FileText,
   Shield
 } from 'lucide-react';
 import { toast } from 'sonner';

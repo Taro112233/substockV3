@@ -13,7 +13,6 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -423,7 +422,7 @@ export function TermsOfServiceModal({
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
             <p className="text-xs text-yellow-800 text-center">
               <AlertTriangle className="w-4 h-4 inline mr-1" />
-              การกดปุ่ม "ยอมรับเงื่อนไข" ถือว่าท่านได้อ่านและเข้าใจเงื่อนไขการใช้งานทั้งหมดแล้ว
+              การกดปุ่ม &quot;ยอมรับเงื่อนไข&quot; ถือว่าท่านได้อ่านและเข้าใจเงื่อนไขการใช้งานทั้งหมดแล้ว
             </p>
           </div>
 

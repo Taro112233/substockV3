@@ -1,5 +1,5 @@
 // 📄 File: app/api/stocks/[stockId]/route.ts
-// ===== ENHANCED STOCK API WITH MINIMUM STOCK SUPPORT =====
+// ===== ENHANCED STOCK API WITH MINIMUM STOCK SUPPORT (Fixed ESLint) =====
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
@@ -14,28 +14,6 @@ const updateStockSchema = z.object({
   adjustmentReason: z.string().min(1, 'กรุณาระบุเหตุผล'),
   department: z.enum(['PHARMACY', 'OPD'])
 })
-
-// ✅ ฟังก์ชันสำหรับกำหนด TransactionType ตามการเปลี่ยนแปลง
-const determineTransactionType = (
-  quantityChange: number,
-  minimumStockChange: number,
-  reason: string
-): TransactionType => {
-  // กรณีเปลี่ยนสต็อกจริง
-  if (quantityChange !== 0) {
-    if (quantityChange > 0) return 'ADJUST_INCREASE' as TransactionType
-    if (quantityChange < 0) return 'ADJUST_DECREASE' as TransactionType
-  }
-  
-  // กรณีเปลี่ยน minimum stock เท่านั้น
-  if (quantityChange === 0 && minimumStockChange !== 0) {
-    if (minimumStockChange > 0) return 'MIN_STOCK_INCREASE' as TransactionType
-    if (minimumStockChange < 0) return 'MIN_STOCK_DECREASE' as TransactionType
-  }
-  
-  // กรณีไม่เปลี่ยนอะไรเลย
-  return 'DATA_UPDATE' as TransactionType
-}
 
 // ✅ ฟังก์ชันสำหรับสร้างเหตุผลอัตโนมัติ
 const generateAdjustmentReason = (
@@ -61,6 +39,12 @@ const generateAdjustmentReason = (
 
 interface RouteContext {
   params: Promise<{ stockId: string }>
+}
+
+// ✅ Type-safe error handling
+interface ErrorResponse {
+  error: string
+  details?: string
 }
 
 export async function GET(request: NextRequest, context: RouteContext) {
@@ -120,9 +104,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
       data: stock
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Get stock error:', error)
-    return NextResponse.json(
+    return NextResponse.json<ErrorResponse>(
       { error: 'เกิดข้อผิดพลาดในการดึงข้อมูลสต็อก' },
       { status: 500 }
     )
@@ -321,11 +305,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       }
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Update stock error:', error)
     
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
+      return NextResponse.json<ErrorResponse>(
         { 
           error: 'ข้อมูลไม่ถูกต้อง',
           details: error.issues.map((issue) => issue.message).join(', ')
@@ -334,7 +318,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       )
     }
 
-    return NextResponse.json(
+    return NextResponse.json<ErrorResponse>(
       { error: 'เกิดข้อผิดพลาดในการอัปเดตข้อมูลสต็อก' },
       { status: 500 }
     )
@@ -370,7 +354,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
 
     if (existingStock.transactions.length > 0) {
-      return NextResponse.json({ 
+      return NextResponse.json<ErrorResponse>({ 
         error: 'ไม่สามารถลบข้อมูลสต็อกได้ เนื่องจากมีประวัติการเคลื่อนไหวแล้ว' 
       }, { status: 400 })
     }
@@ -384,11 +368,16 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       message: `ลบข้อมูลสต็อกยา "${existingStock.drug.name}" สำเร็จ`
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Delete stock error:', error)
-    return NextResponse.json(
+    return NextResponse.json<ErrorResponse>(
       { error: 'เกิดข้อผิดพลาดในการลบข้อมูลสต็อก' },
       { status: 500 }
     )
   }
+}
+
+// ✅ Type definition for RouteContext (ถ้ายังไม่มี)
+interface RouteContext {
+  params: Promise<{ stockId: string }>
 }

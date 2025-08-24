@@ -1,4 +1,5 @@
 // 📄 File: components/modules/dashboard/history-tab-enhanced.tsx
+// ✅ Fixed React Hook useCallback dependency warnings
 // ✅ Enhanced History Tab with Filtering Stats Cards (Updated to Match Stock Pattern)
 
 import { useState, useEffect, useCallback } from 'react'
@@ -47,16 +48,16 @@ export function HistoryTabEnhanced({
   const [hasInitialLoad, setHasInitialLoad] = useState(false)
   const { toast } = useToast()
 
-  // ✅ Fixed: Calculate transaction cost using pricePerBox
-  const calculateTransactionCost = (transaction: Transaction) => {
+  // ✅ Fixed: Wrap calculateTransactionCost in useCallback
+  const calculateTransactionCost = useCallback((transaction: Transaction) => {
     const pricePerBox = transaction.drug?.pricePerBox || 0
     return Math.abs(transaction.quantity) * pricePerBox
-  }
+  }, [])
 
-  // ✅ Fixed: Calculate total value using pricePerBox
-  const calculateTotalValue = (transactions: Transaction[]) => {
+  // ✅ Fixed: Wrap calculateTotalValue in useCallback with proper dependencies
+  const calculateTotalValue = useCallback((transactions: Transaction[]) => {
     return transactions.reduce((sum, transaction) => sum + calculateTransactionCost(transaction), 0)
-  }
+  }, [calculateTransactionCost])
 
   // Calculate original stats from data (used for comparison when filtered)
   const calculateOriginalStats = useCallback(() => {

@@ -1,5 +1,6 @@
 // 📄 File: components/modules/transaction/transaction-table-enhanced.tsx
 // ⭐ COMPLETE VERSION: Enhanced transaction table with minimum stock support
+// ✅ FIXED: TypeScript errors - replaced `any` with proper types
 
 import {
   Table,
@@ -63,6 +64,9 @@ interface TransactionTableProps {
   onFilteredStatsChange?: (stats: FilteredStatsData) => void
   loading?: boolean
 }
+
+// ✅ FIXED: Define proper types for sorting values instead of using `any`
+type SortValue = string | number
 
 export function TransactionTableEnhanced({ 
   transactions,
@@ -247,7 +251,7 @@ export function TransactionTableEnhanced({
     return labels[category as keyof typeof labels] || category
   }
 
-  // Sorting function
+  // ✅ FIXED: Sorting function with proper types
   const handleSort = (field: SortField) => {
     let direction: SortDirection = 'asc'
     
@@ -278,15 +282,15 @@ export function TransactionTableEnhanced({
     return <ArrowUpDown className="h-4 w-4 text-gray-400" />
   }
 
-  // Sorting logic
+  // ✅ FIXED: Sorting logic with proper types instead of `any`
   const sortedTransactions = useMemo(() => {
     if (!sortConfig.field || !sortConfig.direction) {
       return transactions
     }
 
     return [...transactions].sort((a, b) => {
-      let aValue: any
-      let bValue: any
+      let aValue: SortValue
+      let bValue: SortValue
 
       switch (sortConfig.field) {
         case 'drug':
@@ -317,15 +321,19 @@ export function TransactionTableEnhanced({
           return 0
       }
 
+      // Type-safe comparison
       if (typeof aValue === 'string' && typeof bValue === 'string') {
         return sortConfig.direction === 'asc' 
           ? aValue.localeCompare(bValue, 'th') 
           : bValue.localeCompare(aValue, 'th')
-      } else {
+      } else if (typeof aValue === 'number' && typeof bValue === 'number') {
         if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1
         if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1
         return 0
       }
+      
+      // Fallback for mixed types (shouldn't happen with proper typing)
+      return 0
     })
   }, [transactions, sortConfig])
 
@@ -610,8 +618,6 @@ export function TransactionTableEnhanced({
                   <SortableHeader field="drug" className="w-[250px]">
                     ชื่อยา
                   </SortableHeader>
-                  <TableHead className="w-[120px]">รูปแบบ</TableHead>
-                  <TableHead className="w-[120px]">ความแรง</TableHead>
                   <TableHead className="w-[120px]">ขนาดบรรจุ</TableHead>
                   <SortableHeader field="type" className="w-[140px]">
                     ประเภท

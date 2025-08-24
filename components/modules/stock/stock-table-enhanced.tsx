@@ -1,5 +1,6 @@
 // 📄 File: components/modules/stock/stock-table-enhanced.tsx
 // Enhanced Stock Table with Total Value Display and Date Color Coding
+// ✅ Fixed TypeScript and ESLint errors - removed unused variables
 
 import {
   Table,
@@ -67,10 +68,12 @@ interface FilteredStatsData {
   lowStockCount: number
 }
 
+// ✅ Fixed: Type-safe comparison value types
+type SortableValue = string | number | Date
+
 interface StockTableProps {
   stocks: Stock[]
   department: 'PHARMACY' | 'OPD'
-  onAdjust?: (stock: Stock) => void
   onView?: (stock: Stock) => void
   onUpdate?: (updatedStock: Stock) => void
   onFilteredStatsChange?: (stats: FilteredStatsData) => void
@@ -79,7 +82,6 @@ interface StockTableProps {
 
 export function StockTableEnhanced({ 
   stocks,
-  onAdjust, 
   onUpdate,
   onFilteredStatsChange,
   loading = false 
@@ -158,7 +160,7 @@ export function StockTableEnhanced({
     return 'text-green-600'
   }
 
-  // Sorting function
+  // ✅ Fixed: Type-safe sorting function
   const handleSort = (field: SortField) => {
     let direction: SortDirection = 'asc'
     
@@ -190,15 +192,15 @@ export function StockTableEnhanced({
     return <ArrowUpDown className="h-4 w-4 text-gray-400" />
   }
 
-  // Sorting logic
+  // ✅ Fixed: Type-safe sorting logic
   const sortedStocks = useMemo(() => {
     if (!sortConfig.field || !sortConfig.direction) {
       return stocks
     }
 
     return [...stocks].sort((a, b) => {
-      let aValue: any
-      let bValue: any
+      let aValue: SortableValue
+      let bValue: SortableValue
 
       switch (sortConfig.field) {
         case 'name':
@@ -211,8 +213,10 @@ export function StockTableEnhanced({
           break
         case 'strength':
           // สำหรับความแรง ใช้ตัวเลขถ้าเป็นไปได้
-          aValue = parseFloat(a.drug?.strength || '0') || a.drug?.strength?.toLowerCase() || ''
-          bValue = parseFloat(b.drug?.strength || '0') || b.drug?.strength?.toLowerCase() || ''
+          const aStrengthNum = parseFloat(a.drug?.strength || '0')
+          const bStrengthNum = parseFloat(b.drug?.strength || '0')
+          aValue = !isNaN(aStrengthNum) ? aStrengthNum : (a.drug?.strength?.toLowerCase() || '')
+          bValue = !isNaN(bStrengthNum) ? bStrengthNum : (b.drug?.strength?.toLowerCase() || '')
           break
         case 'packageSize':
           aValue = a.drug?.packageSize || 0
@@ -227,22 +231,31 @@ export function StockTableEnhanced({
           bValue = calculateStockValue(b)
           break
         case 'lastUpdated':
-          aValue = a.lastUpdated ? new Date(a.lastUpdated).getTime() : 0
-          bValue = b.lastUpdated ? new Date(b.lastUpdated).getTime() : 0
+          aValue = a.lastUpdated ? new Date(a.lastUpdated) : new Date(0)
+          bValue = b.lastUpdated ? new Date(b.lastUpdated) : new Date(0)
           break
         default:
           return 0
       }
 
-      // Compare values
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
+      // ✅ Fixed: Type-safe comparison with explicit type checking
+      if (aValue instanceof Date && bValue instanceof Date) {
+        const aTime = aValue.getTime()
+        const bTime = bValue.getTime()
+        return sortConfig.direction === 'asc' ? aTime - bTime : bTime - aTime
+      } else if (typeof aValue === 'string' && typeof bValue === 'string') {
         return sortConfig.direction === 'asc' 
           ? aValue.localeCompare(bValue, 'th') 
           : bValue.localeCompare(aValue, 'th')
+      } else if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue
       } else {
-        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1
-        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1
-        return 0
+        // Fallback for mixed types - convert to string for comparison
+        const aStr = String(aValue).toLowerCase()
+        const bStr = String(bValue).toLowerCase()
+        return sortConfig.direction === 'asc' 
+          ? aStr.localeCompare(bStr, 'th') 
+          : bStr.localeCompare(aStr, 'th')
       }
     })
   }, [stocks, sortConfig])
@@ -292,22 +305,9 @@ export function StockTableEnhanced({
   }, [filteredStats, onFilteredStatsChange])
 
   // Component methods
-  const handleAdjust = (stock: Stock) => {
-    setSelectedStock(stock)
-    setIsModalOpen(true)
-  }
-
   const handleView = (stock: Stock) => {
     setSelectedStock(stock)
     setIsModalOpen(true)
-  }
-
-  const handleQuickEdit = (stock: Stock) => {
-    if (onAdjust) {
-      onAdjust(stock)
-    } else {
-      handleAdjust(stock)
-    }
   }
 
   const handleModalClose = () => {

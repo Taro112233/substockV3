@@ -1,4 +1,5 @@
 // 📄 File: components/modules/stock/stock-detail-modal.tsx (ปรับปรุงแล้ว - ใช้ Sonner Toast)
+// ✅ Fixed TypeScript and ESLint warnings - removed unused hasStockChanges variable
 // =====================================================
 
 import { useState, useEffect } from 'react'
@@ -430,10 +431,7 @@ export function StockDetailModalEnhanced({
     }
   }
 
-  // ✅ ตรวจสอบการเปลี่ยนแปลงข้อมูล
-  const hasStockChanges = stockFormData.totalQuantity !== stock.totalQuantity || 
-                        stockFormData.minimumStock !== stock.minimumStock
-
+  // ✅ Fixed: Check for drug changes only (removed unused hasStockChanges)
   const hasDrugChanges = drugFormData.hospitalDrugCode !== stock.drug.hospitalDrugCode ||
                         drugFormData.name !== stock.drug.name ||
                         drugFormData.genericName !== stock.drug.genericName ||
@@ -600,7 +598,7 @@ export function StockDetailModalEnhanced({
               </CardContent>
             </Card>
 
-            {/* Action Buttons for Stock */}
+            {/* Action Buttons for Stock - ✅ ปุ่มบันทึกไม่มีเงื่อนไข */}
             <div className="flex gap-3">
               <Button
                 variant="outline"
@@ -611,7 +609,6 @@ export function StockDetailModalEnhanced({
                 <RotateCcw className="h-4 w-4 mr-2" />
                 รีเซ็ต
               </Button>
-              {/* ✅ ปุ่มบันทึกกดได้ตลอด ไม่มีเงื่อนไข */}
               <Button
                 onClick={handleSaveStock}
                 disabled={loading}
@@ -688,12 +685,6 @@ export function StockDetailModalEnhanced({
                       <Input
                         value={drugFormData.strength || ''}
                         onChange={(e) => setDrugFormData(prev => ({ ...prev, strength: e.target.value || null }))}
-                        placeholder="เช่น 500"
-                        className="flex-1"
-                      />
-                      <Input
-                        value={drugFormData.unit}
-                        onChange={(e) => setDrugFormData(prev => ({ ...prev, unit: e.target.value }))}
                         placeholder="หน่วย"
                         className="w-20"
                       />

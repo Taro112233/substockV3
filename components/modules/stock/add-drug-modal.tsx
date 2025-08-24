@@ -1,5 +1,5 @@
-// 📄 File: components/modules/stock/add-drug-modal.tsx
-// Modal สำหรับเพิ่มยาใหม่ with Sonner Toast
+// 📄 File: components/modules/stock/add-drug-modal.tsx (แก้ไข TypeScript Error)
+// =====================================================
 
 import { useState } from 'react'
 import {
@@ -176,17 +176,11 @@ export function AddDrugModal({
       const firstError = newErrors[firstErrorField]
       
       toast.error('ข้อมูลไม่ถูกต้อง', {
-        description: errorCount === 1 ? firstError : `พบข้อผิดพลาด ${errorCount} รายการ กรุณาตรวจสอบ`,
+        description: errorCount === 1 ? 
+          firstError : 
+          `พบข้อผิดพลาด ${errorCount} รายการ โปรดตรวจสอบข้อมูล`,
         icon: <AlertTriangle className="w-4 h-4" />,
         duration: 5000,
-        action: {
-          label: "แก้ไข",
-          onClick: () => {
-            // Focus on first error field
-            const element = document.querySelector(`[name="${firstErrorField}"]`) as HTMLInputElement
-            element?.focus()
-          },
-        },
       })
       
       return false
@@ -195,19 +189,17 @@ export function AddDrugModal({
     return true
   }
 
-  // Handle form submission with enhanced toast feedback
+  // Submit form
   const handleSubmit = async () => {
-    if (!validateForm()) {
-      return
-    }
+    if (!validateForm()) return
 
-    setLoading(true)
-
-    // Show loading toast
-    const loadingToast = toast.loading('กำลังเพิ่มยาใหม่', {
-      description: `เพิ่มยา "${formData.name}" เข้าสู่ระบบ...`,
+    // Show progress toast
+    const progressToast = toast.loading('กำลังเพิ่มยา...', {
+      description: `เพิ่ม "${formData.name}" (${formData.hospitalDrugCode}) ไปยัง ${department === 'PHARMACY' ? 'คลังยา' : 'OPD'}`,
+      icon: <Loader2 className="w-4 h-4 animate-spin" />,
     })
 
+    setLoading(true)
     try {
       const response = await fetch('/api/drugs', {
         method: 'POST',
@@ -221,45 +213,43 @@ export function AddDrugModal({
         }),
       })
 
-      // Dismiss loading toast
-      toast.dismiss(loadingToast)
+      const responseData = await response.json()
 
       if (!response.ok) {
-        const errorData = await response.json()
+        // Dismiss progress toast
+        toast.dismiss(progressToast)
         
-        // Handle specific error cases
-        if (errorData.error?.includes('รหัสยา') || errorData.error?.includes('duplicate')) {
+        // Show specific error based on the type
+        if (response.status === 409) {
           toast.error('รหัสยาซ้ำ!', {
             description: `รหัสยา "${formData.hospitalDrugCode}" มีอยู่ในระบบแล้ว`,
-            icon: <XCircle className="w-4 h-4" />,
-            duration: 6000,
+            icon: <AlertCircle className="w-4 h-4" />,
+            duration: 5000,
             action: {
               label: "แก้ไขรหัส",
               onClick: () => {
-                const element = document.querySelector('[name="hospitalDrugCode"]') as HTMLInputElement
-                element?.focus()
-                element?.select()
+                // Focus to hospital drug code input
+                const input = document.querySelector('input[name="hospitalDrugCode"]') as HTMLInputElement
+                input?.focus()
+                input?.select()
               },
             },
           })
-        } else {
-          toast.error('ไม่สามารถเพิ่มยาได้', {
-            description: errorData.error || 'เกิดข้อผิดพลาดในการเพิ่มยา',
-            icon: <XCircle className="w-4 h-4" />,
-            duration: 5000,
-            action: {
-              label: "ลองอีกครั้ง",
-              onClick: () => handleSubmit(),
-            },
-          })
+          
+          // Set specific error
+          setErrors({ hospitalDrugCode: 'รหัสยานี้มีอยู่ในระบบแล้ว' })
+          return
         }
         
-        throw new Error(errorData.error || 'เกิดข้อผิดพลาดในการเพิ่มยา')
+        throw new Error(responseData.error || 'เกิดข้อผิดพลาดในการเพิ่มยา')
       }
 
-      const { data: newStock } = await response.json()
+      const { data: newStock } = responseData
+      
+      // Dismiss progress toast
+      toast.dismiss(progressToast)
 
-      // Success toast with drug details
+      // Show success toast with drug info
       toast.success('เพิ่มยาสำเร็จ!', {
         description: `เพิ่ม "${formData.name}" (${formData.hospitalDrugCode}) เรียบร้อยแล้ว`,
         icon: <CheckCircle2 className="w-4 h-4" />,
@@ -283,6 +273,9 @@ export function AddDrugModal({
     } catch (error) {
       console.error('Error adding drug:', error)
       
+      // Dismiss progress toast
+      toast.dismiss(progressToast)
+      
       // Only show connection error toast if no specific error was shown above
       const errorMessage = error instanceof Error ? error.message : String(error)
       if (!errorMessage.includes('รหัสยา')) {
@@ -301,8 +294,11 @@ export function AddDrugModal({
     }
   }
 
-  // Handle input changes with real-time validation feedback
-  const handleInputChange = (field: keyof NewDrugData, value: any) => {
+  // ✅ Fixed: แก้ไข handleInputChange ให้ใช้ type ที่เฉพาะเจาะจง
+  const handleInputChange = <K extends keyof NewDrugData>(
+    field: K, 
+    value: NewDrugData[K]
+  ) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     
     // Clear error for this field
@@ -314,7 +310,10 @@ export function AddDrugModal({
       })
       
       // Show success toast when fixing required fields
-      if (['hospitalDrugCode', 'name', 'unit'].includes(field) && value?.toString().trim()) {
+      if (['hospitalDrugCode', 'name', 'unit'].includes(field) && 
+          value !== null && 
+          value !== undefined && 
+          String(value).trim()) {
         toast.dismiss() // Dismiss any existing validation toasts
         toast.success('ข้อมูลถูกต้อง', {
           description: `${field === 'hospitalDrugCode' ? 'รหัสยา' : 
@@ -326,18 +325,55 @@ export function AddDrugModal({
     }
   }
 
+  // ✅ Helper function สำหรับจัดการ string input
+  const handleStringInputChange = (field: keyof NewDrugData) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const value = e.target.value
+    if (field === 'genericName' || field === 'strength' || field === 'packageSize' || field === 'notes') {
+      handleInputChange(field, value || null)
+    } else {
+      handleInputChange(field, value as NewDrugData[typeof field])
+    }
+  }
+
+  // ✅ Helper function สำหรับจัดการ number input
+  const handleNumberInputChange = (field: 'pricePerBox' | 'initialQuantity' | 'minimumStock') => (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = parseFloat(e.target.value) || 0
+    handleInputChange(field, Math.max(0, value))
+  }
+
+  // Check if form has any data
+  const hasFormData = Object.keys(formData).some(key => {
+    const value = formData[key as keyof NewDrugData]
+    if (key === 'dosageForm' && value === 'TAB') return false
+    if (key === 'unit' && value === 'mg') return false
+    if (key === 'category' && value === 'GENERAL') return false
+    if (key === 'minimumStock' && value === 10) return false
+    if (typeof value === 'string') return value.trim() !== ''
+    if (typeof value === 'number') return value > 0
+    return value !== null
+  })
+
+  const canSubmit = !loading && 
+                   formData.hospitalDrugCode.trim() !== '' &&
+                   formData.name.trim() !== '' &&
+                   formData.unit.trim() !== ''
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Plus className="h-5 w-5" />
-            เพิ่มยาใหม่ - {department === 'PHARMACY' ? 'แผนกคลังยา' : 'แผนก OPD'}
+            เพิ่มยาใหม่ - {department === 'PHARMACY' ? 'คลังยา' : 'OPD'}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Drug Information Card */}
+          {/* Drug Information */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
@@ -349,14 +385,12 @@ export function AddDrugModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* รหัสยาโรงพยาบาล */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">
-                    รหัสยาโรงพยาบาล *
-                  </label>
+                  <label className="text-sm font-medium">รหัสยาโรงพยาบาล *</label>
                   <Input
                     name="hospitalDrugCode"
                     value={formData.hospitalDrugCode}
-                    onChange={(e) => handleInputChange('hospitalDrugCode', e.target.value)}
-                    placeholder="ระบุรหัสยา เช่น TAB001"
+                    onChange={handleStringInputChange('hospitalDrugCode')}
+                    placeholder="ระบุรหัสยา"
                     className={errors.hospitalDrugCode ? 'border-red-500' : ''}
                     disabled={loading}
                   />
@@ -374,7 +408,7 @@ export function AddDrugModal({
                   <Input
                     name="name"
                     value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    onChange={handleStringInputChange('name')}
                     placeholder="ระบุชื่อยา"
                     className={errors.name ? 'border-red-500' : ''}
                     disabled={loading}
@@ -392,7 +426,7 @@ export function AddDrugModal({
                   <label className="text-sm font-medium">ชื่อสามัญ</label>
                   <Input
                     value={formData.genericName || ''}
-                    onChange={(e) => handleInputChange('genericName', e.target.value || null)}
+                    onChange={handleStringInputChange('genericName')}
                     placeholder="ระบุชื่อสามัญ"
                     disabled={loading}
                   />
@@ -425,7 +459,7 @@ export function AddDrugModal({
                   <div className="flex gap-2">
                     <Input
                       value={formData.strength || ''}
-                      onChange={(e) => handleInputChange('strength', e.target.value || null)}
+                      onChange={handleStringInputChange('strength')}
                       placeholder="เช่น 500"
                       className="flex-1"
                       disabled={loading}
@@ -433,7 +467,7 @@ export function AddDrugModal({
                     <Input
                       name="unit"
                       value={formData.unit}
-                      onChange={(e) => handleInputChange('unit', e.target.value)}
+                      onChange={handleStringInputChange('unit')}
                       placeholder="หน่วย"
                       className={`w-20 ${errors.unit ? 'border-red-500' : ''}`}
                       disabled={loading}
@@ -452,7 +486,7 @@ export function AddDrugModal({
                   <label className="text-sm font-medium">ขนาดบรรจุ</label>
                   <Input
                     value={formData.packageSize || ''}
-                    onChange={(e) => handleInputChange('packageSize', e.target.value || null)}
+                    onChange={handleStringInputChange('packageSize')}
                     placeholder="เช่น 100"
                     disabled={loading}
                   />
@@ -466,7 +500,7 @@ export function AddDrugModal({
                     min="0"
                     step="0.01"
                     value={formData.pricePerBox}
-                    onChange={(e) => handleInputChange('pricePerBox', parseFloat(e.target.value) || 0)}
+                    onChange={handleNumberInputChange('pricePerBox')}
                     placeholder="0.00"
                     className={errors.pricePerBox ? 'border-red-500' : ''}
                     disabled={loading}
@@ -506,7 +540,7 @@ export function AddDrugModal({
                 <label className="text-sm font-medium">หมายเหตุ</label>
                 <Textarea
                   value={formData.notes || ''}
-                  onChange={(e) => handleInputChange('notes', e.target.value || null)}
+                  onChange={handleStringInputChange('notes')}
                   placeholder="หมายเหตุเพิ่มเติม..."
                   className="min-h-[80px]"
                   disabled={loading}
@@ -515,7 +549,7 @@ export function AddDrugModal({
             </CardContent>
           </Card>
 
-          {/* Stock Information Card */}
+          {/* Stock Information */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
@@ -532,7 +566,7 @@ export function AddDrugModal({
                     type="number"
                     min="0"
                     value={formData.initialQuantity}
-                    onChange={(e) => handleInputChange('initialQuantity', parseInt(e.target.value) || 0)}
+                    onChange={handleNumberInputChange('initialQuantity')}
                     placeholder="0"
                     className={errors.initialQuantity ? 'border-red-500' : ''}
                     disabled={loading}
@@ -552,7 +586,7 @@ export function AddDrugModal({
                     type="number"
                     min="0"
                     value={formData.minimumStock}
-                    onChange={(e) => handleInputChange('minimumStock', parseInt(e.target.value) || 0)}
+                    onChange={handleNumberInputChange('minimumStock')}
                     placeholder="10"
                     className={errors.minimumStock ? 'border-red-500' : ''}
                     disabled={loading}
@@ -566,15 +600,19 @@ export function AddDrugModal({
                 </div>
               </div>
 
-              {/* มูลค่าเริ่มต้น */}
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">มูลค่าเริ่มต้น:</span>
-                  <span className="text-lg font-medium text-purple-600">
-                    ฿{(formData.initialQuantity * formData.pricePerBox).toLocaleString()}
-                  </span>
+              {/* Stock Summary */}
+              {(formData.initialQuantity > 0 || formData.pricePerBox > 0) && (
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="text-sm font-medium text-blue-800 mb-1">
+                    สรุปสต็อกเริ่มต้น
+                  </div>
+                  <div className="text-xs text-blue-600 space-y-1">
+                    <div>จำนวน: {formData.initialQuantity.toLocaleString()} หน่วย</div>
+                    <div>มูลค่า: ฿{(formData.initialQuantity * formData.pricePerBox).toLocaleString()}</div>
+                    <div>ขั้นต่ำ: {formData.minimumStock.toLocaleString()} หน่วย</div>
+                  </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
@@ -583,12 +621,13 @@ export function AddDrugModal({
             <Button
               variant="outline"
               onClick={handleReset}
-              disabled={loading}
+              disabled={loading || !hasFormData}
               className="flex-1"
             >
               <RotateCcw className="h-4 w-4 mr-2" />
               รีเซ็ต
             </Button>
+            
             <Button
               variant="outline"
               onClick={handleClose}
@@ -598,10 +637,11 @@ export function AddDrugModal({
               <X className="h-4 w-4 mr-2" />
               ยกเลิก
             </Button>
+            
             <Button
               onClick={handleSubmit}
-              disabled={loading || !formData.hospitalDrugCode.trim() || !formData.name.trim() || !formData.unit.trim()}
-              className="flex-1 bg-green-600 hover:bg-green-700"
+              disabled={!canSubmit}
+              className="flex-2"
             >
               {loading ? (
                 <>

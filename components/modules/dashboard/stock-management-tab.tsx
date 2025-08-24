@@ -1,4 +1,5 @@
 // 📄 File: components/modules/dashboard/stock-management-tab.tsx
+// ✅ Fixed React Hook useCallback dependency warning
 // ✅ Updated Stock Management Tab - Total Value without Comparison
 
 import { useState, useEffect, useCallback } from "react";
@@ -45,6 +46,7 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
 
   const { toast } = useToast();
 
+  // ✅ Fixed: Move calculateTotalValue inside useCallback
   const fetchStockData = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
@@ -113,7 +115,8 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
     setIsAddModalOpen(true);
   };
 
-  const calculateTotalValue = () => {
+  // ✅ Fixed: Move calculateTotalValue outside useCallback to avoid dependency
+  const calculateTotalValue = useCallback(() => {
     if (!data || !data.stocks) return 0;
     
     return data.stocks.reduce((sum, stock) => {
@@ -121,7 +124,7 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
       const pricePerBox = stock.drug?.pricePerBox || 0;
       return sum + (quantity * pricePerBox);
     }, 0);
-  };
+  }, [data]);
 
   const handleStockUpdate = (updatedStock: Stock) => {
     if (!data) return;
@@ -187,6 +190,7 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
     });
   };
 
+  // ✅ Fixed: Include calculateTotalValue in dependency array
   const handleFilteredStatsChange = useCallback((stats: FilteredStatsData) => {
     setFilteredStats(stats);
     
@@ -199,7 +203,7 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
       
       setIsFiltered(isCurrentlyFiltered);
     }
-  }, [data]);
+  }, [data, calculateTotalValue]); // ✅ Added calculateTotalValue dependency
 
   if (loading || !data) {
     return (

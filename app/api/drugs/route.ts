@@ -1,10 +1,12 @@
-// 📄 File: app/api/drugs/route.ts (FIXED)
-// API สำหรับสร้างยาใหม่พร้อมสต็อกเริ่มต้น - แผนกรองเริ่มต้น 0
+
+// 📄 File: app/api/drugs/route.ts (FIXED TypeScript Strict)
+// API สำหรับสร้างยาใหม่พร้อมสต็อกเริ่มต้น - แก้ไข TypeScript errors
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
-import { z } from "zod";
+import { z, ZodError, ZodIssue } from "zod";
+import { Prisma } from "@prisma/client";
 
 // Schema สำหรับ validation การสร้างยาใหม่
 const createDrugSchema = z.object({
@@ -23,35 +25,10 @@ const createDrugSchema = z.object({
     .optional(),
   dosageForm: z.enum(
     [
-      "APP",
-      "BAG",
-      "CAP",
-      "CR",
-      "DOP",
-      "ENE",
-      "GEL",
-      "HAN",
-      "IMP",
-      "INJ",
-      "LIQ",
-      "LOT",
-      "LVP",
-      "MDI",
-      "MIX",
-      "NAS",
-      "NB",
-      "OIN",
-      "PAT",
-      "POW",
-      "PWD",
-      "SAC",
-      "SOL",
-      "SPR",
-      "SUP",
-      "SUS",
-      "SYR",
-      "TAB",
-      "TUR",
+      "APP", "BAG", "CAP", "CR", "DOP", "ENE", "GEL", "HAN", "IMP",
+      "INJ", "LIQ", "LOT", "LVP", "MDI", "MIX", "NAS", "NB", "OIN",
+      "PAT", "POW", "PWD", "SAC", "SOL", "SPR", "SUP", "SUS", "SYR",
+      "TAB", "TUR",
     ],
     {
       message: "รูปแบบยาไม่ถูกต้อง",
@@ -77,18 +54,8 @@ const createDrugSchema = z.object({
     .max(999999.99, "ราคาต้องไม่เกิน 999,999.99"),
   category: z.enum(
     [
-      "REFER",
-      "HAD",
-      "NARCOTIC",
-      "REFRIGERATED",
-      "PSYCHIATRIC",
-      "FLUID",
-      "GENERAL",
-      "TABLET",
-      "SYRUP",
-      "INJECTION",
-      "EXTEMP",
-      "ALERT",
+      "REFER", "HAD", "NARCOTIC", "REFRIGERATED", "PSYCHIATRIC",
+      "FLUID", "GENERAL", "TABLET", "SYRUP", "INJECTION", "EXTEMP", "ALERT",
     ],
     {
       message: "ประเภทยาไม่ถูกต้อง",
@@ -132,8 +99,8 @@ export async function GET(request: NextRequest) {
     const dosageForm = searchParams.get("dosageForm");
     const isActive = searchParams.get("active") !== "false";
 
-    // Build where clause
-    const where: any = {
+    // ✅ Fixed: ใช้ Prisma.DrugWhereInput แทน any
+    const where: Prisma.DrugWhereInput = {
       isActive,
     };
 
@@ -146,11 +113,13 @@ export async function GET(request: NextRequest) {
     }
 
     if (category) {
-      where.category = category;
+      // ✅ Fixed: ใช้ proper enum type
+      where.category = category as Prisma.EnumDrugCategoryFilter;
     }
 
     if (dosageForm) {
-      where.dosageForm = dosageForm;
+      // ✅ Fixed: ใช้ proper enum type
+      where.dosageForm = dosageForm as Prisma.EnumDosageFormFilter;
     }
 
     const drugs = await prisma.drug.findMany({
@@ -285,14 +254,14 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // 🔧 FIXED: สร้างสต็อกสำหรับแผนกรอง (เริ่มต้นที่ 0 ทั้ง quantity และ minimumStock)
+      // สร้างสต็อกสำหรับแผนกรอง (เริ่มต้นที่ 0)
       const secondaryStock = await tx.stock.create({
         data: {
           drugId: newDrug.id,
           department: secondaryDepartment,
-          totalQuantity: 0, // ✅ เริ่มต้น 0 กล่อง
+          totalQuantity: 0,
           reservedQty: 0,
-          minimumStock: 0, // ✅ FIXED: เปลี่ยนจาก validatedData.minimumStock เป็น 0
+          minimumStock: 0,
           fixedStock: 0,
           totalValue: 0,
         },
@@ -332,12 +301,12 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // ส่งคืนข้อมูล primary stock (แผนกที่เพิ่ม) สำหรับ frontend
+      // ส่งคืนข้อมูล primary stock สำหรับ frontend
       return {
         ...primaryStock,
         drug: {
           ...newDrug,
-          stocks: [primaryStock, secondaryStock], // รวมข้อมูลทั้ง 2 แผนก
+          stocks: [primaryStock, secondaryStock],
         },
       };
     });
@@ -358,20 +327,20 @@ export async function POST(request: NextRequest) {
         secondaryDepartment:
           validatedData.department === "PHARMACY" ? "OPD" : "PHARMACY",
         secondaryQuantity: 0,
-        secondaryMinimumStock: 0, // ✅ FIXED: เพิ่มข้อมูลนี้ในการแจ้งผลลัพธ์
+        secondaryMinimumStock: 0,
         totalStocks: 2,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Create drug error:", error);
 
-    // Handle validation errors
-    if (error instanceof z.ZodError) {
+    // ✅ Fixed: Type-safe error handling
+    if (error instanceof ZodError) {
       return NextResponse.json(
         {
           error: "ข้อมูลไม่ถูกต้อง",
           details: error.issues
-            .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+            .map((issue: ZodIssue) => `${issue.path.join(".")}: ${issue.message}`)
             .join(", "),
         },
         { status: 400 }
@@ -379,19 +348,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle Prisma unique constraint errors
-    if (error.code === "P2002") {
-      const field = error.meta?.target?.[0];
-      let message = "ข้อมูลซ้ำกับรายการที่มีอยู่แล้ว";
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        // ✅ Fixed: Type-safe meta target access
+        const target = error.meta?.target;
+        const field = Array.isArray(target) ? target[0] : undefined;
+        let message = "ข้อมูลซ้ำกับรายการที่มีอยู่แล้ว";
 
-      if (field === "hospitalDrugCode") {
-        message = "รหัสยาโรงพยาบาลนี้มีอยู่ในระบบแล้ว";
-      } else if (field === "name") {
-        message = "ชื่อยานี้มีอยู่ในระบบแล้ว";
+        if (field === "hospitalDrugCode") {
+          message = "รหัสยาโรงพยาบาลนี้มีอยู่ในระบบแล้ว";
+        } else if (field === "name") {
+          message = "ชื่อยานี้มีอยู่ในระบบแล้ว";
+        }
+
+        return NextResponse.json({ error: message }, { status: 400 });
       }
-
-      return NextResponse.json({ error: message }, { status: 400 });
     }
 
+    // Generic error handling
     return NextResponse.json(
       { error: "เกิดข้อผิดพลาดในการสร้างยาใหม่" },
       { status: 500 }

@@ -643,13 +643,10 @@ export function StockCardsMobile({
                       {/* Stock Value */}
                       <div className="text-right mb-2">
                         <div className="font-bold text-sm text-purple-600">
-                          ฿
-                          {stockValue >= 1000
-                            ? `${(stockValue / 1000).toFixed(1)}K`
-                            : stockValue.toFixed(0)}
+                          {stockValue.toFixed(2)} ฿
                         </div>
                         <div className="text-xs text-gray-500">
-                          กล่องละ ฿{(stock.drug?.pricePerBox || 0).toFixed(0)}
+                          กล่องละ {(stock.drug?.pricePerBox || 0).toFixed(0)} ฿
                         </div>
                       </div>
                     </div>

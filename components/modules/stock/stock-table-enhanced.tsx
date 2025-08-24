@@ -711,10 +711,10 @@ export function StockTableEnhanced({
                         <TableCell className="text-right">
                           <div className="space-y-1">
                             <div className="font-medium text-purple-600">
-                              ฿{stockValue.toLocaleString()}
+                              {stockValue.toFixed(2).toLocaleString()} ฿
                             </div>
                             <div className="text-xs text-gray-500">
-                              @฿{(stock.drug?.pricePerBox || 0).toFixed(2)}/กล่อง
+                              กล่องละ {(stock.drug?.pricePerBox || 0).toFixed(2)} ฿
                             </div>
                           </div>
                         </TableCell>

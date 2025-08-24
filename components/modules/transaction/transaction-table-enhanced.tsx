@@ -1,6 +1,6 @@
 // 📄 File: components/modules/transaction/transaction-table-enhanced.tsx
-// ⭐ COMPLETE VERSION: Enhanced transaction table with minimum stock support
-// ✅ FIXED: TypeScript errors - replaced `any` with proper types
+// ⭐ COMPLETE VERSION: Enhanced transaction table with ALL SORTABLE HEADERS
+// ✅ FIXED: All headers are now sortable with proper TypeScript types
 
 import {
   Table,
@@ -42,7 +42,8 @@ import {
 } from 'lucide-react'
 import { useState, useMemo, useEffect } from 'react'
 
-type SortField = 'drug' | 'type' | 'quantity' | 'totalCost' | 'createdAt' | 'user'
+// ✅ Updated SortField with ALL sortable columns
+type SortField = 'drug' | 'dosageForm' | 'strength' | 'packageSize' | 'type' | 'quantity' | 'createdAt' | 'user' | 'totalCost'
 type SortDirection = 'asc' | 'desc' | null
 
 interface SortConfig {
@@ -251,7 +252,7 @@ export function TransactionTableEnhanced({
     return labels[category as keyof typeof labels] || category
   }
 
-  // ✅ FIXED: Sorting function with proper types
+  // ✅ ENHANCED: Sorting function with ALL sortable fields
   const handleSort = (field: SortField) => {
     let direction: SortDirection = 'asc'
     
@@ -282,7 +283,7 @@ export function TransactionTableEnhanced({
     return <ArrowUpDown className="h-4 w-4 text-gray-400" />
   }
 
-  // ✅ FIXED: Sorting logic with proper types instead of `any`
+  // ✅ ENHANCED: Sorting logic with ALL sortable fields
   const sortedTransactions = useMemo(() => {
     if (!sortConfig.field || !sortConfig.direction) {
       return transactions
@@ -296,6 +297,19 @@ export function TransactionTableEnhanced({
         case 'drug':
           aValue = a.drug?.name?.toLowerCase() || ''
           bValue = b.drug?.name?.toLowerCase() || ''
+          break
+        case 'dosageForm':
+          aValue = a.drug?.dosageForm?.toLowerCase() || ''
+          bValue = b.drug?.dosageForm?.toLowerCase() || ''
+          break
+        case 'strength':
+          aValue = a.drug?.strength?.toLowerCase() || ''
+          bValue = b.drug?.strength?.toLowerCase() || ''
+          break
+        case 'packageSize':
+          // Convert package size to number for proper sorting
+          aValue = parseInt(a.drug?.packageSize?.replace(/[^\d]/g, '') || '0') || 0
+          bValue = parseInt(b.drug?.packageSize?.replace(/[^\d]/g, '') || '0') || 0
           break
         case 'type':
           aValue = a.type
@@ -332,7 +346,6 @@ export function TransactionTableEnhanced({
         return 0
       }
       
-      // Fallback for mixed types (shouldn't happen with proper typing)
       return 0
     })
   }, [transactions, sortConfig])
@@ -405,6 +418,7 @@ export function TransactionTableEnhanced({
     setSortConfig({ field: null, direction: null })
   }
 
+  // ✅ SortableHeader component for all sortable columns
   const SortableHeader = ({ 
     field, 
     children, 
@@ -618,7 +632,15 @@ export function TransactionTableEnhanced({
                   <SortableHeader field="drug" className="w-[250px]">
                     ชื่อยา
                   </SortableHeader>
-                  <TableHead className="w-[120px]">ขนาดบรรจุ</TableHead>
+                  <SortableHeader field="dosageForm" className="w-[100px]">
+                    รูปแบบ
+                  </SortableHeader>
+                  <SortableHeader field="strength" className="w-[120px]">
+                    ความแรง
+                  </SortableHeader>
+                  <SortableHeader field="packageSize" className="w-[120px]">
+                    ขนาดบรรจุ
+                  </SortableHeader>
                   <SortableHeader field="type" className="w-[140px]">
                     ประเภท
                   </SortableHeader>

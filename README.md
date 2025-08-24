@@ -13,6 +13,7 @@ Directory structure:
     ├── app/
     │   ├── globals.css
     │   ├── layout.tsx
+    │   ├── not-found.tsx
     │   ├── page.tsx
     │   ├── admin/
     │   │   ├── layout.tsx
@@ -47,6 +48,8 @@ Directory structure:
     │   │   │   ├── route.ts
     │   │   │   └── [drugId]/
     │   │   │       └── route.ts
+    │   │   ├── health/
+    │   │   │   └── route.ts
     │   │   ├── stock/
     │   │   │   └── route.ts
     │   │   ├── stocks/
@@ -94,6 +97,7 @@ Directory structure:
     │   ├── DemoComponents.tsx
     │   ├── error-boundary.tsx
     │   ├── MobileAdminNav.tsx
+    │   ├── SimpleStatusIndicator.tsx
     │   ├── admin/
     │   │   └── UserManagementButton.tsx
     │   ├── modules/
@@ -184,6 +188,7 @@ Directory structure:
     │   ├── use-auth.ts
     │   ├── use-mobile.ts
     │   ├── use-toast.ts
+    │   ├── useSimpleServerStatus.ts
     │   └── useUserManagement.ts
     ├── lib/
     │   ├── auth-server.ts

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Loader2, 
   Hospital, 
@@ -17,9 +18,13 @@ import {
   CheckCircle2, 
   XCircle, 
   AlertTriangle,
-  UserPlus
+  UserPlus,
+  FileText,
+  Shield
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { TermsOfServiceModal } from '@/components/modules/auth/terms-of-service-modal';
+import { Separator } from '@/components/ui/separator';
 
 type RegisterFormData = {
   username: string;
@@ -49,6 +54,10 @@ export default function RegisterPage() {
     requiresApproval: boolean;
     message: string;
   }>({ show: false, requiresApproval: false, message: '' });
+  
+  // ⭐ States สำหรับ Terms of Service
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   
   const { register, loading } = useAuth();
   const router = useRouter();
@@ -94,6 +103,24 @@ export default function RegisterPage() {
         description: errorMsg,
         icon: <AlertTriangle className="w-4 h-4" />,
         duration: 4000,
+      });
+      return false;
+    }
+
+    // ⭐ ตรวจสอบการยอมรับเงื่อนไข
+    if (!acceptedTerms) {
+      const errorMsg = 'กรุณายอมรับเงื่อนไขการใช้งาน';
+      setError(errorMsg);
+      toast.error('ยังไม่ได้ยอมรับเงื่อนไข', {
+        description: 'กรุณาอ่านและยอมรับเงื่อนไขการใช้งานก่อนสมัครสมาชิก',
+        icon: <Shield className="w-4 h-4" />,
+        duration: 5000,
+        action: {
+          label: "อ่านเงื่อนไข",
+          onClick: () => {
+            setShowTermsModal(true);
+          },
+        },
       });
       return false;
     }
@@ -220,6 +247,33 @@ export default function RegisterPage() {
     router.push('/login');
   };
 
+  // ⭐ Handle Terms of Service
+  const handleTermsAccept = () => {
+    setAcceptedTerms(true);
+    setShowTermsModal(false);
+    
+    toast.success('ยอมรับเงื่อนไขแล้ว', {
+      description: 'คุณได้ยอมรับเงื่อนไขการใช้งานเรียบร้อยแล้ว',
+      icon: <CheckCircle2 className="w-4 h-4" />,
+      duration: 3000,
+    });
+  };
+
+  const handleTermsDecline = () => {
+    setAcceptedTerms(false);
+    setShowTermsModal(false);
+    
+    toast.warning('ยกเลิกการยอมรับ', {
+      description: 'คุณต้องยอมรับเงื่อนไขการใช้งานก่อนสมัครสมาชิก',
+      icon: <AlertTriangle className="w-4 h-4" />,
+      duration: 4000,
+    });
+  };
+
+  const handleShowTerms = () => {
+    setShowTermsModal(true);
+  };
+
   // Loading spinner ขณะตรวจสอบ auth status
   if (loading) {
     return (
@@ -288,9 +342,6 @@ export default function RegisterPage() {
               <p className="text-sm text-gray-600">Stock Management System V3.0</p>
             </div>
           </div>
-          <p className="text-gray-600">
-            สมัครสมาชิกเพื่อเข้าใช้ระบบ
-          </p>
         </div>
 
         {/* Register Form */}
@@ -304,12 +355,6 @@ export default function RegisterPage() {
           
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
 
               {/* Username */}
               <div className="space-y-2">
@@ -443,11 +488,61 @@ export default function RegisterPage() {
                   </Button>
                 </div>
               </div>
+              
+              {error && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
+              {/* ⭐ Terms of Service Section */}
+              <div className="space-y-4 pt-2">
+                <Separator />
+                
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      id="terms"
+                      checked={acceptedTerms}
+                      onCheckedChange={(checked) => {
+                        setAcceptedTerms(checked as boolean);
+                        if (error && checked) {
+                          setError('');
+                        }
+                      }}
+                      disabled={isLoading}
+                      className="h-4 w-4"
+                    />
+                    <Label 
+                      htmlFor="terms" 
+                      className="text-sm text-gray-700 leading-relaxed cursor-pointer"
+                    >
+                      ข้าพเจ้าได้อ่านและยอมรับ{' '}
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="p-0 h-auto text-blue-600 hover:text-blue-800 font-medium underline"
+                        onClick={handleShowTerms}
+                        disabled={isLoading}
+                      >
+                        เงื่อนไขการใช้งาน
+                      </Button>
+                      {' '}แล้ว *
+                    </Label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit Button */}
               <Button 
                 type="submit" 
-                className="w-full h-11 text-base bg-blue-500 hover:bg-blue-600"
-                disabled={isLoading}
+                className={`w-full h-11 text-base transition-colors duration-200 ${
+                  acceptedTerms 
+                    ? 'bg-blue-500 hover:bg-blue-600' 
+                    : 'bg-gray-400 hover:bg-gray-500'
+                }`}
+                disabled={isLoading || !acceptedTerms}
               >
                 {isLoading ? (
                   <>
@@ -485,6 +580,14 @@ export default function RegisterPage() {
           <p>Hospital Pharmacy Stock Management System</p>
           <p>© 2025 - Developed by Thanatouch</p>
         </div>
+
+        {/* ⭐ Terms of Service Modal */}
+        <TermsOfServiceModal
+          isOpen={showTermsModal}
+          onClose={() => setShowTermsModal(false)}
+          onAccept={handleTermsAccept}
+          onDecline={handleTermsDecline}
+        />
       </div>
     </div>
   );

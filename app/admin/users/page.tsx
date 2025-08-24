@@ -1,10 +1,9 @@
-// 📄 File: app/admin/users/page.tsx (Fixed ESLint warnings and errors)
+// 📄 File: app/admin/users/page.tsx (No Authentication Check Version)
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useAuth } from '@/app/utils/auth-client'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent } from '@/components/ui/card' // ✅ ลบ unused imports
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -54,7 +53,6 @@ interface UserStats {
 }
 
 export default function UserApprovalPage() {
-  const { user: currentUser, loading } = useAuth()
   const router = useRouter()
   const [users, setUsers] = useState<User[]>([])
   const [stats, setStats] = useState<UserStats>({
@@ -67,18 +65,11 @@ export default function UserApprovalPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Check authentication and authorization
+  // Load data on component mount
   useEffect(() => {
-    if (!loading && !currentUser) {
-      router.push('/login')
-      return
-    }
-    
-    if (!loading && currentUser) {
-      fetchUsers()
-      fetchStats()
-    }
-  }, [currentUser, loading, router])
+    fetchUsers()
+    fetchStats()
+  }, [])
 
   const fetchUsers = async () => {
     try {
@@ -184,16 +175,6 @@ export default function UserApprovalPage() {
   }
 
   const getActionButtons = (user: User) => {
-    const isCurrentUser = user.id === currentUser?.id
-
-    if (isCurrentUser) {
-      return (
-        <div className="text-sm text-gray-500 italic">
-          (คุณเอง)
-        </div>
-      )
-    }
-
     switch (user.status) {
       case 'UNAPPROVED':
         return (
@@ -338,18 +319,7 @@ export default function UserApprovalPage() {
     }
   }
 
-  if (loading || !currentUser) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    )
-  }
-
   const pendingUsers = users.filter(user => user.status === 'UNAPPROVED')
-  // ✅ ลบตัวแปรที่ไม่ได้ใช้
-  // const approvedUsers = users.filter(user => user.status === 'APPROVED')
-  // const suspendedUsers = users.filter(user => user.status === 'SUSPENDED')
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 space-y-6">

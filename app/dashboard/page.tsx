@@ -1,14 +1,14 @@
 // app/dashboard/page.tsx
-'use client'
+"use client";
 
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Package, Hospital, ArrowRight, Users, LogOut } from 'lucide-react'
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Package, Hospital, ArrowRight, Users, LogOut } from "lucide-react";
 
 export default function MainDashboard() {
-  const router = useRouter()
+  const router = useRouter();
 
   // ดึงข้อมูลผู้ใช้จาก localStorage หรือ context
   const [user, setUser] = useState<{
@@ -16,109 +16,108 @@ export default function MainDashboard() {
     lastName: string;
     position?: string;
     username?: string;
-  } | null>(null)
+  } | null>(null);
 
   useEffect(() => {
     // เรียก API เพื่อดึงข้อมูลผู้ใช้จาก server
     const fetchUserData = async () => {
       try {
-        const response = await fetch('/api/auth/me', {
-          method: 'GET',
-          credentials: 'include', // รวม cookies
-        })
+        const response = await fetch("/api/auth/me", {
+          method: "GET",
+          credentials: "include", // รวม cookies
+        });
 
         if (response.ok) {
-          const data = await response.json()
+          const data = await response.json();
           if (data.success && data.user) {
-            setUser(data.user)
+            setUser(data.user);
             // เก็บใน localStorage เพื่อใช้ในครั้งต่อไป
-            localStorage.setItem('user', JSON.stringify(data.user))
+            localStorage.setItem("user", JSON.stringify(data.user));
           } else {
             // หากไม่สำเร็จ ให้ใช้ข้อมูล default
             setUser({
-              firstName: 'ผู้ใช้',
-              lastName: 'ระบบ',
-              position: 'เจ้าหน้าที่'
-            })
+              firstName: "ผู้ใช้",
+              lastName: "ระบบ",
+              position: "เจ้าหน้าที่",
+            });
           }
         } else {
           // หาก API ไม่สำเร็จ ลองดึงจาก localStorage
-          const userData = localStorage.getItem('user')
+          const userData = localStorage.getItem("user");
           if (userData) {
             try {
-              const parsedUser = JSON.parse(userData)
-              setUser(parsedUser)
+              const parsedUser = JSON.parse(userData);
+              setUser(parsedUser);
             } catch {
               setUser({
-                firstName: 'ผู้ใช้',
-                lastName: 'ระบบ',
-                position: 'เจ้าหน้าที่'
-              })
+                firstName: "ผู้ใช้",
+                lastName: "ระบบ",
+                position: "เจ้าหน้าที่",
+              });
             }
           } else {
             setUser({
-              firstName: 'ผู้ใช้',
-              lastName: 'ระบบ',
-              position: 'เจ้าหน้าที่'
-            })
+              firstName: "ผู้ใช้",
+              lastName: "ระบบ",
+              position: "เจ้าหน้าที่",
+            });
           }
         }
       } catch (error) {
-        console.error('Error fetching user data:', error)
+        console.error("Error fetching user data:", error);
         // หากเกิดข้อผิดพลาด ลองดึงจาก localStorage
-        const userData = localStorage.getItem('user')
+        const userData = localStorage.getItem("user");
         if (userData) {
           try {
-            const parsedUser = JSON.parse(userData)
-            setUser(parsedUser)
+            const parsedUser = JSON.parse(userData);
+            setUser(parsedUser);
           } catch {
             setUser({
-              firstName: 'ผู้ใช้',
-              lastName: 'ระบบ',
-              position: 'เจ้าหน้าที่'
-            })
+              firstName: "ผู้ใช้",
+              lastName: "ระบบ",
+              position: "เจ้าหน้าที่",
+            });
           }
         } else {
           setUser({
-            firstName: 'ผู้ใช้',
-            lastName: 'ระบบ',
-            position: 'เจ้าหน้าที่'
-          })
+            firstName: "ผู้ใช้",
+            lastName: "ระบบ",
+            position: "เจ้าหน้าที่",
+          });
         }
       }
-    }
+    };
 
-    fetchUserData()
-  }, [])
+    fetchUserData();
+  }, []);
 
   const handleLogout = async () => {
     try {
       // Call logout API to clear HTTP-only cookies
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include' // รวม cookies ในการเรียก API
-      })
-      
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include", // รวม cookies ในการเรียก API
+      });
+
       // Clear any client-side storage (if exists)
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      sessionStorage.clear()
-      
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      sessionStorage.clear();
+
       // Always redirect to login regardless of API response
-      router.push('/login')
-      
+      router.push("/login");
     } catch (error) {
-      console.error('Logout error:', error)
-      
+      console.error("Logout error:", error);
+
       // Clear client-side storage even if API fails
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      sessionStorage.clear()
-      
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      sessionStorage.clear();
+
       // Force redirect anyway for security
-      router.push('/login')
+      router.push("/login");
     }
-  }
+  };
 
   // หากยังไม่มีข้อมูลผู้ใช้ ให้แสดง loading state
   if (!user) {
@@ -129,7 +128,7 @@ export default function MainDashboard() {
           <p className="text-gray-600">กำลังโหลดข้อมูลผู้ใช้...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -138,34 +137,42 @@ export default function MainDashboard() {
       <div className="bg-white rounded-lg p-6 shadow-sm">
         <div className="flex justify-between items-start">
           <div className="text-center md:text-left">
-            <h1 className="text-3xl font-bold text-gray-900">ระบบจัดการสต็อกยาโรงพยาบาล</h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              ระบบจัดการสต็อกยาโรงพยาบาล
+            </h1>
             {user ? (
               <>
-                <p className="text-xl text-gray-600 mt-2">ยินดีต้อนรับ, {user.firstName} {user.lastName}</p>
+                <p className="text-xl text-gray-600 mt-2">
+                  ยินดีต้อนรับ, {user.firstName} {user.lastName}
+                </p>
                 {user.position && (
-                  <p className="text-sm text-gray-500">ตำแหน่ง: {user.position}</p>
+                  <p className="text-sm text-gray-500">
+                    ตำแหน่ง: {user.position}
+                  </p>
                 )}
               </>
             ) : (
-              <p className="text-xl text-gray-600 mt-2">กำลังโหลดข้อมูลผู้ใช้...</p>
+              <p className="text-xl text-gray-600 mt-2">
+                กำลังโหลดข้อมูลผู้ใช้...
+              </p>
             )}
           </div>
-          
+
           {/* Admin Controls - Desktop */}
           <div className="hidden sm:flex space-x-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => router.push('/admin/users')}
+              onClick={() => router.push("/admin/users")}
             >
               <Users className="h-4 w-4 mr-2" />
               จัดการผู้ใช้งาน
             </Button>
-            
+
             <Button
-              variant="outline"
               size="sm"
               onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-700 text-white"
             >
               <LogOut className="h-4 w-4 mr-2" />
               ออกจากระบบ
@@ -179,7 +186,7 @@ export default function MainDashboard() {
         <h2 className="text-xl font-semibold text-gray-900 mb-6 text-center">
           เลือกแผนกที่ต้องการใช้งาน
         </h2>
-        
+
         <div className="grid md:grid-cols-2 gap-6">
           {/* Pharmacy Department Card */}
           <Card className="transition-all hover:shadow-lg hover:scale-105 cursor-pointer border-2 border-blue-200">
@@ -209,10 +216,10 @@ export default function MainDashboard() {
                   <span>ติดตามยาหมดอายุ</span>
                 </div>
               </div>
-              
-              <Button 
-                className="w-full" 
-                onClick={() => router.push('/dashboard/pharmacy')}
+
+              <Button
+                className="w-full"
+                onClick={() => router.push("/dashboard/pharmacy")}
               >
                 เข้าสู่แผนกคลังยา
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -248,10 +255,10 @@ export default function MainDashboard() {
                   <span>บันทึกการจ่ายยา</span>
                 </div>
               </div>
-              
-              <Button 
-                className="w-full bg-green-600 hover:bg-green-700" 
-                onClick={() => router.push('/dashboard/opd')}
+
+              <Button
+                className="w-full bg-green-600 hover:bg-green-700"
+                onClick={() => router.push("/dashboard/opd")}
               >
                 เข้าสู่แผนก OPD
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -267,17 +274,16 @@ export default function MainDashboard() {
         <div className="space-y-3">
           <Button
             variant="outline"
-            onClick={() => router.push('/admin/users')}
+            onClick={() => router.push("/admin/users")}
             className="w-full justify-start"
           >
             <Users className="h-4 w-4 mr-3" />
             จัดการผู้ใช้งาน
           </Button>
-          
+
           <Button
-            variant="outline"
             onClick={handleLogout}
-            className="w-full justify-start"
+            className="w-full justify-start bg-red-600 hover:bg-red-700 text-white"
           >
             <LogOut className="h-4 w-4 mr-3" />
             ออกจากระบบ
@@ -291,5 +297,5 @@ export default function MainDashboard() {
         <p>Mobile-First • Department Isolation • Real-time Updates</p>
       </div>
     </div>
-  )
+  );
 }

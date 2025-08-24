@@ -145,9 +145,6 @@ export default function LoginPage() {
               <p className="text-sm text-gray-600">Stock Management System V3.0</p>
             </div>
           </div>
-          <p className="text-gray-600">
-            เข้าสู่ระบบจัดการสต็อกยาโรงพยาบาล
-          </p>
         </div>
 
         {/* Login Form */}

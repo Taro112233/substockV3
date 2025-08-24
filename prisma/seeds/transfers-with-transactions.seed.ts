@@ -1,4 +1,4 @@
-// // prisma/seeds/transfers-with-transactions.seed.ts - Hospital Pharmacy V3.0
+// // prisma/seeds/transfers-with-transactions.seed.ts - Hospital Pharmacy V3.0 NO USE
 // // ระบบใบเบิกครบถ้วนพร้อมสร้าง Stock Transactions อัตโนมัติ
 
 // import { PrismaClient } from "@prisma/client";

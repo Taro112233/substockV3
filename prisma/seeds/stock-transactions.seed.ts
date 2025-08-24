@@ -1,4 +1,4 @@
-// // prisma/seeds/stock-transactions.seed.ts - Hospital Pharmacy V3.0 Stock Transaction History
+// // prisma/seeds/stock-transactions.seed.ts - Hospital Pharmacy V3.0 Stock Transaction History NO USE
 // // สร้าง transaction history สำหรับติดตามการเคลื่อนไหวของสต็อก
 
 // import { PrismaClient } from "@prisma/client";

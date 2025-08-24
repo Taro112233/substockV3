@@ -1,4 +1,4 @@
-// // prisma/seeds/transfers.seed.ts - Hospital Pharmacy V3.0 Transfer System
+// // prisma/seeds/transfers.seed.ts - Hospital Pharmacy V3.0 Transfer System NO USE
 // // สร้าง sample transfers ระหว่างแผนก พร้อม workflow ที่สมบูรณ์
 
 // import { PrismaClient } from "@prisma/client";

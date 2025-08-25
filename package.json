@@ -26,7 +26,9 @@
     "db:seed:demo": "SEED_DEMO_DATA=true pnpm db:seed",
     "db:setup": "pnpm schema:merge && pnpm db:push && pnpm seeds:merge && pnpm db:seed:run",
     "db:setup:demo": "pnpm schema:merge && pnpm db:push && pnpm seeds:merge && SEED_DEMO_DATA=true pnpm db:seed:run",
-    "db:full-reset": "pnpm db:reset && pnpm db:setup:demo"
+    "db:full-reset": "pnpm db:reset && pnpm db:setup:demo",
+    "db:reset:4models": "npx tsx scripts/reset-4-models.ts",
+    "db:fresh": "pnpm run db:reset:4models && pnpm run db:seed:csv"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

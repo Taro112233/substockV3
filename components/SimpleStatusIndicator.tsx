@@ -1,5 +1,7 @@
-// 📄 File: components/SimpleStatusIndicator.tsx (UPDATED)
+// 📄 File: components/SimpleStatusIndicator.tsx (FIXED)
 'use client'
+
+import React from 'react' // ✅ เพิ่ม import React
 import { useSimpleServerStatus } from '@/hooks/useSimpleServerStatus'
 import { Button } from '@/components/ui/button'
 import { Wifi, WifiOff, Loader2, RotateCcw } from 'lucide-react'
@@ -7,15 +9,18 @@ import { Wifi, WifiOff, Loader2, RotateCcw } from 'lucide-react'
 interface SimpleStatusIndicatorProps {
   showText?: boolean
   size?: 'sm' | 'md' | 'lg'
-  autoCheckOnMount?: boolean // เพิ่ม option นี้
+  autoCheckOnMount?: boolean
 }
 
 export function SimpleStatusIndicator({ 
   showText = true, 
   size = 'sm',
-  autoCheckOnMount = false // Default ไม่ auto check
+  autoCheckOnMount = false
 }: SimpleStatusIndicatorProps) {
-  const { serverStatus, checkServerStatus, isOnline, isChecking } = useSimpleServerStatus()
+  const { serverStatus, checkServerStatus } = useSimpleServerStatus()
+
+  // ✅ เพิ่ม isChecking derived state
+  const isChecking = serverStatus.status === 'connecting'
 
   // เช็คเมื่อ mount เฉพาะเมื่อต้องการ
   React.useEffect(() => {
@@ -78,10 +83,13 @@ export function SimpleStatusIndicator({
     )
   }
 
+  // ✅ แก้ size prop สำหรับ Button component (ไม่มี 'md' option)
+  const buttonSize = size === 'md' ? 'sm' : size // แปลง 'md' เป็น 'sm'
+
   return (
     <Button
       variant="ghost"
-      size={size}
+      size={buttonSize} // ✅ ใช้ buttonSize แทน size
       onClick={checkServerStatus}
       disabled={isChecking}
       className={`${config.color} ${config.bg} flex items-center gap-2`}

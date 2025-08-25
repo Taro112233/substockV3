@@ -3,10 +3,28 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { headers } from 'next/headers'
 
+// Health check response interface
+interface HealthData {
+  status: 'ok' | 'error'
+  responseTime: number
+  timestamp: string
+  database: 'connected' | 'disconnected'
+  cached: boolean
+  error?: string
+  source?: string
+  age?: number
+}
+
+// Cache interface
+interface HealthCache {
+  timestamp: number
+  data: HealthData | null
+}
+
 // Simple cache
-let lastCheck = {
+let lastCheck: HealthCache = {
   timestamp: 0,
-  data: null as any
+  data: null
 }
 const CACHE_DURATION = 30000 // 30 วินาที
 
@@ -23,22 +41,27 @@ export async function GET() {
   const isBot = /bot|crawler|spider|monitor|ping|vercel/i.test(userAgent)
   if (isBot) {
     console.log('🤖 Bot detected - serving lightweight response')
-    return NextResponse.json({ 
+    const botResponse: HealthData = { 
       status: 'ok', 
+      responseTime: Date.now() - startTime,
       timestamp: new Date().toISOString(),
+      database: 'connected',
+      cached: false,
       source: 'bot'
-    })
+    }
+    return NextResponse.json(botResponse)
   }
   
   // ใช้ cache ถ้ายังไม่หมดอายุ
   const now = Date.now()
   if (lastCheck.data && (now - lastCheck.timestamp) < CACHE_DURATION) {
     console.log('📦 Serving cached health data')
-    return NextResponse.json({
+    const cachedResponse: HealthData = {
       ...lastCheck.data,
       cached: true,
       age: Math.round((now - lastCheck.timestamp) / 1000)
-    })
+    }
+    return NextResponse.json(cachedResponse)
   }
   
   try {
@@ -47,7 +70,7 @@ export async function GET() {
     
     const responseTime = Date.now() - startTime
     
-    const healthData = {
+    const healthData: HealthData = {
       status: 'ok',
       responseTime,
       timestamp: new Date().toISOString(),
@@ -67,7 +90,7 @@ export async function GET() {
   } catch (error) {
     console.error('❌ Health check failed:', error)
     
-    const errorData = {
+    const errorData: HealthData = {
       status: 'error',
       responseTime: Date.now() - startTime,
       timestamp: new Date().toISOString(),

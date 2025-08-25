@@ -1,6 +1,6 @@
 // 📄 File: components/modules/stock/stock-table-enhanced.tsx
-// Enhanced Stock Table with Total Value Display and Date Color Coding
-// ✅ Updated: เริ่มต้นด้วยการเรียงชื่อยาจาก A-Z
+// ✅ FIXED: Export Selection Memory - จำการเลือกข้าม Filter
+// ✅ แก้ปัญหาการเลือก export ที่หายไปเมื่อเปลี่ยน filter
 
 import {
   Table,
@@ -13,6 +13,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Select,
   SelectContent,
@@ -20,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useToast } from '@/hooks/use-toast'
 import { Stock } from '@/types/dashboard'
 import {
   calculateAvailableStock,
@@ -33,11 +36,13 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Download,
+  Package,
+  CheckCircle2,
 } from 'lucide-react'
 import { useState, useMemo, useEffect } from 'react'
 import { StockDetailModalEnhanced } from './stock-detail-modal'
 
-// Type สำหรับ sorting
 type SortField = 'name' | 'dosageForm' | 'strength' | 'packageSize' | 'quantity' | 'totalValue' | 'lastUpdated'
 type SortDirection = 'asc' | 'desc' | null
 
@@ -46,7 +51,6 @@ interface SortConfig {
   direction: SortDirection
 }
 
-// Type สำหรับ filtering
 type DrugCategory = 
   | 'REFER' | 'HAD' | 'NARCOTIC' | 'REFRIGERATED' | 'PSYCHIATRIC' 
   | 'FLUID' | 'GENERAL' | 'TABLET' | 'SYRUP' | 'INJECTION' | 'EXTEMP' | 'ALERT'
@@ -68,7 +72,6 @@ interface FilteredStatsData {
   lowStockCount: number
 }
 
-// ✅ Fixed: Type-safe comparison value types
 type SortableValue = string | number | Date
 
 interface StockTableProps {
@@ -76,28 +79,36 @@ interface StockTableProps {
   department: 'PHARMACY' | 'OPD'
   onView?: (stock: Stock) => void
   onUpdate?: (updatedStock: Stock) => void
-  onFilteredStatsChange?: (stats: FilteredStatsData) => void
+  onFilteredStatsChange?: (stats: FilteredStatsData, filteredStocks?: Stock[]) => void
   loading?: boolean
 }
 
 export function StockTableEnhanced({ 
   stocks,
+  department,
   onUpdate,
   onFilteredStatsChange,
   loading = false 
 }: StockTableProps) {
+  const { toast } = useToast()
+  
   const [searchTerm, setSearchTerm] = useState('')
   const [showLowStockOnly, setShowLowStockOnly] = useState(false)
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  // ✅ Updated: เริ่มต้นด้วยการเรียงชื่อยา A-Z
   const [sortConfig, setSortConfig] = useState<SortConfig>({ field: 'name', direction: 'asc' })
   const [filterConfig, setFilterConfig] = useState<FilterConfig>({ 
     category: 'all', 
     dosageForm: 'all' 
   })
 
-  // Category options with Thai labels
+  // ✅ FIXED: Export Selection State - จำการเลือกข้าม Filter
+  const [selectedForExport, setSelectedForExport] = useState<Set<string>>(new Set())
+  const [exportFormat, setExportFormat] = useState<'summary' | 'detailed'>('summary')
+  const [showExportMode, setShowExportMode] = useState(false)
+  const [exporting, setExporting] = useState(false)
+
+  // Category options
   const categoryOptions = [
     { value: 'all', label: 'ทุกประเภท' },
     { value: 'GENERAL', label: 'ยาทั่วไป' },
@@ -114,7 +125,7 @@ export function StockTableEnhanced({
     { value: 'ALERT', label: 'ยาเฝ้าระวัง' }
   ]
 
-  // Dosage form options with Thai labels
+  // Dosage form options
   const dosageFormOptions = [
     { value: 'all', label: 'ทุกรูปแบบ' },
     { value: 'TAB', label: 'TAB' },
@@ -161,7 +172,6 @@ export function StockTableEnhanced({
     return 'text-green-600'
   }
 
-  // ✅ Fixed: Type-safe sorting function
   const handleSort = (field: SortField) => {
     let direction: SortDirection = 'asc'
     
@@ -169,7 +179,7 @@ export function StockTableEnhanced({
       if (sortConfig.direction === 'asc') {
         direction = 'desc'
       } else if (sortConfig.direction === 'desc') {
-        direction = null // ยกเลิก sort
+        direction = null
       } else {
         direction = 'asc'
       }
@@ -178,7 +188,6 @@ export function StockTableEnhanced({
     setSortConfig({ field: direction ? field : null, direction })
   }
 
-  // Get sort icon for header
   const getSortIcon = (field: SortField) => {
     if (sortConfig.field !== field) {
       return <ArrowUpDown className="h-4 w-4 text-gray-400" />
@@ -193,10 +202,8 @@ export function StockTableEnhanced({
     return <ArrowUpDown className="h-4 w-4 text-gray-400" />
   }
 
-  // ✅ Fixed: Type-safe sorting logic
   const sortedStocks = useMemo(() => {
     if (!sortConfig.field || !sortConfig.direction) {
-      // ✅ Updated: เมื่อไม่มี sort config จะเรียงชื่อยา A-Z เป็นค่าเริ่มต้น
       return [...stocks].sort((a, b) => 
         (a.drug?.name?.toLowerCase() || '').localeCompare(b.drug?.name?.toLowerCase() || '', 'th')
       )
@@ -216,7 +223,6 @@ export function StockTableEnhanced({
           bValue = b.drug?.dosageForm?.toLowerCase() || ''
           break
         case 'strength':
-          // สำหรับความแรง ใช้ตัวเลขถ้าเป็นไปได้
           const aStrengthNum = parseFloat(a.drug?.strength || '0')
           const bStrengthNum = parseFloat(b.drug?.strength || '0')
           aValue = !isNaN(aStrengthNum) ? aStrengthNum : (a.drug?.strength?.toLowerCase() || '')
@@ -242,7 +248,6 @@ export function StockTableEnhanced({
           return 0
       }
 
-      // ✅ Fixed: Type-safe comparison with explicit type checking
       if (aValue instanceof Date && bValue instanceof Date) {
         const aTime = aValue.getTime()
         const bTime = bValue.getTime()
@@ -254,7 +259,6 @@ export function StockTableEnhanced({
       } else if (typeof aValue === 'number' && typeof bValue === 'number') {
         return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue
       } else {
-        // Fallback for mixed types - convert to string for comparison
         const aStr = String(aValue).toLowerCase()
         const bStr = String(bValue).toLowerCase()
         return sortConfig.direction === 'asc' 
@@ -264,10 +268,9 @@ export function StockTableEnhanced({
     })
   }, [stocks, sortConfig])
 
-  // Filter sorted stocks with enhanced filtering
+  // Filter sorted stocks
   const filteredStocks = useMemo(() => {
     return sortedStocks.filter(stock => {
-      // ป้องกัน undefined/null ใน search
       const drugName = stock.drug?.name?.toLowerCase() || ''
       const hospitalCode = stock.drug?.hospitalDrugCode?.toLowerCase() || ''
       const genericName = stock.drug?.genericName?.toLowerCase() || ''
@@ -280,11 +283,9 @@ export function StockTableEnhanced({
       
       const matchesLowStock = showLowStockOnly ? isLowStock(stock) : true
       
-      // Category filter
       const matchesCategory = filterConfig.category === 'all' || 
         stock.drug?.category === filterConfig.category
       
-      // Dosage form filter
       const matchesDosageForm = filterConfig.dosageForm === 'all' || 
         stock.drug?.dosageForm === filterConfig.dosageForm
       
@@ -301,15 +302,162 @@ export function StockTableEnhanced({
     return { totalDrugs, totalValue, lowStockCount }
   }, [filteredStocks])
 
-  // Use useEffect to notify parent component about stats change
   useEffect(() => {
     if (onFilteredStatsChange) {
-      onFilteredStatsChange(filteredStats)
+      onFilteredStatsChange(filteredStats, filteredStocks)
     }
-  }, [filteredStats, onFilteredStatsChange])
+  }, [filteredStats, filteredStocks, onFilteredStatsChange])
+
+  // ✅ FIXED: Export Selection Functions - ใช้ stocks แทน filteredStocks
+  const handleToggleExportMode = () => {
+    setShowExportMode(!showExportMode)
+    if (showExportMode) {
+      setSelectedForExport(new Set())
+    }
+  }
+
+  // ✅ FIXED: Select All - เลือกเฉพาะที่แสดงใน current view
+  const handleSelectAll = () => {
+    const currentlyVisibleSelected = filteredStocks.filter(stock => selectedForExport.has(stock.id))
+    
+    if (currentlyVisibleSelected.length === filteredStocks.length) {
+      // ถ้าเลือกครบแล้ว ให้ยกเลิกการเลือกเฉพาะที่แสดงอยู่
+      const newSelected = new Set(selectedForExport)
+      filteredStocks.forEach(stock => newSelected.delete(stock.id))
+      setSelectedForExport(newSelected)
+    } else {
+      // เลือกทั้งหมดที่แสดงอยู่
+      const newSelected = new Set(selectedForExport)
+      filteredStocks.forEach(stock => newSelected.add(stock.id))
+      setSelectedForExport(newSelected)
+    }
+  }
+
+  const handleToggleStock = (stockId: string) => {
+    const newSelected = new Set(selectedForExport)
+    if (newSelected.has(stockId)) {
+      newSelected.delete(stockId)
+    } else {
+      newSelected.add(stockId)
+    }
+    setSelectedForExport(newSelected)
+  }
+
+  // ✅ FIXED: คำนวณ Export Stats จาก ALL stocks ที่เลือก
+  const calculateExportStats = () => {
+    // ใช้ stocks ทั้งหมด ไม่ใช่ filteredStocks
+    const selectedStocks = stocks.filter(stock => selectedForExport.has(stock.id))
+    const totalValue = selectedStocks.reduce((sum, stock) => sum + calculateStockValue(stock), 0)
+    return {
+      count: selectedStocks.length,
+      totalValue,
+      stocks: selectedStocks
+    }
+  }
+
+  // ✅ FIXED: คำนวณ Selected ใน Current View
+  const calculateCurrentViewStats = () => {
+    const currentlyVisibleSelected = filteredStocks.filter(stock => selectedForExport.has(stock.id))
+    const totalValue = currentlyVisibleSelected.reduce((sum, stock) => sum + calculateStockValue(stock), 0)
+    return {
+      count: currentlyVisibleSelected.length,
+      totalValue
+    }
+  }
+
+  // ✅ NEW: Handle Export
+  const handleExport = async () => {
+    const exportStats = calculateExportStats()
+    
+    if (exportStats.count === 0) {
+      toast({
+        title: 'ไม่สามารถ Export ได้',
+        description: 'กรุณาเลือกรายการยาที่ต้องการ Export',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setExporting(true)
+    try {
+      const exportData = {
+        currentView: exportStats.stocks,
+        additionalStocks: [],
+        format: exportFormat,
+        fields: {
+          drugInfo: true,
+          stockLevels: true,
+          costInfo: true,
+          lastUpdated: true,
+        },
+        department,
+        timestamp: new Date().toISOString(),
+        stats: {
+          totalSelected: exportStats.count,
+          currentViewCount: exportStats.count,
+          additionalCount: 0,
+          totalValue: exportStats.totalValue
+        }
+      }
+
+      toast({
+        title: 'กำลัง Export ข้อมูล...',
+        description: `กำลังสร้างไฟล์ Excel สำหรับ ${exportStats.count} รายการ`,
+        variant: 'default',
+      })
+
+      const response = await fetch('/api/stock/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(exportData)
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      
+      const departmentName = department === 'PHARMACY' ? 'คลังยา' : 'OPD'
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
+      const filename = `สต็อกยา_${departmentName}_${timestamp}.xlsx`
+      
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      toast({
+        title: 'Export สำเร็จ!',
+        description: `ส่งออกข้อมูลสต็อก ${exportStats.count} รายการเรียบร้อย`,
+        variant: 'default',
+      })
+
+      // Reset export mode
+      setShowExportMode(false)
+      setSelectedForExport(new Set())
+
+    } catch (error) {
+      console.error('Export error:', error)
+      toast({
+        title: 'เกิดข้อผิดพลาด',
+        description: 'ไม่สามารถ Export ข้อมูลได้ กรุณาลองใหม่',
+        variant: 'destructive',
+      })
+    } finally {
+      setExporting(false)
+    }
+  }
 
   // Component methods
   const handleView = (stock: Stock) => {
+    if (showExportMode) return // ป้องกันเปิด modal ตอนเลือก export
     setSelectedStock(stock)
     setIsModalOpen(true)
   }
@@ -352,6 +500,11 @@ export function StockTableEnhanced({
       </div>
     </TableHead>
   )
+
+  // Calculate stats for display
+  const exportStats = calculateExportStats()
+  const currentViewStats = calculateCurrentViewStats()
+  const hiddenSelectedCount = exportStats.count - currentViewStats.count
 
   if (loading) {
     return (
@@ -399,11 +552,77 @@ export function StockTableEnhanced({
   return (
     <>
       <div className="space-y-4">
+        {/* ✅ IMPROVED: Export Controls with Memory Display */}
+        {showExportMode && (
+          <Card className="border-green-200 bg-green-50">
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <Package className="h-5 w-5 text-green-600" />
+                  <div>
+                    <h3 className="font-medium text-green-900 flex items-center gap-2">
+                      โหมดเลือก Export ({exportStats.count} รายการ)
+                      {hiddenSelectedCount > 0 && (
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          +{hiddenSelectedCount} นอกมุมมอง
+                        </Badge>
+                      )}
+                    </h3>
+                    <p className="text-sm text-green-700 mt-1">
+                      ในมุมมองนี้: {currentViewStats.count}/{filteredStocks.length} รายการ • 
+                      รวมทั้งหมด: {exportStats.count} รายการ (฿{exportStats.totalValue.toLocaleString()})
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        value="summary"
+                        checked={exportFormat === 'summary'}
+                        onChange={(e) => setExportFormat(e.target.value as 'summary' | 'detailed')}
+                      />
+                      <span>สรุป</span>
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        value="detailed" 
+                        checked={exportFormat === 'detailed'}
+                        onChange={(e) => setExportFormat(e.target.value as 'summary' | 'detailed')}
+                      />
+                      <span>รายละเอียด</span>
+                    </label>
+                  </div>
+                  
+                  <Button
+                    onClick={handleExport}
+                    disabled={exportStats.count === 0 || exporting}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    {exporting ? 'กำลัง Export...' : 'Export Excel'}
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={handleToggleExportMode}
+                  >
+                    ยกเลิก
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Enhanced Search and Filter Bar */}
         <div className="space-y-3">
-          {/* Large Screen: Everything in one row */}
+          {/* Large Screen Layout */}
           <div className="hidden lg:flex items-center gap-3">
-            {/* Search Bar */}
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -414,7 +633,6 @@ export function StockTableEnhanced({
               />
             </div>
 
-            {/* Category Filter */}
             <div className="w-48">
               <Select
                 value={filterConfig.category}
@@ -436,7 +654,6 @@ export function StockTableEnhanced({
               </Select>
             </div>
 
-            {/* Dosage Form Filter */}
             <div className="w-48">
               <Select
                 value={filterConfig.dosageForm}
@@ -458,7 +675,6 @@ export function StockTableEnhanced({
               </Select>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex gap-2 shrink-0">
               <Button
                 variant={showLowStockOnly ? "default" : "outline"}
@@ -470,7 +686,16 @@ export function StockTableEnhanced({
                 สต็อกต่ำ
               </Button>
 
-              {/* Clear Filters Button */}
+              <Button
+                variant={showExportMode ? "default" : "outline"}
+                size="sm"
+                onClick={handleToggleExportMode}
+                className={`flex items-center gap-2 ${showExportMode ? 'bg-green-600 hover:bg-green-700' : ''}`}
+              >
+                <Download className="h-4 w-4" />
+                {showExportMode ? 'ยกเลิก Export' : 'Excel'}
+              </Button>
+
               {(filterConfig.category !== 'all' || 
                 filterConfig.dosageForm !== 'all' || 
                 searchTerm || 
@@ -484,7 +709,6 @@ export function StockTableEnhanced({
                     setSearchTerm('')
                     setShowLowStockOnly(false)
                     setFilterConfig({ category: 'all', dosageForm: 'all' })
-                    // ✅ Updated: กลับไปที่การเรียงชื่อยา A-Z
                     setSortConfig({ field: 'name', direction: 'asc' })
                   }}
                   className="flex items-center gap-2 text-xs bg-red-500 text-white hover:bg-red-600"
@@ -495,9 +719,8 @@ export function StockTableEnhanced({
             </div>
           </div>
 
-          {/* Small Screen: Mobile Layout */}
+          {/* Mobile Layout */}
           <div className="lg:hidden">
-            {/* Row 1: Search Bar */}
             <div className="relative mb-3">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -508,9 +731,7 @@ export function StockTableEnhanced({
               />
             </div>
             
-            {/* Row 2: Filters and Buttons */}
             <div className="flex items-center gap-2">
-              {/* Category Filter */}
               <div className="flex-1">
                 <Select
                   value={filterConfig.category}
@@ -520,7 +741,7 @@ export function StockTableEnhanced({
                   }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="ยาใช้ภายนอก/สมุนไพร" />
+                    <SelectValue placeholder="ทุกประเภท" />
                   </SelectTrigger>
                   <SelectContent>
                     {categoryOptions.map((option) => (
@@ -532,7 +753,6 @@ export function StockTableEnhanced({
                 </Select>
               </div>
 
-              {/* Dosage Form Filter */}
               <div className="flex-1">
                 <Select
                   value={filterConfig.dosageForm}
@@ -554,7 +774,6 @@ export function StockTableEnhanced({
                 </Select>
               </div>
 
-              {/* Action Buttons - Icon only */}
               <Button
                 variant={showLowStockOnly ? "default" : "outline"}
                 size="sm"
@@ -565,7 +784,18 @@ export function StockTableEnhanced({
                 <AlertTriangle className="h-4 w-4" />
               </Button>
 
-              {/* Clear Filters Button - Icon only */}
+              <Button
+                variant={showExportMode ? "default" : "outline"}
+                size="sm"
+                onClick={handleToggleExportMode}
+                className={`flex items-center justify-center shrink-0 w-10 h-10 ${
+                  showExportMode ? 'bg-green-600 hover:bg-green-700 text-white border-green-600' : ''
+                }`}
+                title="Export Excel"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+
               {(filterConfig.category !== 'all' || 
                 filterConfig.dosageForm !== 'all' || 
                 searchTerm || 
@@ -579,7 +809,6 @@ export function StockTableEnhanced({
                     setSearchTerm('')
                     setShowLowStockOnly(false)
                     setFilterConfig({ category: 'all', dosageForm: 'all' })
-                    // ✅ Updated: กลับไปที่การเรียงชื่อยา A-Z
                     setSortConfig({ field: 'name', direction: 'asc' })
                   }}
                   className="flex items-center justify-center shrink-0 w-10 h-10 bg-red-500 text-white hover:bg-red-600 border-red-500"
@@ -592,12 +821,37 @@ export function StockTableEnhanced({
           </div>
         </div>
 
-        {/* Enhanced Table with Sortable Headers */}
+        {/* Enhanced Table with Export Checkboxes */}
         <div className="border rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50">
+                  {/* ✅ FIXED: Select Column with Smart Status */}
+                  {showExportMode && (
+                    <TableHead className="w-[50px]">
+                      <div 
+                        className="flex items-center justify-center cursor-pointer hover:bg-gray-100 rounded p-1"
+                        onClick={handleSelectAll}
+                        title={
+                          currentViewStats.count === filteredStocks.length 
+                            ? "ยกเลิกเลือกทั้งหมดในหน้านี้" 
+                            : "เลือกทั้งหมดในหน้านี้"
+                        }
+                      >
+                        {currentViewStats.count === filteredStocks.length && filteredStocks.length > 0 ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        ) : currentViewStats.count > 0 ? (
+                          <div className="h-4 w-4 border-2 border-blue-600 rounded flex items-center justify-center">
+                            <div className="h-2 w-2 bg-blue-600 rounded-sm" />
+                          </div>
+                        ) : (
+                          <div className="h-4 w-4 border-2 border-gray-400 rounded" />
+                        )}
+                      </div>
+                    </TableHead>
+                  )}
+                  
                   <SortableHeader field="name" className="w-[250px]">
                     ชื่อยา
                   </SortableHeader>
@@ -624,7 +878,10 @@ export function StockTableEnhanced({
               <TableBody>
                 {filteredStocks.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center text-gray-500">
+                    <TableCell 
+                      colSpan={showExportMode ? 8 : 7} 
+                      className="h-24 text-center text-gray-500"
+                    >
                       {searchTerm || showLowStockOnly ? 'ไม่พบรายการที่ค้นหา' : 'ไม่มีข้อมูลสต็อก'}
                     </TableCell>
                   </TableRow>
@@ -637,13 +894,29 @@ export function StockTableEnhanced({
                     const reorderPoint = stock.minimumStock || 0
                     const stockValue = calculateStockValue(stock)
                     const lastUpdatedColor = getLastUpdatedColor(stock.lastUpdated)
+                    const isSelected = selectedForExport.has(stock.id)
 
                     return (
                       <TableRow 
                         key={stock.id} 
-                        className="border-b hover:bg-gray-50/50 cursor-pointer"
-                        onClick={() => handleView(stock)}
+                        className={`border-b transition-all ${
+                          showExportMode 
+                            ? (isSelected ? 'bg-green-50 hover:bg-green-100' : 'hover:bg-gray-50')
+                            : 'hover:bg-gray-50/50 cursor-pointer'
+                        }`}
+                        onClick={showExportMode ? () => handleToggleStock(stock.id) : () => handleView(stock)}
                       >
+                        {/* ✅ FIXED: Checkbox Column */}
+                        {showExportMode && (
+                          <TableCell>
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => handleToggleStock(stock.id)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </TableCell>
+                        )}
+
                         {/* ชื่อยา */}
                         <TableCell className="font-medium">
                           <div className="space-y-2">
@@ -758,7 +1031,7 @@ export function StockTableEnhanced({
           </div>
         </div>
 
-        {/* Enhanced Footer Info with Comprehensive Filter Status */}
+        {/* ✅ IMPROVED: Enhanced Footer Info with Export Memory */}
         {filteredStocks.length > 0 && (
           <div className="flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-gray-500">
             <div className="flex flex-col sm:flex-row gap-2 text-center sm:text-left">
@@ -769,6 +1042,21 @@ export function StockTableEnhanced({
               <span className="text-purple-600 font-medium">
                 มูลค่ารวม ฿{filteredStats.totalValue.toLocaleString()}
               </span>
+              {showExportMode && (
+                <div className="flex flex-col sm:flex-row gap-1">
+                  <span className="text-green-600 font-medium">
+                    • เลือกใน view: {currentViewStats.count} รายการ
+                  </span>
+                  {hiddenSelectedCount > 0 && (
+                    <span className="text-blue-600 font-medium">
+                      • จำไว้นอก view: {hiddenSelectedCount} รายการ
+                    </span>
+                  )}
+                  <span className="text-green-700 font-bold">
+                    • รวม Export: {exportStats.count} รายการ (฿{exportStats.totalValue.toLocaleString()})
+                  </span>
+                </div>
+              )}
             </div>
             
             <div className="flex items-center gap-4 text-xs">
@@ -785,6 +1073,22 @@ export function StockTableEnhanced({
                 <span>อัปเดต {'<'}7 วัน</span>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ✅ IMPROVED: Export Instructions */}
+        {showExportMode && filteredStocks.length > 0 && (
+          <div className="text-center text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
+            <p>
+              💡 <strong>วิธีใช้:</strong> คลิกเพื่อเลือกรายการยาที่ต้องการ Export 
+              • ระบบจะจำการเลือกข้ามตัวกรองต่างๆ 
+              • ใช้ checkbox ด้านบนเพื่อเลือก/ยกเลิกทั้งหมดในหน้าปัจจุบัน
+            </p>
+            {hiddenSelectedCount > 0 && (
+              <p className="text-blue-700 font-medium mt-1">
+                🔍 คุณได้เลือก {hiddenSelectedCount} รายการที่ไม่ได้แสดงในตัวกรองปัจจุบัน
+              </p>
+            )}
           </div>
         )}
       </div>

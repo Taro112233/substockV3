@@ -12,8 +12,7 @@ import {
   Plus,
   Package,
   AlertTriangle,
-  DollarSign,
-  Download,
+  DollarSign
 } from "lucide-react";
 import { StockDisplayResponsive } from "../stock/stock-display-responsive";
 import { AddDrugModal } from "../stock/add-drug-modal";
@@ -41,77 +40,68 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
   const [data, setData] = useState<StockData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filteredStats, setFilteredStats] = useState<FilteredStatsData | null>(
-    null
-  );
+  const [filteredStats, setFilteredStats] = useState<FilteredStatsData | null>(null);
   const [isFiltered, setIsFiltered] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const { toast } = useToast();
 
   // ✅ Fixed: Move calculateTotalValue inside useCallback
-  const fetchStockData = useCallback(
-    async (isRefresh = false) => {
+  const fetchStockData = useCallback(async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+
+    try {
+      const endpoint =
+        department === "PHARMACY" ? "/api/stocks/pharmacy" : "/api/stocks/opd";
+
+      const response = await fetch(endpoint, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("ไม่สามารถโหลดข้อมูลสต็อกได้");
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || "เกิดข้อผิดพลาดในการโหลดข้อมูล");
+      }
+
+      setData(result.data);
+
       if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-
-      try {
-        const endpoint =
-          department === "PHARMACY"
-            ? "/api/stocks/pharmacy"
-            : "/api/stocks/opd";
-
-        const response = await fetch(endpoint, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          throw new Error("ไม่สามารถโหลดข้อมูลสต็อกได้");
-        }
-
-        const result = await response.json();
-
-        if (!result.success) {
-          throw new Error(result.error || "เกิดข้อผิดพลาดในการโหลดข้อมูล");
-        }
-
-        setData(result.data);
-
-        if (isRefresh) {
-          toast({
-            title: "อัปเดตข้อมูลสำเร็จ",
-            description: "ข้อมูลสต็อกได้รับการอัปเดตแล้ว",
-            variant: "default",
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching stock data:", error);
-
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "ไม่สามารถโหลดข้อมูลสต็อกได้";
-
         toast({
-          title: "เกิดข้อผิดพลาด",
-          description: errorMessage,
-          variant: "destructive",
-          duration: 4000,
+          title: "อัปเดตข้อมูลสำเร็จ",
+          description: "ข้อมูลสต็อกได้รับการอัปเดตแล้ว",
+          variant: "default",
         });
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
       }
-    },
-    [department, toast]
-  );
+    } catch (error) {
+      console.error("Error fetching stock data:", error);
+
+      const errorMessage =
+        error instanceof Error ? error.message : "ไม่สามารถโหลดข้อมูลสต็อกได้";
+
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: errorMessage,
+        variant: "destructive",
+        duration: 4000,
+      });
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [department, toast]);
 
   useEffect(() => {
     fetchStockData();
@@ -128,11 +118,11 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
   // ✅ Fixed: Move calculateTotalValue outside useCallback to avoid dependency
   const calculateTotalValue = useCallback(() => {
     if (!data || !data.stocks) return 0;
-
+    
     return data.stocks.reduce((sum, stock) => {
       const quantity = stock.totalQuantity || 0;
       const pricePerBox = stock.drug?.pricePerBox || 0;
-      return sum + quantity * pricePerBox;
+      return sum + (quantity * pricePerBox);
     }, 0);
   }, [data]);
 
@@ -146,12 +136,11 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
     const newTotalValue = updatedStocks.reduce((sum, stock) => {
       const quantity = stock.totalQuantity || 0;
       const pricePerBox = stock.drug?.pricePerBox || 0;
-      return sum + quantity * pricePerBox;
+      return sum + (quantity * pricePerBox);
     }, 0);
 
     const lowStockCount = updatedStocks.filter(
-      (stock) =>
-        stock.totalQuantity < stock.minimumStock && stock.minimumStock > 0
+      (stock) => stock.totalQuantity < stock.minimumStock && stock.minimumStock > 0
     ).length;
 
     setData({
@@ -178,12 +167,11 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
     const newTotalValue = updatedStocks.reduce((sum, stock) => {
       const quantity = stock.totalQuantity || 0;
       const pricePerBox = stock.drug?.pricePerBox || 0;
-      return sum + quantity * pricePerBox;
+      return sum + (quantity * pricePerBox);
     }, 0);
 
     const lowStockCount = updatedStocks.filter(
-      (stock) =>
-        stock.totalQuantity < stock.minimumStock && stock.minimumStock > 0
+      (stock) => stock.totalQuantity < stock.minimumStock && stock.minimumStock > 0
     ).length;
 
     setData({
@@ -203,22 +191,19 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
   };
 
   // ✅ Fixed: Include calculateTotalValue in dependency array
-  const handleFilteredStatsChange = useCallback(
-    (stats: FilteredStatsData) => {
-      setFilteredStats(stats);
-
-      if (data) {
-        const originalTotalValue = calculateTotalValue();
-        const isCurrentlyFiltered =
-          stats.totalDrugs !== data.stats.totalDrugs ||
-          Math.abs(stats.totalValue - originalTotalValue) > 0.01 ||
-          stats.lowStockCount !== data.stats.lowStockCount;
-
-        setIsFiltered(isCurrentlyFiltered);
-      }
-    },
-    [data, calculateTotalValue]
-  ); // ✅ Added calculateTotalValue dependency
+  const handleFilteredStatsChange = useCallback((stats: FilteredStatsData) => {
+    setFilteredStats(stats);
+    
+    if (data) {
+      const originalTotalValue = calculateTotalValue();
+      const isCurrentlyFiltered = 
+        stats.totalDrugs !== data.stats.totalDrugs ||
+        Math.abs(stats.totalValue - originalTotalValue) > 0.01 ||
+        stats.lowStockCount !== data.stats.lowStockCount;
+      
+      setIsFiltered(isCurrentlyFiltered);
+    }
+  }, [data, calculateTotalValue]); // ✅ Added calculateTotalValue dependency
 
   if (loading || !data) {
     return (
@@ -247,10 +232,7 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
               </div>
               <div className="border rounded-lg">
                 {[...Array(5)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-16 bg-gray-100 border-b animate-pulse"
-                  />
+                  <div key={i} className="h-16 bg-gray-100 border-b animate-pulse" />
                 ))}
               </div>
             </div>
@@ -261,20 +243,11 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
   }
 
   const totalValueCalculated = calculateTotalValue();
-
+  
   const displayStats = filteredStats || {
     totalDrugs: data.stats.totalDrugs,
     totalValue: totalValueCalculated,
-    lowStockCount: data.stats.lowStockCount,
-  };
-
-  const handleExportExcel = () => {
-    toast({
-      title: "กำลังเตรียมการส่งออก",
-      description: "กำลังสร้างไฟล์ Excel สำหรับข้อมูลสต็อกยา...",
-      variant: "default",
-    });
-    // TODO: Implement Excel export functionality
+    lowStockCount: data.stats.lowStockCount
   };
 
   return (
@@ -287,12 +260,12 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
                 จัดการสต็อกยา
               </h2>
             </div>
-
+            
             <div className="flex items-center gap-4 mt-1">
-              <p className="text-sm text-gray-600">
-                อัปเดตล่าสุด: {new Date().toLocaleString("th-TH")}
-              </p>
-            </div>
+            <p className="text-sm text-gray-600">
+              อัปเดตล่าสุด: {new Date().toLocaleString('th-TH')}
+            </p>
+          </div>
           </div>
 
           <div className="flex gap-2 flex-wrap justify-end">
@@ -318,30 +291,20 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
               เพิ่มยาใหม่
             </Button>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportExcel}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700 hover:text-white"
-            >
-              <Download className="h-4 w-4" />
-              <span>Excel</span>
-            </Button>
+            
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Total Drugs Card */}
-          <Card
-            className={`transition-all duration-200 ${
-              isFiltered ? "border-blue-300 bg-blue-50" : "border-gray-200"
-            }`}
-          >
+          <Card className={`transition-all duration-200 ${
+            isFiltered ? 'border-blue-300 bg-blue-50' : 'border-gray-200'
+          }`}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-600 truncate">
-                    รายการยา{isFiltered ? " (กรองแล้ว)" : "ทั้งหมด"}
+                    รายการยา{isFiltered ? ' (กรองแล้ว)' : 'ทั้งหมด'}
                   </p>
                   <div className="flex items-center gap-2">
                     <p className="text-2xl font-bold text-gray-900">
@@ -354,26 +317,20 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
                     )}
                   </div>
                 </div>
-                <Package
-                  className={`h-8 w-8 shrink-0 ${
-                    isFiltered ? "text-blue-500" : "text-gray-500"
-                  }`}
-                />
+                <Package className={`h-8 w-8 shrink-0 ${isFiltered ? 'text-blue-500' : 'text-gray-500'}`} />
               </div>
             </CardContent>
           </Card>
 
           {/* Low Stock Card */}
-          <Card
-            className={`transition-all duration-200 ${
-              isFiltered ? "border-orange-300 bg-orange-50" : "border-gray-200"
-            }`}
-          >
+          <Card className={`transition-all duration-200 ${
+            isFiltered ? 'border-orange-300 bg-orange-50' : 'border-gray-200'
+          }`}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-600 truncate">
-                    สต็อกต่ำ{isFiltered ? " (กรองแล้ว)" : ""}
+                    สต็อกต่ำ{isFiltered ? ' (กรองแล้ว)' : ''}
                   </p>
                   <div className="flex items-center gap-2">
                     <p
@@ -404,16 +361,14 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
           </Card>
 
           {/* Total Value Card - ✅ Updated without comparison */}
-          <Card
-            className={`transition-all duration-200 ${
-              isFiltered ? "border-purple-300 bg-purple-50" : "border-gray-200"
-            }`}
-          >
+          <Card className={`transition-all duration-200 ${
+            isFiltered ? 'border-purple-300 bg-purple-50' : 'border-gray-200'
+          }`}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-600 truncate">
-                    มูลค่ารวม{isFiltered ? " (กรองแล้ว)" : ""}
+                    มูลค่ารวม{isFiltered ? ' (กรองแล้ว)' : ''}
                   </p>
                   <div className="flex items-center gap-2">
                     <p className="text-2xl font-bold text-purple-600">
@@ -421,11 +376,7 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
                     </p>
                   </div>
                 </div>
-                <DollarSign
-                  className={`h-8 w-8 shrink-0 ${
-                    isFiltered ? "text-purple-500" : "text-gray-500"
-                  }`}
-                />
+                <DollarSign className={`h-8 w-8 shrink-0 ${isFiltered ? 'text-purple-500' : 'text-gray-500'}`} />
               </div>
             </CardContent>
           </Card>

@@ -10,7 +10,7 @@ interface SimpleServerStatus {
   lastCheck: Date | null
 }
 
-export function useSimpleServerStatus(checkInterval = 30000) {
+export function useSimpleServerStatus(checkInterval = 3600000) {
   const [serverStatus, setServerStatus] = useState<SimpleServerStatus>({
     status: 'connecting',
     responseTime: 0,

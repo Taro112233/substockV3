@@ -12,21 +12,21 @@ export function SimpleStatusIndicator() {
       case 'connected':
         return {
           icon: <Wifi className="w-4 h-4" />,
-          text: 'เชื่อมต่อแล้ว',
+          text: 'เชื่อมต่อแล้ว (คลิกเพื่อเช็คสถานะ)',
           color: 'text-green-600 hover:text-green-700',
           bg: 'hover:bg-green-50'
         }
       case 'connecting':
         return {
           icon: <Loader2 className="w-4 h-4 animate-spin" />,
-          text: 'กำลังเชื่อมต่อ',
+          text: 'กำลังเชื่อมต่อ (คลิกเพื่อลองใหม่)',
           color: 'text-yellow-600 hover:text-yellow-700',
           bg: 'hover:bg-yellow-50'
         }
       case 'disconnected':
         return {
           icon: <WifiOff className="w-4 h-4" />,
-          text: 'ไม่เชื่อมต่อ',
+          text: 'ไม่เชื่อมต่อ (คลิกเพื่อลองใหม่)',
           color: 'text-red-600 hover:text-red-700',
           bg: 'hover:bg-red-50'
         }

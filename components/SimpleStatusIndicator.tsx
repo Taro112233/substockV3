@@ -1,7 +1,6 @@
-// 📄 File: components/SimpleStatusIndicator.tsx (FIXED)
+// 📄 File: components/SimpleStatusIndicator.tsx (Updated with better UX)
 'use client'
-
-import React from 'react' // ✅ เพิ่ม import React
+import React from 'react'
 import { useSimpleServerStatus } from '@/hooks/useSimpleServerStatus'
 import { Button } from '@/components/ui/button'
 import { Wifi, WifiOff, Loader2, RotateCcw } from 'lucide-react'
@@ -17,10 +16,7 @@ export function SimpleStatusIndicator({
   size = 'sm',
   autoCheckOnMount = false
 }: SimpleStatusIndicatorProps) {
-  const { serverStatus, checkServerStatus } = useSimpleServerStatus()
-
-  // ✅ เพิ่ม isChecking derived state
-  const isChecking = serverStatus.status === 'connecting'
+  const { serverStatus, checkServerStatus, isChecking } = useSimpleServerStatus()
 
   // เช็คเมื่อ mount เฉพาะเมื่อต้องการ
   React.useEffect(() => {
@@ -35,7 +31,7 @@ export function SimpleStatusIndicator({
         return {
           icon: <Wifi className={`${size === 'sm' ? 'w-4 h-4' : size === 'md' ? 'w-5 h-5' : 'w-6 h-6'}`} />,
           text: showText ? 'เชื่อมต่อแล้ว' : '',
-          shortText: 'เชื่อมต่อ',
+          shortText: 'ออนไลน์',
           color: 'text-green-600 hover:text-green-700',
           bg: 'hover:bg-green-50'
         }
@@ -59,8 +55,8 @@ export function SimpleStatusIndicator({
       default:
         return {
           icon: <RotateCcw className={`${size === 'sm' ? 'w-4 h-4' : size === 'md' ? 'w-5 h-5' : 'w-6 h-6'}`} />,
-          text: showText ? 'คลิกเพื่อเช็คสถานะ' : '',
-          shortText: 'เช็คสถานะ',
+          text: showText ? 'คลิกเพื่อเช็ค' : '',
+          shortText: 'เช็ค',
           color: 'text-gray-600 hover:text-gray-700',
           bg: 'hover:bg-gray-50'
         }
@@ -75,21 +71,19 @@ export function SimpleStatusIndicator({
       <button
         onClick={checkServerStatus}
         disabled={isChecking}
-        className={`${config.color} ${config.bg} p-1 rounded-full transition-colors`}
+        className={`${config.color} ${config.bg} p-1.5 rounded-full transition-colors disabled:opacity-50`}
         title={config.shortText}
+        aria-label={`สถานะเซิร์ฟเวอร์: ${config.shortText}`}
       >
         {config.icon}
       </button>
     )
   }
 
-  // ✅ แก้ size prop สำหรับ Button component (ไม่มี 'md' option)
-  const buttonSize = size === 'md' ? 'sm' : size // แปลง 'md' เป็น 'sm'
-
   return (
     <Button
       variant="ghost"
-      size={buttonSize} // ✅ ใช้ buttonSize แทน size
+      size="sm"
       onClick={checkServerStatus}
       disabled={isChecking}
       className={`${config.color} ${config.bg} flex items-center gap-2`}

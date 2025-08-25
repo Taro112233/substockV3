@@ -1,5 +1,5 @@
-// 📄 File: components/modules/stock/stock-detail-modal.tsx (ปรับปรุงแล้ว - ใช้ Sonner Toast)
-// ✅ Fixed TypeScript and ESLint warnings - removed unused hasStockChanges variable
+// 📄 File: components/modules/stock/stock-detail-modal.tsx (แก้ไข - เพิ่มช่อง Unit)
+// ✅ Fixed: เพิ่มช่องแก้ไข "หน่วย" ใน tab ข้อมูลยา
 // =====================================================
 
 import { useState, useEffect } from 'react'
@@ -56,7 +56,7 @@ interface DrugUpdateData {
   genericName: string | null
   dosageForm: string
   strength: string | null
-  unit: string
+  unit: string  // ✅ เพิ่ม unit field
   packageSize: string | null
   pricePerBox: number
   category: string
@@ -196,7 +196,7 @@ export function StockDetailModalEnhanced({
     genericName: null,
     dosageForm: '',
     strength: null,
-    unit: '',
+    unit: '',  // ✅ เพิ่ม unit field
     packageSize: null,
     pricePerBox: 0,
     category: 'GENERAL',
@@ -218,7 +218,7 @@ export function StockDetailModalEnhanced({
         genericName: stock.drug.genericName || null,
         dosageForm: stock.drug.dosageForm,
         strength: stock.drug.strength || null,
-        unit: stock.drug.unit,
+        unit: stock.drug.unit,  // ✅ เพิ่ม unit field
         packageSize: stock.drug.packageSize || null,
         pricePerBox: stock.drug.pricePerBox,
         category: stock.drug.category,
@@ -282,7 +282,7 @@ export function StockDetailModalEnhanced({
       genericName: stock.drug.genericName || null,
       dosageForm: stock.drug.dosageForm,
       strength: stock.drug.strength || null,
-      unit: stock.drug.unit,
+      unit: stock.drug.unit,  // ✅ เพิ่ม unit field
       packageSize: stock.drug.packageSize || null,
       pricePerBox: stock.drug.pricePerBox,
       category: stock.drug.category,
@@ -350,6 +350,14 @@ export function StockDetailModalEnhanced({
       return
     }
 
+    // ✅ เพิ่มการตรวจสอบหน่วย
+    if (!drugFormData.unit.trim()) {
+      toast.error('กรุณาระบุหน่วย', {
+        description: "หน่วยเป็นข้อมูลที่จำเป็น"
+      })
+      return
+    }
+
     setLoading(true)
     try {
       const response = await fetch(`/api/drugs/${stock.drugId}`, {
@@ -389,7 +397,7 @@ export function StockDetailModalEnhanced({
           genericName: updatedDrug.genericName,
           dosageForm: updatedDrug.dosageForm,
           strength: updatedDrug.strength,
-          unit: updatedDrug.unit,
+          unit: updatedDrug.unit,  // ✅ เพิ่ม unit field
           packageSize: updatedDrug.packageSize,
           pricePerBox: updatedDrug.pricePerBox,
           category: updatedDrug.category,
@@ -412,7 +420,7 @@ export function StockDetailModalEnhanced({
         genericName: updatedDrug.genericName || null,
         dosageForm: updatedDrug.dosageForm,
         strength: updatedDrug.strength || null,
-        unit: updatedDrug.unit,
+        unit: updatedDrug.unit,  // ✅ เพิ่ม unit field
         packageSize: updatedDrug.packageSize || null,
         pricePerBox: updatedDrug.pricePerBox,
         category: updatedDrug.category,
@@ -431,13 +439,13 @@ export function StockDetailModalEnhanced({
     }
   }
 
-  // ✅ Fixed: Check for drug changes only (removed unused hasStockChanges)
+  // ✅ Fixed: Check for drug changes only (รวม unit field)
   const hasDrugChanges = drugFormData.hospitalDrugCode !== stock.drug.hospitalDrugCode ||
                         drugFormData.name !== stock.drug.name ||
                         drugFormData.genericName !== stock.drug.genericName ||
                         drugFormData.dosageForm !== stock.drug.dosageForm ||
                         drugFormData.strength !== stock.drug.strength ||
-                        drugFormData.unit !== stock.drug.unit ||
+                        drugFormData.unit !== stock.drug.unit ||  // ✅ เพิ่ม unit check
                         drugFormData.packageSize !== stock.drug.packageSize ||
                         drugFormData.pricePerBox !== stock.drug.pricePerBox ||
                         drugFormData.category !== stock.drug.category ||
@@ -566,21 +574,22 @@ export function StockDetailModalEnhanced({
                   </div>
                 </div>
 
-                {/* ✅ แสดงเหตุผลที่ถูกสร้างอัตโนมัติ */}
+                {/* ✅ แสดงเหตุผลที่สามารถแก้ไขได้ */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">เหตุผล (อัตโนมัติ)</label>
+                  <label className="text-sm font-medium">เหตุผล</label>
                   <div className="flex gap-2">
                     <Input
                       value={stockFormData.adjustmentReason}
-                      readOnly
-                      className="bg-gray-50 text-gray-700"
+                      onChange={(e) => setStockFormData(prev => ({ ...prev, adjustmentReason: e.target.value }))}
+                      placeholder="ระบุเหตุผลการปรับสต็อก"
+                      className="flex-1"
                     />
                     <Select
                       value={stockFormData.adjustmentReason}
                       onValueChange={(value) => setStockFormData(prev => ({ ...prev, adjustmentReason: value }))}
                     >
                       <SelectTrigger className="w-40">
-                        <SelectValue placeholder="เปลี่ยน" />
+                        <SelectValue placeholder="เลือก" />
                       </SelectTrigger>
                       <SelectContent>
                         {ADJUSTMENT_REASONS.map((reason) => (
@@ -592,7 +601,7 @@ export function StockDetailModalEnhanced({
                     </Select>
                   </div>
                   <p className="text-xs text-gray-500">
-                    เหตุผลถูกสร้างอัตโนมัติตามการเปลี่ยนแปลง หรือเลือกเปลี่ยนเองได้
+                    เหตุผลถูกสร้างอัตโนมัติตามการเปลี่ยนแปลง สามารถแก้ไข/พิมพ์เองได้
                   </p>
                 </div>
               </CardContent>
@@ -679,16 +688,24 @@ export function StockDetailModalEnhanced({
                     </Select>
                   </div>
 
+                  {/* ✅ Fixed: ความแรง และ หน่วย - แยกเป็น 2 ช่อง */}
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">ความแรง</label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={drugFormData.strength || ''}
-                        onChange={(e) => setDrugFormData(prev => ({ ...prev, strength: e.target.value || null }))}
-                        placeholder="หน่วย"
-                        className="w-20"
-                      />
-                    </div>
+                    <label className="text-sm font-medium">ความแรง หรือ ปริมาตร</label>
+                    <Input
+                      value={drugFormData.strength || ''}
+                      onChange={(e) => setDrugFormData(prev => ({ ...prev, strength: e.target.value || null }))}
+                      placeholder="เช่น 500"
+                    />
+                  </div>
+
+                  {/* ✅ เพิ่มช่องหน่วยแยก */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">หน่วยความแรง หรือ ปริมาตร *</label>
+                    <Input
+                      value={drugFormData.unit}
+                      onChange={(e) => setDrugFormData(prev => ({ ...prev, unit: e.target.value }))}
+                      placeholder="เช่น mg, ml, tab"
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -701,7 +718,7 @@ export function StockDetailModalEnhanced({
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">ราคาต่อกล่อง</label>
+                    <label className="text-sm font-medium">ราคาต่อกล่อง (บาท)</label>
                     <Input
                       type="number"
                       min="0"
@@ -759,7 +776,7 @@ export function StockDetailModalEnhanced({
               </Button>
               <Button
                 onClick={handleSaveDrug}
-                disabled={loading || !hasDrugChanges || !drugFormData.name.trim() || !drugFormData.hospitalDrugCode.trim()}
+                disabled={loading || !hasDrugChanges || !drugFormData.name.trim() || !drugFormData.hospitalDrugCode.trim() || !drugFormData.unit.trim()}
                 className="flex-1"
               >
                 <Save className="h-4 w-4 mr-2" />

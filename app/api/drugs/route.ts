@@ -1,10 +1,8 @@
-
-// 📄 File: app/api/drugs/route.ts (FIXED TypeScript Strict)
-// API สำหรับสร้างยาใหม่พร้อมสต็อกเริ่มต้น - แก้ไข TypeScript errors
+// 📄 File: app/api/drugs/route.ts (NO AUTHENTICATION)
+// API สำหรับสร้างยาใหม่พร้อมสต็อกเริ่มต้น - ไม่ต้องตรวจสอบ authentication
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { verifyToken } from "@/lib/auth";
 import { z, ZodError, ZodIssue } from "zod";
 import { Prisma } from "@prisma/client";
 
@@ -70,28 +68,13 @@ const createDrugSchema = z.object({
   department: z.enum(["PHARMACY", "OPD"], { message: "แผนกไม่ถูกต้อง" }),
   initialQuantity: z.number().min(0, "จำนวนเริ่มต้นต้องไม่น้อยกว่า 0"),
   minimumStock: z.number().min(0, "จำนวนขั้นต่ำต้องไม่น้อยกว่า 0"),
+  // เพิ่ม userId สำหรับการบันทึก transaction
+  userId: z.string().min(1, "User ID เป็นข้อมูลที่จำเป็น"),
 });
 
 // GET - ดึงรายการยาทั้งหมด (สำหรับ search/autocomplete)
 export async function GET(request: NextRequest) {
   try {
-    // Verify authentication
-    const token =
-      request.headers.get("authorization")?.replace("Bearer ", "") ||
-      request.cookies.get("auth-token")?.value;
-
-    if (!token) {
-      return NextResponse.json(
-        { error: "ไม่พบ token การเข้าสู่ระบบ" },
-        { status: 401 }
-      );
-    }
-
-    const decoded = await verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json({ error: "Token ไม่ถูกต้อง" }, { status: 401 });
-    }
-
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get("search");
@@ -160,23 +143,6 @@ export async function GET(request: NextRequest) {
 // POST - สร้างยาใหม่พร้อมสต็อกเริ่มต้น
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication
-    const token =
-      request.headers.get("authorization")?.replace("Bearer ", "") ||
-      request.cookies.get("auth-token")?.value;
-
-    if (!token) {
-      return NextResponse.json(
-        { error: "ไม่พบ token การเข้าสู่ระบบ" },
-        { status: 401 }
-      );
-    }
-
-    const decoded = await verifyToken(token);
-    if (!decoded) {
-      return NextResponse.json({ error: "Token ไม่ถูกต้อง" }, { status: 401 });
-    }
-
     // Get and validate input data
     const body = await request.json();
     const validatedData = createDrugSchema.parse(body);
@@ -192,22 +158,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "รหัสยานี้มีอยู่ในระบบแล้ว",
-        },
-        { status: 400 }
-      );
-    }
-
-    // ตรวจสอบว่าชื่อยาซ้ำหรือไม่
-    const existingDrugByName = await prisma.drug.findFirst({
-      where: {
-        name: validatedData.name,
-      },
-    });
-
-    if (existingDrugByName) {
-      return NextResponse.json(
-        {
-          error: "ชื่อยานี้มีอยู่ในระบบแล้ว",
         },
         { status: 400 }
       );
@@ -272,7 +222,7 @@ export async function POST(request: NextRequest) {
         await tx.stockTransaction.create({
           data: {
             stockId: primaryStock.id,
-            userId: decoded.userId,
+            userId: validatedData.userId,
             type: "RECEIVE_EXTERNAL",
             quantity: validatedData.initialQuantity,
             beforeQty: 0,
@@ -289,7 +239,7 @@ export async function POST(request: NextRequest) {
       await tx.stockTransaction.create({
         data: {
           stockId: secondaryStock.id,
-          userId: decoded.userId,
+          userId: validatedData.userId,
           type: "ADJUST_INCREASE",
           quantity: 0,
           beforeQty: 0,

@@ -1,10 +1,9 @@
 // 📄 File: app/api/drugs/[drugId]/route.ts
-// API สำหรับจัดการข้อมูลยาแต่ละตัว (GET, PATCH, DELETE)
+// API สำหรับจัดการข้อมูลยาแต่ละตัว (GET, PATCH, DELETE) - NO AUTHENTICATION
 // ✅ Fixed TypeScript Strict Mode และ ESLint warnings
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyToken } from '@/lib/auth'
 import { z } from 'zod'
 import { Prisma } from '@prisma/client'
 
@@ -59,7 +58,9 @@ const updateDrugSchema = z.object({
     .string()
     .max(1000, 'หมายเหตุต้องไม่เกิน 1000 ตัวอักษร')
     .nullable()
-    .optional()
+    .optional(),
+  // เพิ่ม userId สำหรับการบันทึก transaction
+  userId: z.string().min(1, 'User ID เป็นข้อมูลที่จำเป็น').optional(),
 })
 
 // Route context interface
@@ -77,18 +78,6 @@ interface ErrorResponse {
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { drugId } = await context.params
-
-    const token = request.headers.get('authorization')?.replace('Bearer ', '') || 
-                  request.cookies.get('auth-token')?.value
-
-    if (!token) {
-      return NextResponse.json({ error: 'ไม่พบ token การเข้าสู่ระบบ' }, { status: 401 })
-    }
-
-    const decoded = await verifyToken(token)
-    if (!decoded) {
-      return NextResponse.json({ error: 'Token ไม่ถูกต้อง' }, { status: 401 })
-    }
 
     const drug = await prisma.drug.findUnique({
       where: { id: drugId },
@@ -137,18 +126,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { drugId } = await context.params
 
-    const token = request.headers.get('authorization')?.replace('Bearer ', '') || 
-                  request.cookies.get('auth-token')?.value
-
-    if (!token) {
-      return NextResponse.json({ error: 'ไม่พบ token การเข้าสู่ระบบ' }, { status: 401 })
-    }
-
-    const decoded = await verifyToken(token)
-    if (!decoded) {
-      return NextResponse.json({ error: 'Token ไม่ถูกต้อง' }, { status: 401 })
-    }
-
     // ตรวจสอบว่ามียาอยู่หรือไม่
     const existingDrug = await prisma.drug.findUnique({
       where: { id: drugId },
@@ -186,22 +163,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       }
     }
 
-    // ตรวจสอบชื่อยาซ้ำ (ถ้าเปลี่ยนชื่อ)
-    if (validatedData.name !== existingDrug.name) {
-      const duplicateName = await prisma.drug.findFirst({
-        where: {
-          name: validatedData.name,
-          id: { not: drugId }
-        }
-      })
-
-      if (duplicateName) {
-        return NextResponse.json({ 
-          error: 'ชื่อยานี้มีอยู่ในระบบแล้ว' 
-        }, { status: 400 })
-      }
-    }
-
     // เช็คการเปลี่ยนแปลงราคา
     const priceChanged = validatedData.pricePerBox !== existingDrug.pricePerBox
     const oldPrice = existingDrug.pricePerBox
@@ -213,7 +174,16 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       const updatedDrug = await tx.drug.update({
         where: { id: drugId },
         data: {
-          ...validatedData,
+          hospitalDrugCode: validatedData.hospitalDrugCode,
+          name: validatedData.name,
+          genericName: validatedData.genericName,
+          dosageForm: validatedData.dosageForm,
+          strength: validatedData.strength,
+          unit: validatedData.unit,
+          packageSize: validatedData.packageSize,
+          pricePerBox: validatedData.pricePerBox,
+          category: validatedData.category,
+          notes: validatedData.notes,
           updatedAt: new Date()
         }
       })
@@ -287,18 +257,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
     const { drugId } = await context.params
-
-    const token = request.headers.get('authorization')?.replace('Bearer ', '') || 
-                  request.cookies.get('auth-token')?.value
-
-    if (!token) {
-      return NextResponse.json({ error: 'ไม่พบ token การเข้าสู่ระบบ' }, { status: 401 })
-    }
-
-    const decoded = await verifyToken(token)
-    if (!decoded) {
-      return NextResponse.json({ error: 'Token ไม่ถูกต้อง' }, { status: 401 })
-    }
 
     // ตรวจสอบว่ามียาอยู่หรือไม่
     const existingDrug = await prisma.drug.findUnique({

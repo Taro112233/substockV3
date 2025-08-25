@@ -1,4 +1,5 @@
-// 📄 File: components/modules/stock/add-drug-modal.tsx (แก้ไข TypeScript Error)
+// 📄 File: components/modules/stock/add-drug-modal.tsx (แก้ไข - แยกช่องความแรงและหน่วย)
+// ✅ Fixed: แยกช่อง "ความแรง" และ "หน่วย" ให้เป็นช่องแยกกัน
 // =====================================================
 
 import { useState } from 'react'
@@ -88,7 +89,7 @@ const initialFormData: NewDrugData = {
   genericName: null,
   dosageForm: 'TAB',
   strength: null,
-  unit: 'mg',
+  unit: '',
   packageSize: null,
   pricePerBox: 0,
   category: 'GENERAL',
@@ -453,26 +454,28 @@ export function AddDrugModal({
                   </Select>
                 </div>
 
-                {/* ความแรง */}
+                {/* ✅ Fixed: ความแรง - แยกเป็นช่องเดียว */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">ความแรง</label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={formData.strength || ''}
-                      onChange={handleStringInputChange('strength')}
-                      placeholder="เช่น 500"
-                      className="flex-1"
-                      disabled={loading}
-                    />
-                    <Input
-                      name="unit"
-                      value={formData.unit}
-                      onChange={handleStringInputChange('unit')}
-                      placeholder="หน่วย"
-                      className={`w-20 ${errors.unit ? 'border-red-500' : ''}`}
-                      disabled={loading}
-                    />
-                  </div>
+                  <Input
+                    value={formData.strength || ''}
+                    onChange={handleStringInputChange('strength')}
+                    placeholder="เช่น 500"
+                    disabled={loading}
+                  />
+                </div>
+
+                {/* ✅ Fixed: หน่วย - แยกเป็นช่องเดียว */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">หน่วยความแรง *</label>
+                  <Input
+                    name="unit"
+                    value={formData.unit}
+                    onChange={handleStringInputChange('unit')}
+                    placeholder="เช่น mg, ml, tab"
+                    className={errors.unit ? 'border-red-500' : ''}
+                    disabled={loading}
+                  />
                   {errors.unit && (
                     <p className="text-sm text-red-600 flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
@@ -494,7 +497,7 @@ export function AddDrugModal({
 
                 {/* ราคาต่อกล่อง */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">ราคาต่อกล่อง</label>
+                  <label className="text-sm font-medium">ราคาต่อกล่อง (บาท)</label>
                   <Input
                     type="number"
                     min="0"
@@ -554,14 +557,14 @@ export function AddDrugModal({
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Package className="h-4 w-4" />
-                ข้อมูลสต็อกเริ่มต้น
+                ข้อมูลสต็อก
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* จำนวนเริ่มต้น */}
+                {/* จำนวนสต็อก */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">จำนวนเริ่มต้น</label>
+                  <label className="text-sm font-medium">จำนวนสต็อก</label>
                   <Input
                     type="number"
                     min="0"
@@ -604,7 +607,7 @@ export function AddDrugModal({
               {(formData.initialQuantity > 0 || formData.pricePerBox > 0) && (
                 <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
                   <div className="text-sm font-medium text-blue-800 mb-1">
-                    สรุปสต็อกเริ่มต้น
+                    สรุปสต็อก
                   </div>
                   <div className="text-xs text-blue-600 space-y-1">
                     <div>จำนวน: {formData.initialQuantity.toLocaleString()} หน่วย</div>

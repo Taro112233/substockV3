@@ -1,4 +1,4 @@
-// 📄 File: app/dashboard/opd/page.tsx (with Back Button)
+// 📄 File: app/dashboard/opd/page.tsx (FIXED - Updated SimpleStatusIndicator)
 
 "use client";
 
@@ -135,7 +135,7 @@ export default function OpdDashboard() {
 
   return (
     <div className="container mx-auto p-4 max-w-7xl">
-      {/* Back Button & Status Section - แก้ไขส่วนนี้ */}
+      {/* Back Button & Status Section - ✅ FIXED: Updated SimpleStatusIndicator */}
       <div className="flex items-center justify-between mb-4">
         <Button
           variant="ghost"
@@ -147,8 +147,12 @@ export default function OpdDashboard() {
           <span className="sm:hidden">กลับ</span>
         </Button>
 
-        {/* เพิ่ม Server Status ชิดขวา */}
-        <SimpleStatusIndicator />
+        {/* ✅ FIXED: เพิ่ม Server Status ชิดขวา - ใช้ props ที่ถูกต้อง */}
+        <SimpleStatusIndicator 
+          showText={false}        // แสดงแค่ไอคอน
+          size="sm"              // ขนาดเล็ก
+          autoCheckOnMount={false} // ไม่ auto check
+        />
       </div>
 
       {/* Header Section */}

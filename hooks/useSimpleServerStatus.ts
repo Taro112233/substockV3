@@ -1,8 +1,8 @@
-// 📄 File: hooks/useSimpleServerStatus.ts  
+// 📄 File: hooks/useSimpleServerStatus.ts (FIXED - No Auto Polling)
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 
-type ServerStatus = 'connected' | 'connecting' | 'disconnected'
+type ServerStatus = 'connected' | 'connecting' | 'disconnected' | 'idle'
 
 interface SimpleServerStatus {
   status: ServerStatus
@@ -10,56 +10,109 @@ interface SimpleServerStatus {
   lastCheck: Date | null
 }
 
-export function useSimpleServerStatus(checkInterval = 3600000) {
-  const [serverStatus, setServerStatus] = useState<SimpleServerStatus>({
-    status: 'connecting',
-    responseTime: 0,
-    lastCheck: null
-  })
+// Singleton cache เพื่อแชร์สถานะระหว่าง components
+const statusCache = {
+  status: 'idle' as ServerStatus,
+  responseTime: 0,
+  lastCheck: null as Date | null,
+  lastCheckTime: 0
+}
 
-  const checkServerStatus = async () => {
+const CACHE_DURATION = 30000 // 30 วินาที cache
+
+export function useSimpleServerStatus() {
+  const [serverStatus, setServerStatus] = useState<SimpleServerStatus>(() => ({
+    status: statusCache.status,
+    responseTime: statusCache.responseTime,
+    lastCheck: statusCache.lastCheck
+  }))
+
+  const checkServerStatus = useCallback(async () => {
+    const now = Date.now()
+    
+    // ใช้ cached result ถ้ายังไม่หมดอายุ
+    if (now - statusCache.lastCheckTime < CACHE_DURATION && statusCache.status !== 'idle') {
+      console.log('📦 Using cached server status')
+      const cachedStatus = {
+        status: statusCache.status,
+        responseTime: statusCache.responseTime,
+        lastCheck: statusCache.lastCheck
+      }
+      setServerStatus(cachedStatus)
+      return cachedStatus
+    }
+
+    // แสดงสถานะ connecting ขณะเช็ค
+    const connectingStatus = {
+      status: 'connecting' as ServerStatus,
+      responseTime: 0,
+      lastCheck: statusCache.lastCheck
+    }
+    setServerStatus(connectingStatus)
+
     try {
+      console.log('🔄 Checking server status...')
       const startTime = Date.now()
       
       const response = await fetch('/api/health', {
         method: 'GET',
-        cache: 'no-cache'
+        cache: 'no-cache',
+        headers: {
+          'X-Source': 'manual-check'
+        }
       })
       
       const endTime = Date.now()
       const responseTime = endTime - startTime
 
+      let status: ServerStatus
       if (response.ok) {
-        setServerStatus({
-          status: responseTime > 1000 ? 'connecting' : 'connected',
-          responseTime,
-          lastCheck: new Date()
-        })
+        status = responseTime > 1000 ? 'connecting' : 'connected'
+        console.log(`✅ Server is ${status} (${responseTime}ms)`)
       } else {
-        setServerStatus({
-          status: 'disconnected',
-          responseTime,
-          lastCheck: new Date()
-        })
+        status = 'disconnected'
+        console.log(`❌ Server disconnected (${responseTime}ms)`)
       }
+
+      const newStatus = {
+        status,
+        responseTime,
+        lastCheck: new Date()
+      }
+
+      // อัปเดต cache
+      statusCache.status = status
+      statusCache.responseTime = responseTime
+      statusCache.lastCheck = newStatus.lastCheck
+      statusCache.lastCheckTime = now
+
+      setServerStatus(newStatus)
+      return newStatus
+
     } catch (error) {
-      setServerStatus({
-        status: 'disconnected',
+      console.error('❌ Server status check failed:', error)
+      
+      const errorStatus = {
+        status: 'disconnected' as ServerStatus,
         responseTime: 0,
         lastCheck: new Date()
-      })
+      }
+
+      // อัปเดต cache
+      statusCache.status = 'disconnected'
+      statusCache.responseTime = 0
+      statusCache.lastCheck = errorStatus.lastCheck
+      statusCache.lastCheckTime = now
+
+      setServerStatus(errorStatus)
+      return errorStatus
     }
+  }, [])
+
+  return { 
+    serverStatus, 
+    checkServerStatus,
+    isOnline: serverStatus.status === 'connected',
+    isChecking: serverStatus.status === 'connecting'
   }
-
-  useEffect(() => {
-    // เช็คทันทีเมื่อ component mount
-    checkServerStatus()
-    
-    // เช็คตามช่วงเวลาที่กำหนด
-    const interval = setInterval(checkServerStatus, checkInterval)
-    
-    return () => clearInterval(interval)
-  }, [checkInterval])
-
-  return { serverStatus, checkServerStatus }
 }

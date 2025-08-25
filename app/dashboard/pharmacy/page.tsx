@@ -147,8 +147,12 @@ export default function PharmacyDashboard() {
           <span className="sm:hidden">กลับ</span>
         </Button>
 
-        {/* เพิ่ม Server Status ชิดขวา */}
-        <SimpleStatusIndicator />
+        {/* ✅ FIXED: เพิ่ม Server Status ชิดขวา - ใช้ props ที่ถูกต้อง */}
+        <SimpleStatusIndicator 
+          showText={false}        // แสดงแค่ไอคอน
+          size="sm"              // ขนาดเล็ก
+          autoCheckOnMount={false} // ไม่ auto check
+        />
       </div>
 
       {/* Header Section */}

@@ -1,5 +1,5 @@
-// 📄 File: components/modules/stock/stock-table-enhanced.tsx
-// ✅ REFACTORED: Main Stock Table Component (Clean & Modular)
+// components/modules/stock/stock-table-enhanced.tsx
+// ✅ แก้ไข props pass ลงไปใน ExportControls
 
 import React, { useState } from 'react'
 import {
@@ -74,6 +74,7 @@ export function StockTableEnhanced({
     // Utility functions
     calculateStockValue,
     getLastUpdatedColor,
+    preparePrintData,
     
     // Handlers
     handleSort,
@@ -174,6 +175,8 @@ export function StockTableEnhanced({
             onExport={handleExport}
             onCancel={handleToggleExportMode}
             exporting={exporting}
+            department={department}
+            preparePrintData={preparePrintData}
           />
         )}
 

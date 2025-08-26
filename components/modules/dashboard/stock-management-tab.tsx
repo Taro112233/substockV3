@@ -1,6 +1,5 @@
 // 📄 File: components/modules/dashboard/stock-management-tab.tsx
-// ✅ Fixed React Hook useCallback dependency warning
-// ✅ Updated Stock Management Tab - Total Value without Comparison
+// ✅ ลบ QuickPrintActions ออกแล้ว - เหลือแค่ Print ใน Export Mode
 
 import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -46,7 +45,6 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
 
   const { toast } = useToast();
 
-  // ✅ Fixed: Move calculateTotalValue inside useCallback
   const fetchStockData = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
@@ -115,7 +113,6 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
     setIsAddModalOpen(true);
   };
 
-  // ✅ Fixed: Move calculateTotalValue outside useCallback to avoid dependency
   const calculateTotalValue = useCallback(() => {
     if (!data || !data.stocks) return 0;
     
@@ -190,7 +187,6 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
     });
   };
 
-  // ✅ Fixed: Include calculateTotalValue in dependency array
   const handleFilteredStatsChange = useCallback((stats: FilteredStatsData) => {
     setFilteredStats(stats);
     
@@ -203,7 +199,7 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
       
       setIsFiltered(isCurrentlyFiltered);
     }
-  }, [data, calculateTotalValue]); // ✅ Added calculateTotalValue dependency
+  }, [data, calculateTotalValue]);
 
   if (loading || !data) {
     return (
@@ -262,12 +258,13 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
             </div>
             
             <div className="flex items-center gap-4 mt-1">
-            <p className="text-sm text-gray-600">
-              อัปเดตล่าสุด: {new Date().toLocaleString('th-TH')}
-            </p>
-          </div>
+              <p className="text-sm text-gray-600">
+                อัปเดตล่าสุด: {new Date().toLocaleString('th-TH')}
+              </p>
+            </div>
           </div>
 
+          {/* ปุ่มเฉพาะ รีเฟรช และ เพิ่มยาใหม่ เท่านั้น */}
           <div className="flex gap-2 flex-wrap justify-end">
             <Button
               variant="outline"
@@ -290,8 +287,6 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
               <Plus className="h-4 w-4" />
               เพิ่มยาใหม่
             </Button>
-
-            
           </div>
         </div>
 
@@ -360,7 +355,7 @@ export function StockManagementTab({ department }: StockManagementTabProps) {
             </CardContent>
           </Card>
 
-          {/* Total Value Card - ✅ Updated without comparison */}
+          {/* Total Value Card */}
           <Card className={`transition-all duration-200 ${
             isFiltered ? 'border-purple-300 bg-purple-50' : 'border-gray-200'
           }`}>

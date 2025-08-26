@@ -1,5 +1,5 @@
-// 📄 File: components/modules/stock/StockTableComponents.tsx
-// ✅ UI Components สำหรับ Stock Table
+// components/modules/stock/StockTableComponents.tsx
+// ✅ แก้ไข interface และเพิ่ม department + selectedStocks
 
 import React from 'react'
 import {
@@ -26,6 +26,9 @@ import {
   Package,
   CheckCircle2,
 } from 'lucide-react'
+import { Stock } from '@/types/dashboard'
+import { StockPrintData } from '@/types/print'
+import { PrintButton } from '@/components/ui/PrintButton'
 
 // Types
 type SortField = 'name' | 'dosageForm' | 'strength' | 'packageSize' | 'quantity' | 'totalValue' | 'lastUpdated'
@@ -95,9 +98,9 @@ export const dosageFormOptions = [
   { value: 'MIX', label: 'MIX' }
 ]
 
-// Export Controls Component
+// Export Controls Component - แก้ไข interface
 interface ExportControlsProps {
-  exportStats: { count: number; totalValue: number }
+  exportStats: { count: number; totalValue: number; stocks: Stock[] }
   currentViewStats: { count: number; totalValue: number }
   hiddenSelectedCount: number
   filteredStocksLength: number
@@ -106,6 +109,9 @@ interface ExportControlsProps {
   onExport: () => void
   onCancel: () => void
   exporting: boolean
+  // เพิ่ม props ใหม่
+  department: 'PHARMACY' | 'OPD'
+  preparePrintData: (stocks: Stock[]) => StockPrintData[]
 }
 
 export function ExportControls({
@@ -117,7 +123,9 @@ export function ExportControls({
   setExportFormat,
   onExport,
   onCancel,
-  exporting
+  exporting,
+  department,
+  preparePrintData
 }: ExportControlsProps) {
   return (
     <Card className="border-green-200 bg-green-50">
@@ -167,6 +175,14 @@ export function ExportControls({
               <Download className="h-4 w-4 mr-2" />
               {exporting ? 'กำลัง Export...' : 'Export Excel'}
             </Button>
+
+            {/* เพิ่ม Print Button */}
+            <PrintButton
+              stocks={preparePrintData(exportStats.stocks)}
+              department={department}
+              selectedCount={exportStats.count}
+              disabled={exportStats.count === 0}
+            />
             
             <Button
               variant="outline"
@@ -526,7 +542,7 @@ export function FooterInfo({
       <div className="flex items-center gap-4 text-xs">
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-          <span>อัปเดต {'>'}14 วัน</span>
+          <span>อัปเดต {'>'} 14 วัน</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
@@ -534,7 +550,7 @@ export function FooterInfo({
         </div>
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-          <span>อัปเดต {'<'}7 วัน</span>
+          <span>อัปเดต {'<'} 7 วัน</span>
         </div>
       </div>
     </div>

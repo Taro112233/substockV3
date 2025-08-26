@@ -1,9 +1,8 @@
-// 📄 File: hooks/useStockTable.ts
-// ✅ Custom Hook สำหรับ Stock Table Logic
-
-import { useState, useMemo, useEffect } from 'react'
+// hooks/useStockTable.ts - แก้ไข scope และ type issues
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { Stock } from '@/types/dashboard'
+import { StockPrintData } from '@/types/print'
 import {
   calculateAvailableStock,
   isLowStock,
@@ -193,6 +192,40 @@ export function useStockTable({ stocks, department, onFilteredStatsChange }: Use
       return matchesSearch && matchesLowStock && matchesCategory && matchesDosageForm
     })
   }, [sortedStocks, searchTerm, showLowStockOnly, filterConfig])
+
+  // แก้ไข: ย้าย preparePrintData ลงมาหลัง filteredStocks
+  const preparePrintData = useCallback((stocksToConvert: Stock[]): StockPrintData[] => {
+    return stocksToConvert.map(stock => ({
+      id: stock.id,
+      drug: {
+        hospitalDrugCode: stock.drug?.hospitalDrugCode || '',
+        name: stock.drug?.name || '',
+        genericName: stock.drug?.genericName,
+        dosageForm: stock.drug?.dosageForm || '',
+        strength: stock.drug?.strength,
+        unit: stock.drug?.unit || '',
+        packageSize: stock.drug?.packageSize // รองรับทั้ง string และ number
+      },
+      totalQuantity: calculateAvailableStock(stock),
+      minimumStock: stock.minimumStock || 0,
+      lastUpdated: stock.lastUpdated ? new Date(stock.lastUpdated) : undefined,
+      cost: stock.drug?.pricePerBox || 0
+    }))
+  }, [])
+
+  // Get Print Data functions
+  const getAllPrintData = useCallback((): StockPrintData[] => {
+    return preparePrintData(stocks)
+  }, [stocks, preparePrintData])
+
+  const getSelectedPrintData = useCallback((): StockPrintData[] => {
+    const selectedStocks = stocks.filter(stock => selectedForExport.has(stock.id))
+    return preparePrintData(selectedStocks)
+  }, [stocks, selectedForExport, preparePrintData])
+
+  const getFilteredPrintData = useCallback((): StockPrintData[] => {
+    return preparePrintData(filteredStocks)
+  }, [filteredStocks, preparePrintData])
 
   // Calculate filtered stats
   const filteredStats = useMemo(() => {
@@ -395,6 +428,12 @@ export function useStockTable({ stocks, department, onFilteredStatsChange }: Use
     // Utility functions
     calculateStockValue,
     getLastUpdatedColor,
+    
+    // Print Data Functions
+    preparePrintData,
+    getAllPrintData,
+    getSelectedPrintData,
+    getFilteredPrintData,
     
     // Handlers
     handleSort,

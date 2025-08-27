@@ -1,5 +1,5 @@
 // 📄 File: app/api/stock/export/route.ts
-// ✅ FIXED: แก้ไข Format Logic ให้ทำงานถูกต้อง
+// ✅ FIXED: แก้ไข Format Logic ให้ทำงานถูกต้อง + เรียงชื่อยา A-Z
 
 import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
@@ -83,6 +83,21 @@ function getCategoryLabelLocal(category: string | null | undefined): string {
   return labels[category] || category
 }
 
+// ✅ NEW: Sort stocks by drug name A-Z (Thai locale support)
+function sortStocksByName(stocks: StockData[]): StockData[] {
+  return [...stocks].sort((a, b) => {
+    const nameA = a.drug?.name?.toLowerCase() || ''
+    const nameB = b.drug?.name?.toLowerCase() || ''
+    
+    // ใช้ Thai locale sorting สำหรับการเรียงลำดับที่ถูกต้อง
+    return nameA.localeCompare(nameB, 'th', {
+      sensitivity: 'base',
+      numeric: true,
+      ignorePunctuation: true
+    })
+  })
+}
+
 export async function POST(request: NextRequest) {
   try {
     console.log('📊 Stock Export API called')
@@ -150,7 +165,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// รวบรวมข้อมูล Stock สำหรับ Export
+// ✅ UPDATED: รวบรวมข้อมูล Stock และเรียงตามชื่อยา A-Z
 function collectExportData(body: ExportRequest): StockData[] {
   const allStocks: StockData[] = []
 
@@ -160,8 +175,13 @@ function collectExportData(body: ExportRequest): StockData[] {
     allStocks.push(...body.currentView)
   }
 
-  console.log(`📊 Total stocks for export: ${allStocks.length}`)
-  return allStocks
+  console.log(`📊 Total stocks before sorting: ${allStocks.length}`)
+  
+  // ✅ NEW: เรียงตามชื่อยา A-Z ก่อน return
+  const sortedStocks = sortStocksByName(allStocks)
+  console.log(`📊 Stocks sorted by drug name A-Z: ${sortedStocks.length}`)
+
+  return sortedStocks
 }
 
 // สร้าง Excel Workbook
@@ -280,7 +300,7 @@ function createExportRow(stock: StockData, config: ExportRequest): ExportRow {
   }
 }
 
-// สร้างข้อมูลสรุป
+// ✅ UPDATED: สร้างข้อมูลสรุป - Summary data จะใช้ข้อมูลที่เรียงแล้ว
 function createSummaryData(stocks: StockData[], config: ExportRequest): ExportRow[] {
   const totalStocks = stocks.length
   const totalValue = stocks.reduce((sum, stock) => 
@@ -288,7 +308,7 @@ function createSummaryData(stocks: StockData[], config: ExportRequest): ExportRo
   )
   const lowStockCount = stocks.filter(stock => isLowStockLocal(stock)).length
   
-  // สรุปตามประเภทยา
+  // สรุปตามประเภทยา - เรียงตามประเภท
   const categoryStats = stocks.reduce((acc, stock) => {
     const category = stock.drug?.category || 'UNKNOWN'
     if (!acc[category]) {
@@ -317,17 +337,20 @@ function createSummaryData(stocks: StockData[], config: ExportRequest): ExportRo
       'แผนก': '',
       'วันที่ Export': ''
     },
-    ...Object.entries(categoryStats).map(([category, categoryData]) => {
-      const data = categoryData as { count: number, value: number }
-      return {
-        'รายการ': `ประเภท: ${getCategoryLabelLocal(category)}`,
-        'รายการยา': data.count,
-        'มูลค่ารวม': data.value.toFixed(2),
-        'สต็อกต่ำ': '',
-        'แผนก': '',
-        'วันที่ Export': ''
-      }
-    })
+    // ✅ เรียงประเภทตามตัวอักษร
+    ...Object.entries(categoryStats)
+      .sort(([a], [b]) => getCategoryLabelLocal(a).localeCompare(getCategoryLabelLocal(b), 'th'))
+      .map(([category, categoryData]) => {
+        const data = categoryData as { count: number, value: number }
+        return {
+          'รายการ': `ประเภท: ${getCategoryLabelLocal(category)}`,
+          'รายการยา': data.count,
+          'มูลค่ารวม': data.value.toFixed(2),
+          'สต็อกต่ำ': '',
+          'แผนก': '',
+          'วันที่ Export': ''
+        }
+      })
   ]
 
   return summaryData
@@ -362,7 +385,7 @@ function createRequisitionHeader(config: ExportRequest): Array<Record<string, st
     {},
     {
       'ข้อมูล': 'หมายเหตุ:',
-      'ค่า': 'ใบเบิกสำหรับตรวจสอบสต็อกและการเบิกจ่าย'
+      'ค่า': 'ใบเบิกสำหรับตรวจสอบสต็อกและการเบิกจ่าย (เรียงตามชื่อยา A-Z)'
     },
     {
       'ข้อมูล': '',

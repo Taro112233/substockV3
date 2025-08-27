@@ -47,7 +47,9 @@ Directory structure:
     │   │   │       └── route.ts
     │   │   ├── drugs/
     │   │   │   ├── route.ts
-    │   │   │   └── [drugId]/
+    │   │   │   ├── [drugId]/
+    │   │   │   │   └── route.ts
+    │   │   │   └── check-code/
     │   │   │       └── route.ts
     │   │   ├── health/
     │   │   │   └── route.ts
@@ -63,6 +65,8 @@ Directory structure:
     │   │   │   └── pharmacy/
     │   │   │       └── route.ts
     │   │   ├── transactions/
+    │   │   │   ├── export/
+    │   │   │   │   └── route.ts
     │   │   │   ├── opd/
     │   │   │   │   └── route.ts
     │   │   │   └── pharmacy/
@@ -125,7 +129,9 @@ Directory structure:
     │   │   │   ├── transaction-detail-modal.tsx
     │   │   │   ├── transaction-display-responsive.tsx
     │   │   │   ├── transaction-item.tsx
-    │   │   │   └── transaction-table-enhanced.tsx
+    │   │   │   ├── transaction-table-enhanced.tsx
+    │   │   │   ├── TransactionTableComponents.tsx
+    │   │   │   └── TransactionTableRow.tsx
     │   │   └── transfer/
     │   │       ├── status-badge.tsx
     │   │       ├── transfer-actions.tsx
@@ -141,8 +147,6 @@ Directory structure:
     │   │       └── workflow-progress.tsx
     │   ├── print/
     │   │   └── PharmacyPrintTemplate.tsx
-    │   ├── stock/
-    │   │   └── QuickPrintActions.tsx
     │   └── ui/
     │       ├── accordion.tsx
     │       ├── alert-dialog.tsx
@@ -162,6 +166,7 @@ Directory structure:
     │       ├── dialog.tsx
     │       ├── drawer.tsx
     │       ├── dropdown-menu.tsx
+    │       ├── ExcelExportButton.tsx
     │       ├── form.tsx
     │       ├── hover-card.tsx
     │       ├── input-otp.tsx
@@ -198,11 +203,13 @@ Directory structure:
     │   └── hospital-drugs.csv
     ├── hooks/
     │   ├── use-auth.ts
+    │   ├── use-drug-code-validation.ts
     │   ├── use-mobile.ts
     │   ├── use-toast.ts
     │   ├── usePrintPDF.ts
     │   ├── useSimpleServerStatus.ts
     │   ├── useStockTable.ts
+    │   ├── useTransactionTable.ts
     │   └── useUserManagement.ts
     ├── lib/
     │   ├── auth-server.ts

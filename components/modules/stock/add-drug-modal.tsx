@@ -113,14 +113,6 @@ export function AddDrugModal({
     setFormData(initialFormData)
     setErrors({})
     onClose()
-    
-    // Show toast when closing without saving
-    if (!loading) {
-      toast.info('ยกเลิกการเพิ่มยา', {
-        description: 'การเพิ่มยาใหม่ถูกยกเลิก',
-        duration: 2000,
-      })
-    }
   }
 
   const handleReset = () => {

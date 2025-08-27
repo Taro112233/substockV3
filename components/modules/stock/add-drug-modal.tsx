@@ -1,8 +1,8 @@
-// 📄 File: components/modules/stock/add-drug-modal.tsx (แก้ไข - แยกช่องความแรงและหน่วย)
-// ✅ Fixed: แยกช่อง "ความแรง" และ "หน่วย" ให้เป็นช่องแยกกัน
+// 📄 File: components/modules/stock/add-drug-modal.tsx (Updated with Real-time Validation)
+// ✅ Added: Real-time duplicate checking for hospital drug code
 // =====================================================
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -20,7 +20,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from '@/components/ui/alert'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
+import { Badge } from '@/components/ui/badge'
 import { Stock } from '@/types/dashboard'
+import { useDrugCodeValidation } from '@/hooks/use-drug-code-validation'
 import { 
   Package, 
   Pill,
@@ -32,7 +44,14 @@ import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
-  Loader2
+  Loader2,
+  Search,
+  Clock,
+  Info,
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  ExternalLink
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -107,17 +126,165 @@ export function AddDrugModal({
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState<NewDrugData>(initialFormData)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [showSuggestions, setShowSuggestions] = useState(false)
+
+  // ✅ Real-time validation hook
+  const {
+    code: drugCode,
+    isChecking,
+    isAvailable,
+    isDuplicate,
+    existingDrug,
+    suggestions,
+    error: validationError,
+    updateCode,
+    getValidationStatus,
+    getMessage
+  } = useDrugCodeValidation(formData.hospitalDrugCode)
+
+  // Sync drug code with form data
+  const handleDrugCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newCode = e.target.value.toUpperCase() // Auto uppercase
+    setFormData(prev => ({ ...prev, hospitalDrugCode: newCode }))
+    updateCode(newCode)
+    
+    // Clear hospital drug code error when typing
+    if (errors.hospitalDrugCode) {
+      setErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors.hospitalDrugCode
+        return newErrors
+      })
+    }
+  }
+
+  // Copy code from suggestion
+  const copySuggestionCode = (suggestedCode: string) => {
+    const newCode = suggestedCode + '_NEW' // Add suffix to avoid duplicate
+    setFormData(prev => ({ ...prev, hospitalDrugCode: newCode }))
+    updateCode(newCode)
+    
+    toast.info('คัดลอกรหัสแล้ว', {
+      description: `ใช้รหัส "${newCode}" (เพิ่ม _NEW เพื่อไม่ให้ซ้ำ)`,
+      duration: 2000,
+    })
+  }
+
+  const [wasFilledFromDuplicate, setWasFilledFromDuplicate] = useState(false) // ✅ Track if form was auto-filled
+  const [userDataBeforeDuplicate, setUserDataBeforeDuplicate] = useState<NewDrugData | null>(null) // ✅ Backup user data
+
+  // ✅ Auto-fill when duplicate is detected (but disable editing)
+  useEffect(() => {
+    if (isDuplicate && existingDrug && formData.hospitalDrugCode === drugCode.trim()) {
+      if (!wasFilledFromDuplicate) {
+        // ✅ Backup current form data before auto-filling
+        setUserDataBeforeDuplicate({ ...formData })
+        
+        // Auto-fill immediately when duplicate is detected
+        fillFromExistingDrug(existingDrug, false) // false = don't generate new code
+        setWasFilledFromDuplicate(true) // ✅ Mark as filled from duplicate
+      }
+    } else if (!isDuplicate && wasFilledFromDuplicate && userDataBeforeDuplicate) {
+      // ✅ Restore user data when no longer duplicate
+      restoreUserData()
+      setWasFilledFromDuplicate(false)
+    }
+  }, [isDuplicate, existingDrug, drugCode, wasFilledFromDuplicate])
+
+  // ✅ Restore user data that was entered before duplicate
+  const restoreUserData = () => {
+    if (userDataBeforeDuplicate) {
+      const restoredData: NewDrugData = {
+        ...userDataBeforeDuplicate,
+        hospitalDrugCode: formData.hospitalDrugCode // Keep the current (new) code
+      }
+      
+      setFormData(restoredData)
+      setUserDataBeforeDuplicate(null) // Clear backup
+      setErrors({})
+      
+      toast.success('กู้คืนข้อมูลแล้ว', {
+        description: 'นำข้อมูลที่กรอกไว้ก่อนหน้ากลับมาแล้ว',
+        icon: <CheckCircle2 className="w-4 h-4" />,
+        duration: 2000,
+      })
+    }
+  }
+
+  // ✅ Fill form with existing drug data (no new code generation)
+  const fillFromExistingDrug = (drug: any, generateNewCode = true) => {
+    const filledData: NewDrugData = {
+      hospitalDrugCode: generateNewCode ? generateNewDrugCode(drug.hospitalDrugCode) : drug.hospitalDrugCode,
+      name: drug.name,
+      genericName: drug.genericName,
+      dosageForm: drug.dosageForm,
+      strength: drug.strength,
+      unit: drug.unit,
+      packageSize: drug.packageSize,
+      pricePerBox: drug.pricePerBox || 0,
+      category: drug.category,
+      notes: drug.notes,
+      // Keep stock data for display
+      initialQuantity: 0,
+      minimumStock: 10
+    }
+
+    setFormData(filledData)
+    if (generateNewCode) {
+      updateCode(filledData.hospitalDrugCode)
+    }
+    
+    // Clear any existing errors
+    setErrors({})
+    
+    if (generateNewCode) {
+      // Show subtle success toast only when generating new code
+      toast.success('คัดลอกข้อมูลแล้ว', {
+        description: `ใช้รหัส "${filledData.hospitalDrugCode}" จากข้อมูลเดิม`,
+        icon: <CheckCircle2 className="w-4 h-4" />,
+        duration: 3000,
+      })
+    } else {
+      // Show info toast when auto-filling from duplicate
+      toast.info('แสดงข้อมูลยาเดิม', {
+        description: `แสดงข้อมูลของ "${drug.name}" เพื่อเป็นข้อมูลอ้างอิง`,
+        icon: <Info className="w-4 h-4" />,
+        duration: 2000,
+      })
+    }
+  }
+
+  // Helper function to generate new drug code
+  const generateNewDrugCode = (originalCode: string) => {
+    const match = originalCode.match(/^([A-Z]+)(\d+)$/)
+    if (match) {
+      const prefix = match[1]
+      const number = parseInt(match[2])
+      return `${prefix}${String(number + 1).padStart(match[2].length, '0')}`
+    }
+    
+    // If no pattern found, add suffix
+    return `${originalCode}_V2`
+  }
 
   // Reset form when modal opens/closes
   const handleClose = () => {
     setFormData(initialFormData)
     setErrors({})
+    setWasFilledFromDuplicate(false) // ✅ Reset tracking
+    setUserDataBeforeDuplicate(null) // ✅ Clear backup
+    updateCode('')
+    setShowSuggestions(false)
     onClose()
   }
 
   const handleReset = () => {
     setFormData(initialFormData)
     setErrors({})
+    setWasFilledFromDuplicate(false) // ✅ Reset tracking
+    setUserDataBeforeDuplicate(null) // ✅ Clear backup
+    updateCode('')
+    setShowSuggestions(false)
     
     toast.info('รีเซ็ตฟอร์มแล้ว', {
       description: 'ข้อมูลทั้งหมดถูกล้างเรียบร้อยแล้ว',
@@ -126,13 +293,19 @@ export function AddDrugModal({
     })
   }
 
-  // Validation with detailed toast messages
+  // Validation with real-time check integration
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
     let firstErrorField = ''
 
     if (!formData.hospitalDrugCode.trim()) {
       newErrors.hospitalDrugCode = 'รหัสยาโรงพยาบาลเป็นข้อมูลที่จำเป็น'
+      if (!firstErrorField) firstErrorField = 'hospitalDrugCode'
+    } else if (isDuplicate) {
+      newErrors.hospitalDrugCode = 'รหัสยานี้มีอยู่ในระบบแล้ว'
+      if (!firstErrorField) firstErrorField = 'hospitalDrugCode'
+    } else if (validationError) {
+      newErrors.hospitalDrugCode = 'ไม่สามารถตรวจสอบรหัสได้'
       if (!firstErrorField) firstErrorField = 'hospitalDrugCode'
     }
 
@@ -163,7 +336,6 @@ export function AddDrugModal({
 
     setErrors(newErrors)
     
-    // Show validation toast with specific error
     if (Object.keys(newErrors).length > 0) {
       const errorCount = Object.keys(newErrors).length
       const firstError = newErrors[firstErrorField]
@@ -186,7 +358,6 @@ export function AddDrugModal({
   const handleSubmit = async () => {
     if (!validateForm()) return
 
-    // Show progress toast
     const progressToast = toast.loading('กำลังเพิ่มยา...', {
       description: `เพิ่ม "${formData.name}" (${formData.hospitalDrugCode}) ไปยัง ${department === 'PHARMACY' ? 'คลังยา' : 'OPD'}`,
       icon: <Loader2 className="w-4 h-4 animate-spin" />,
@@ -209,28 +380,14 @@ export function AddDrugModal({
       const responseData = await response.json()
 
       if (!response.ok) {
-        // Dismiss progress toast
         toast.dismiss(progressToast)
         
-        // Show specific error based on the type
         if (response.status === 409) {
           toast.error('รหัสยาซ้ำ!', {
             description: `รหัสยา "${formData.hospitalDrugCode}" มีอยู่ในระบบแล้ว`,
             icon: <AlertCircle className="w-4 h-4" />,
             duration: 5000,
-            action: {
-              label: "แก้ไขรหัส",
-              onClick: () => {
-                // Focus to hospital drug code input
-                const input = document.querySelector('input[name="hospitalDrugCode"]') as HTMLInputElement
-                input?.focus()
-                input?.select()
-              },
-            },
           })
-          
-          // Set specific error
-          setErrors({ hospitalDrugCode: 'รหัสยานี้มีอยู่ในระบบแล้ว' })
           return
         }
         
@@ -239,17 +396,13 @@ export function AddDrugModal({
 
       const { data: newStock } = responseData
       
-      // Dismiss progress toast
       toast.dismiss(progressToast)
-
-      // Show success toast with drug info
       toast.success('เพิ่มยาสำเร็จ!', {
         description: `เพิ่ม "${formData.name}" (${formData.hospitalDrugCode}) เรียบร้อยแล้ว`,
         icon: <CheckCircle2 className="w-4 h-4" />,
         duration: 4000,
       })
 
-      // Show stock info if initial quantity > 0
       if (formData.initialQuantity > 0) {
         setTimeout(() => {
           toast.info('ข้อมูลสต็อกเริ่มต้น', {
@@ -265,21 +418,14 @@ export function AddDrugModal({
       
     } catch (error) {
       console.error('Error adding drug:', error)
-      
-      // Dismiss progress toast
       toast.dismiss(progressToast)
       
-      // Only show connection error toast if no specific error was shown above
       const errorMessage = error instanceof Error ? error.message : String(error)
       if (!errorMessage.includes('รหัสยา')) {
         toast.error('เชื่อมต่อไม่ได้', {
           description: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบอินเทอร์เน็ต',
           icon: <XCircle className="w-4 h-4" />,
           duration: 6000,
-          action: {
-            label: "ลองอีกครั้ง",
-            onClick: () => handleSubmit(),
-          },
         })
       }
     } finally {
@@ -287,38 +433,22 @@ export function AddDrugModal({
     }
   }
 
-  // ✅ Fixed: แก้ไข handleInputChange ให้ใช้ type ที่เฉพาะเจาะจง
+  // Helper functions for other form fields
   const handleInputChange = <K extends keyof NewDrugData>(
     field: K, 
     value: NewDrugData[K]
   ) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     
-    // Clear error for this field
     if (errors[field]) {
       setErrors(prev => {
         const newErrors = { ...prev }
         delete newErrors[field]
         return newErrors
       })
-      
-      // Show success toast when fixing required fields
-      if (['hospitalDrugCode', 'name', 'unit'].includes(field) && 
-          value !== null && 
-          value !== undefined && 
-          String(value).trim()) {
-        toast.dismiss() // Dismiss any existing validation toasts
-        toast.success('ข้อมูลถูกต้อง', {
-          description: `${field === 'hospitalDrugCode' ? 'รหัสยา' : 
-                        field === 'name' ? 'ชื่อยา' : 'หน่วย'} ได้รับการแก้ไขแล้ว`,
-          icon: <CheckCircle2 className="w-4 h-4" />,
-          duration: 2000,
-        })
-      }
     }
   }
 
-  // ✅ Helper function สำหรับจัดการ string input
   const handleStringInputChange = (field: keyof NewDrugData) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -330,7 +460,6 @@ export function AddDrugModal({
     }
   }
 
-  // ✅ Helper function สำหรับจัดการ number input
   const handleNumberInputChange = (field: 'pricePerBox' | 'initialQuantity' | 'minimumStock') => (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -338,11 +467,26 @@ export function AddDrugModal({
     handleInputChange(field, Math.max(0, value))
   }
 
-  // Check if form has any data
+  // Get validation status icon
+  const getValidationIcon = () => {
+    const status = getValidationStatus()
+    switch (status) {
+      case 'checking':
+        return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+      case 'available':
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />
+      case 'duplicate':
+        return <XCircle className="h-4 w-4 text-red-500" />
+      case 'error':
+        return <AlertCircle className="h-4 w-4 text-orange-500" />
+      default:
+        return null
+    }
+  }
+
   const hasFormData = Object.keys(formData).some(key => {
     const value = formData[key as keyof NewDrugData]
     if (key === 'dosageForm' && value === 'TAB') return false
-    if (key === 'unit' && value === 'mg') return false
     if (key === 'category' && value === 'GENERAL') return false
     if (key === 'minimumStock' && value === 10) return false
     if (typeof value === 'string') return value.trim() !== ''
@@ -351,9 +495,12 @@ export function AddDrugModal({
   })
 
   const canSubmit = !loading && 
+                   !isChecking &&
+                   !isDuplicate &&  // ✅ Can't submit if duplicate
                    formData.hospitalDrugCode.trim() !== '' &&
                    formData.name.trim() !== '' &&
-                   formData.unit.trim() !== ''
+                   formData.unit.trim() !== '' &&
+                   isAvailable
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -376,23 +523,27 @@ export function AddDrugModal({
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* รหัสยาโรงพยาบาล */}
+                {/* ✅ รหัสยาโรงพยาบาล with Real-time Validation */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">รหัสยาโรงพยาบาล *</label>
-                  <Input
-                    name="hospitalDrugCode"
-                    value={formData.hospitalDrugCode}
-                    onChange={handleStringInputChange('hospitalDrugCode')}
-                    placeholder="ระบุรหัสยา"
-                    className={errors.hospitalDrugCode ? 'border-red-500' : ''}
-                    disabled={loading}
-                  />
-                  {errors.hospitalDrugCode && (
-                    <p className="text-sm text-red-600 flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.hospitalDrugCode}
-                    </p>
-                  )}
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    รหัสยาโรงพยาบาล *
+                    {getValidationIcon()}
+                  </label>
+                  <div className="relative">
+                    <Input
+                      name="hospitalDrugCode"
+                      value={formData.hospitalDrugCode}
+                      onChange={handleDrugCodeChange}
+                      placeholder="ระบุรหัสยา (เช่น TAB001)"
+                      className={`${
+                        errors.hospitalDrugCode ? 'border-red-500' : 
+                        isDuplicate ? 'border-red-500 focus:border-red-500 focus:ring-red-200' :
+                        isAvailable ? 'border-green-500' : ''
+                      } ${isChecking ? 'pr-8' : ''}`}
+                      disabled={loading}  // ✅ Only disable when loading, NOT when duplicate
+                      autoComplete="off"
+                    />
+                  </div>
                 </div>
 
                 {/* ชื่อยา */}
@@ -403,15 +554,9 @@ export function AddDrugModal({
                     value={formData.name}
                     onChange={handleStringInputChange('name')}
                     placeholder="ระบุชื่อยา"
-                    className={errors.name ? 'border-red-500' : ''}
-                    disabled={loading}
+                    className={`${errors.name ? 'border-red-500' : ''} ${isDuplicate ? 'bg-gray-100' : ''}`}
+                    disabled={loading || isDuplicate}
                   />
-                  {errors.name && (
-                    <p className="text-sm text-red-600 flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.name}
-                    </p>
-                  )}
                 </div>
 
                 {/* ชื่อสามัญ */}
@@ -421,7 +566,8 @@ export function AddDrugModal({
                     value={formData.genericName || ''}
                     onChange={handleStringInputChange('genericName')}
                     placeholder="ระบุชื่อสามัญ"
-                    disabled={loading}
+                    className={isDuplicate ? 'bg-gray-100' : ''}
+                    disabled={loading || isDuplicate}
                   />
                 </div>
 
@@ -431,9 +577,9 @@ export function AddDrugModal({
                   <Select
                     value={formData.dosageForm}
                     onValueChange={(value) => handleInputChange('dosageForm', value)}
-                    disabled={loading}
+                    disabled={loading || isDuplicate}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={isDuplicate ? 'bg-gray-100' : ''}>
                       <SelectValue placeholder="เลือกรูปแบบ" />
                     </SelectTrigger>
                     <SelectContent>
@@ -446,18 +592,19 @@ export function AddDrugModal({
                   </Select>
                 </div>
 
-                {/* ✅ Fixed: ความแรง - แยกเป็นช่องเดียว */}
+                {/* ความแรง */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">ความแรง</label>
                   <Input
                     value={formData.strength || ''}
                     onChange={handleStringInputChange('strength')}
                     placeholder="เช่น 500"
-                    disabled={loading}
+                    className={isDuplicate ? 'bg-gray-100' : ''}
+                    disabled={loading || isDuplicate}
                   />
                 </div>
 
-                {/* ✅ Fixed: หน่วย - แยกเป็นช่องเดียว */}
+                {/* หน่วย */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">หน่วยความแรง *</label>
                   <Input
@@ -465,10 +612,10 @@ export function AddDrugModal({
                     value={formData.unit}
                     onChange={handleStringInputChange('unit')}
                     placeholder="เช่น mg, ml, tab"
-                    className={errors.unit ? 'border-red-500' : ''}
-                    disabled={loading}
+                    className={`${errors.unit ? 'border-red-500' : ''} ${isDuplicate ? 'bg-gray-100' : ''}`}
+                    disabled={loading || isDuplicate}
                   />
-                  {errors.unit && (
+                  {errors.unit && !isDuplicate && (
                     <p className="text-sm text-red-600 flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
                       {errors.unit}
@@ -483,7 +630,8 @@ export function AddDrugModal({
                     value={formData.packageSize || ''}
                     onChange={handleStringInputChange('packageSize')}
                     placeholder="เช่น 100"
-                    disabled={loading}
+                    className={isDuplicate ? 'bg-gray-100' : ''}
+                    disabled={loading || isDuplicate}
                   />
                 </div>
 
@@ -497,10 +645,10 @@ export function AddDrugModal({
                     value={formData.pricePerBox}
                     onChange={handleNumberInputChange('pricePerBox')}
                     placeholder="0.00"
-                    className={errors.pricePerBox ? 'border-red-500' : ''}
-                    disabled={loading}
+                    className={`${errors.pricePerBox ? 'border-red-500' : ''} ${isDuplicate ? 'bg-gray-100' : ''}`}
+                    disabled={loading || isDuplicate}
                   />
-                  {errors.pricePerBox && (
+                  {errors.pricePerBox && !isDuplicate && (
                     <p className="text-sm text-red-600 flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
                       {errors.pricePerBox}
@@ -515,9 +663,9 @@ export function AddDrugModal({
                 <Select
                   value={formData.category}
                   onValueChange={(value) => handleInputChange('category', value)}
-                  disabled={loading}
+                  disabled={loading || isDuplicate}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={isDuplicate ? 'bg-gray-100' : ''}>
                     <SelectValue placeholder="เลือกประเภท" />
                   </SelectTrigger>
                   <SelectContent>
@@ -537,8 +685,8 @@ export function AddDrugModal({
                   value={formData.notes || ''}
                   onChange={handleStringInputChange('notes')}
                   placeholder="หมายเหตุเพิ่มเติม..."
-                  className="min-h-[80px]"
-                  disabled={loading}
+                  className={`min-h-[80px] ${isDuplicate ? 'bg-gray-100' : ''}`}
+                  disabled={loading || isDuplicate}
                 />
               </div>
             </CardContent>
@@ -556,17 +704,17 @@ export function AddDrugModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* จำนวนสต็อก */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">จำนวนสต็อก</label>
+                  <label className="text-sm font-medium">จำนวนสต็อกเริ่มต้น</label>
                   <Input
                     type="number"
                     min="0"
                     value={formData.initialQuantity}
                     onChange={handleNumberInputChange('initialQuantity')}
                     placeholder="0"
-                    className={errors.initialQuantity ? 'border-red-500' : ''}
-                    disabled={loading}
+                    className={`${errors.initialQuantity ? 'border-red-500' : ''} ${isDuplicate ? 'bg-gray-100' : ''}`}
+                    disabled={loading || isDuplicate}
                   />
-                  {errors.initialQuantity && (
+                  {errors.initialQuantity && !isDuplicate && (
                     <p className="text-sm text-red-600 flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
                       {errors.initialQuantity}
@@ -583,10 +731,10 @@ export function AddDrugModal({
                     value={formData.minimumStock}
                     onChange={handleNumberInputChange('minimumStock')}
                     placeholder="10"
-                    className={errors.minimumStock ? 'border-red-500' : ''}
-                    disabled={loading}
+                    className={`${errors.minimumStock ? 'border-red-500' : ''} ${isDuplicate ? 'bg-gray-100' : ''}`}
+                    disabled={loading || isDuplicate}
                   />
-                  {errors.minimumStock && (
+                  {errors.minimumStock && !isDuplicate && (
                     <p className="text-sm text-red-600 flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
                       {errors.minimumStock}
@@ -599,7 +747,7 @@ export function AddDrugModal({
               {(formData.initialQuantity > 0 || formData.pricePerBox > 0) && (
                 <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
                   <div className="text-sm font-medium text-blue-800 mb-1">
-                    สรุปสต็อก
+                    สรุปสต็อกเริ่มต้น
                   </div>
                   <div className="text-xs text-blue-600 space-y-1">
                     <div>จำนวน: {formData.initialQuantity.toLocaleString()} หน่วย</div>

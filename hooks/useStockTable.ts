@@ -1,9 +1,8 @@
-// 📄 File: hooks/useStockTable.ts
-// ✅ Custom Hook สำหรับ Stock Table Logic
-
-import { useState, useMemo, useEffect } from 'react'
+// hooks/useStockTable.ts - ✅ FIXED: Export format selection
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { Stock } from '@/types/dashboard'
+import { StockPrintData } from '@/types/print'
 import {
   calculateAvailableStock,
   isLowStock,
@@ -194,6 +193,39 @@ export function useStockTable({ stocks, department, onFilteredStatsChange }: Use
     })
   }, [sortedStocks, searchTerm, showLowStockOnly, filterConfig])
 
+  const preparePrintData = useCallback((stocksToConvert: Stock[]): StockPrintData[] => {
+    return stocksToConvert.map(stock => ({
+      id: stock.id,
+      drug: {
+        hospitalDrugCode: stock.drug?.hospitalDrugCode || '',
+        name: stock.drug?.name || '',
+        genericName: stock.drug?.genericName,
+        dosageForm: stock.drug?.dosageForm || '',
+        strength: stock.drug?.strength,
+        unit: stock.drug?.unit || '',
+        packageSize: stock.drug?.packageSize
+      },
+      totalQuantity: calculateAvailableStock(stock),
+      minimumStock: stock.minimumStock || 0,
+      lastUpdated: stock.lastUpdated ? new Date(stock.lastUpdated) : undefined,
+      cost: stock.drug?.pricePerBox || 0
+    }))
+  }, [])
+
+  // Get Print Data functions
+  const getAllPrintData = useCallback((): StockPrintData[] => {
+    return preparePrintData(stocks)
+  }, [stocks, preparePrintData])
+
+  const getSelectedPrintData = useCallback((): StockPrintData[] => {
+    const selectedStocks = stocks.filter(stock => selectedForExport.has(stock.id))
+    return preparePrintData(selectedStocks)
+  }, [stocks, selectedForExport, preparePrintData])
+
+  const getFilteredPrintData = useCallback((): StockPrintData[] => {
+    return preparePrintData(filteredStocks)
+  }, [filteredStocks, preparePrintData])
+
   // Calculate filtered stats
   const filteredStats = useMemo(() => {
     const totalDrugs = filteredStocks.length
@@ -261,8 +293,11 @@ export function useStockTable({ stocks, department, onFilteredStatsChange }: Use
     }
   }
 
-  // Handle Export
-  const handleExport = async () => {
+  // ✅ FIXED: Handle Export with correct format
+  const handleExport = async (selectedFormat?: 'requisition' | 'detailed' | 'summary') => {
+    // ใช้ format ที่ส่งมาจาก dropdown แทนที่ state
+    const formatToUse = selectedFormat || exportFormat
+    
     const exportStats = calculateExportStats()
     
     if (exportStats.count === 0) {
@@ -276,14 +311,16 @@ export function useStockTable({ stocks, department, onFilteredStatsChange }: Use
 
     setExporting(true)
     try {
+      console.log(`🔄 Exporting ${exportStats.count} stocks in ${formatToUse} format`)
+      
       const exportData = {
         currentView: exportStats.stocks,
         additionalStocks: [],
-        format: exportFormat,
+        format: formatToUse, // ✅ ใช้ format ที่ถูกต้อง
         fields: {
-          drugInfo: exportFormat === 'detailed',
-          stockLevels: exportFormat === 'detailed',
-          costInfo: exportFormat === 'detailed',
+          drugInfo: formatToUse === 'detailed',
+          stockLevels: formatToUse === 'detailed',
+          costInfo: formatToUse === 'detailed',
           lastUpdated: true,
         },
         department,
@@ -298,7 +335,7 @@ export function useStockTable({ stocks, department, onFilteredStatsChange }: Use
 
       toast({
         title: 'กำลัง Export ข้อมูล...',
-        description: `กำลังสร้างไฟล์ Excel สำหรับ ${exportStats.count} รายการ`,
+        description: `กำลังสร้างไฟล์ Excel สำหรับ ${exportStats.count} รายการ (${formatToUse})`,
         variant: 'default',
       })
 
@@ -318,8 +355,8 @@ export function useStockTable({ stocks, department, onFilteredStatsChange }: Use
       
       const departmentName = department === 'PHARMACY' ? 'คลังยา' : 'OPD'
       const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
-      const formatSuffix = exportFormat === 'requisition' ? 'ใบเบิก' : 
-                          exportFormat === 'detailed' ? 'รายละเอียด' : 'สรุป'
+      const formatSuffix = formatToUse === 'requisition' ? 'ใบเบิก' : 
+                          formatToUse === 'detailed' ? 'รายละเอียด' : 'สรุป'
       const filename = `สต็อกยา_${departmentName}_${formatSuffix}_${timestamp}.xlsx`
       
       const link = document.createElement('a')
@@ -333,7 +370,7 @@ export function useStockTable({ stocks, department, onFilteredStatsChange }: Use
 
       toast({
         title: 'Export สำเร็จ!',
-        description: `ส่งออกข้อมูลสต็อก ${exportStats.count} รายการเรียบร้อย`,
+        description: `ส่งออกข้อมูลสต็อก ${exportStats.count} รายการ (${formatSuffix}) เรียบร้อย`,
         variant: 'default',
       })
 
@@ -396,12 +433,18 @@ export function useStockTable({ stocks, department, onFilteredStatsChange }: Use
     calculateStockValue,
     getLastUpdatedColor,
     
+    // Print Data Functions
+    preparePrintData,
+    getAllPrintData,
+    getSelectedPrintData,
+    getFilteredPrintData,
+    
     // Handlers
     handleSort,
     handleToggleExportMode,
     handleSelectAll,
     handleToggleStock,
-    handleExport,
+    handleExport, // ✅ แก้ไขแล้วรับ format parameter
     handleClearFilters,
     
     // Export stats

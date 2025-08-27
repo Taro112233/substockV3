@@ -10,6 +10,7 @@ Directory structure:
     ├── pnpm-workspace.yaml
     ├── postcss.config.mjs
     ├── tsconfig.json
+    ├── vercel.json
     ├── app/
     │   ├── globals.css
     │   ├── layout.tsx
@@ -46,12 +47,16 @@ Directory structure:
     │   │   │       └── route.ts
     │   │   ├── drugs/
     │   │   │   ├── route.ts
-    │   │   │   └── [drugId]/
+    │   │   │   ├── [drugId]/
+    │   │   │   │   └── route.ts
+    │   │   │   └── check-code/
     │   │   │       └── route.ts
     │   │   ├── health/
     │   │   │   └── route.ts
     │   │   ├── stock/
-    │   │   │   └── route.ts
+    │   │   │   ├── route.ts
+    │   │   │   └── export/
+    │   │   │       └── route.ts
     │   │   ├── stocks/
     │   │   │   ├── [stockId]/
     │   │   │   │   └── route.ts
@@ -60,6 +65,8 @@ Directory structure:
     │   │   │   └── pharmacy/
     │   │   │       └── route.ts
     │   │   ├── transactions/
+    │   │   │   ├── export/
+    │   │   │   │   └── route.ts
     │   │   │   ├── opd/
     │   │   │   │   └── route.ts
     │   │   │   └── pharmacy/
@@ -101,6 +108,8 @@ Directory structure:
     │   ├── admin/
     │   │   └── UserManagementButton.tsx
     │   ├── modules/
+    │   │   ├── auth/
+    │   │   │   └── terms-of-service-modal.tsx
     │   │   ├── dashboard/
     │   │   │   ├── dashboard-stats.tsx
     │   │   │   ├── history-tab-enhanced.tsx
@@ -112,13 +121,17 @@ Directory structure:
     │   │   │   ├── stock-detail-modal.tsx
     │   │   │   ├── stock-display-responsive.tsx
     │   │   │   ├── stock-table-enhanced.tsx
-    │   │   │   └── stock-table.tsx
+    │   │   │   ├── stock-table.tsx
+    │   │   │   ├── StockTableComponents.tsx
+    │   │   │   └── StockTableRow.tsx
     │   │   ├── transaction/
     │   │   │   ├── transaction-cards-mobile.tsx
     │   │   │   ├── transaction-detail-modal.tsx
     │   │   │   ├── transaction-display-responsive.tsx
     │   │   │   ├── transaction-item.tsx
-    │   │   │   └── transaction-table-enhanced.tsx
+    │   │   │   ├── transaction-table-enhanced.tsx
+    │   │   │   ├── TransactionTableComponents.tsx
+    │   │   │   └── TransactionTableRow.tsx
     │   │   └── transfer/
     │   │       ├── status-badge.tsx
     │   │       ├── transfer-actions.tsx
@@ -132,6 +145,8 @@ Directory structure:
     │   │       ├── transfer-request-tab.tsx
     │   │       ├── transfer-signatures.tsx
     │   │       └── workflow-progress.tsx
+    │   ├── print/
+    │   │   └── PharmacyPrintTemplate.tsx
     │   └── ui/
     │       ├── accordion.tsx
     │       ├── alert-dialog.tsx
@@ -151,6 +166,7 @@ Directory structure:
     │       ├── dialog.tsx
     │       ├── drawer.tsx
     │       ├── dropdown-menu.tsx
+    │       ├── ExcelExportButton.tsx
     │       ├── form.tsx
     │       ├── hover-card.tsx
     │       ├── input-otp.tsx
@@ -160,6 +176,7 @@ Directory structure:
     │       ├── navigation-menu.tsx
     │       ├── pagination.tsx
     │       ├── popover.tsx
+    │       ├── PrintButton.tsx
     │       ├── progress.tsx
     │       ├── radio-group.tsx
     │       ├── resizable.tsx
@@ -186,9 +203,13 @@ Directory structure:
     │   └── hospital-drugs.csv
     ├── hooks/
     │   ├── use-auth.ts
+    │   ├── use-drug-code-validation.ts
     │   ├── use-mobile.ts
     │   ├── use-toast.ts
+    │   ├── usePrintPDF.ts
     │   ├── useSimpleServerStatus.ts
+    │   ├── useStockTable.ts
+    │   ├── useTransactionTable.ts
     │   └── useUserManagement.ts
     ├── lib/
     │   ├── auth-server.ts
@@ -201,6 +222,8 @@ Directory structure:
     │   │   └── api.ts
     │   └── utils/
     │       ├── dashboard.ts
+    │       ├── excel.ts
+    │       ├── print-utils.ts
     │       ├── transfer-status.ts
     │       └── type-guards.ts
     ├── prisma/
@@ -221,7 +244,8 @@ Directory structure:
     ├── scripts/
     │   ├── debug-drugs.js
     │   ├── merge-schemas.js
-    │   └── merge-seeds.js
+    │   ├── merge-seeds.js
+    │   └── reset-4-models.ts
     ├── services/
     │   ├── transfer-action-service.ts
     │   └── transfer-service.ts
@@ -229,6 +253,7 @@ Directory structure:
         ├── cookie.d.ts
         ├── dashboard.ts
         ├── index.ts
+        ├── print.ts
         └── transfer.ts
 
 # 📌 Project Instructions for Claude: Hospital Pharmacy Stock Management System V3.0

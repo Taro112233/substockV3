@@ -798,8 +798,8 @@ export function StockDetailModalEnhanced({
               onClick={onClose}
               className="flex items-center gap-1"
             >
-              <X className="h-4 w-4" />
-              ปิด
+              <X className="h-4 w-4 text-red-600" />
+              <p className='text-red-600'>ปิด</p>
             </Button>
           </div>
         </div>

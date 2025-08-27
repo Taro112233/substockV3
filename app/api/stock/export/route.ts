@@ -1,11 +1,9 @@
 // 📄 File: app/api/stock/export/route.ts
-// ✅ FIXED: Type compatibility with utility functions
-// API Endpoint for Excel Export - No Auth Required
+// ✅ FIXED: แก้ไข Format Logic ให้ทำงานถูกต้อง + เรียงชื่อยา A-Z
 
 import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 
-// ✅ FIXED: Create local utility functions that work with StockData type
 interface StockData {
   id: string
   totalQuantity: number
@@ -24,40 +22,6 @@ interface StockData {
     packageSize: number | null
     pricePerBox: number | null
   } | null
-}
-
-// ✅ LOCAL: Calculate available stock (works with StockData)
-function calculateAvailableStockLocal(stock: StockData): number {
-  return Math.max(0, (stock.totalQuantity || 0) - (stock.reservedQty || 0))
-}
-
-// ✅ LOCAL: Check if stock is low (works with StockData)
-function isLowStockLocal(stock: StockData): boolean {
-  const available = calculateAvailableStockLocal(stock)
-  const minimum = stock.minimumStock || 0
-  return available < minimum && minimum > 0
-}
-
-// ✅ LOCAL: Get category label (works with nullable string)
-function getCategoryLabelLocal(category: string | null | undefined): string {
-  if (!category) return 'ไม่ระบุ'
-  
-  const labels: Record<string, string> = {
-    'REFER': 'ยาส่งต่อ',
-    'HAD': 'ยา HAD',
-    'NARCOTIC': 'ยาเสพติด',
-    'REFRIGERATED': 'ยาเก็บเย็น',
-    'PSYCHIATRIC': 'ยาจิต',
-    'FLUID': 'น้ำเกล็อ',
-    'GENERAL': 'ยาทั่วไป',
-    'TABLET': 'ยาเม็ด',
-    'SYRUP': 'ยาน้ำ',
-    'INJECTION': 'ยาฉีด',
-    'EXTEMP': 'ยาผสม',
-    'ALERT': 'ยาแจ้งเตือน'
-  }
-  
-  return labels[category] || category
 }
 
 interface ExportRequest {
@@ -85,9 +49,58 @@ interface ExportRow {
   [key: string]: string | number | undefined
 }
 
+// ✅ LOCAL: Calculate available stock
+function calculateAvailableStockLocal(stock: StockData): number {
+  return Math.max(0, (stock.totalQuantity || 0) - (stock.reservedQty || 0))
+}
+
+// ✅ LOCAL: Check if stock is low
+function isLowStockLocal(stock: StockData): boolean {
+  const available = calculateAvailableStockLocal(stock)
+  const minimum = stock.minimumStock || 0
+  return available < minimum && minimum > 0
+}
+
+// ✅ LOCAL: Get category label
+function getCategoryLabelLocal(category: string | null | undefined): string {
+  if (!category) return 'ไม่ระบุ'
+  
+  const labels: Record<string, string> = {
+    'REFER': 'ยาส่งต่อ',
+    'HAD': 'ยา HAD',
+    'NARCOTIC': 'ยาเสพติด',
+    'REFRIGERATED': 'ยาเก็บเย็น',
+    'PSYCHIATRIC': 'ยาจิต',
+    'FLUID': 'น้ำเกล็อ',
+    'GENERAL': 'ยาทั่วไป',
+    'TABLET': 'ยาเม็ด',
+    'SYRUP': 'ยาน้ำ',
+    'INJECTION': 'ยาฉีด',
+    'EXTEMP': 'ยาผสม',
+    'ALERT': 'ยาแจ้งเตือน'
+  }
+  
+  return labels[category] || category
+}
+
+// ✅ NEW: Sort stocks by drug name A-Z (Thai locale support)
+function sortStocksByName(stocks: StockData[]): StockData[] {
+  return [...stocks].sort((a, b) => {
+    const nameA = a.drug?.name?.toLowerCase() || ''
+    const nameB = b.drug?.name?.toLowerCase() || ''
+    
+    // ใช้ Thai locale sorting สำหรับการเรียงลำดับที่ถูกต้อง
+    return nameA.localeCompare(nameB, 'th', {
+      sensitivity: 'base',
+      numeric: true,
+      ignorePunctuation: true
+    })
+  })
+}
+
 export async function POST(request: NextRequest) {
   try {
-    console.log('📊 Export API called')
+    console.log('📊 Stock Export API called')
 
     const body: ExportRequest = await request.json()
     console.log('📋 Export request:', {
@@ -152,7 +165,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// รวบรวมข้อมูล Stock สำหรับ Export
+// ✅ UPDATED: รวบรวมข้อมูล Stock และเรียงตามชื่อยา A-Z
 function collectExportData(body: ExportRequest): StockData[] {
   const allStocks: StockData[] = []
 
@@ -162,8 +175,13 @@ function collectExportData(body: ExportRequest): StockData[] {
     allStocks.push(...body.currentView)
   }
 
-  console.log(`📊 Total stocks for export: ${allStocks.length}`)
-  return allStocks
+  console.log(`📊 Total stocks before sorting: ${allStocks.length}`)
+  
+  // ✅ NEW: เรียงตามชื่อยา A-Z ก่อน return
+  const sortedStocks = sortStocksByName(allStocks)
+  console.log(`📊 Stocks sorted by drug name A-Z: ${sortedStocks.length}`)
+
+  return sortedStocks
 }
 
 // สร้าง Excel Workbook
@@ -199,77 +217,90 @@ function createExcelWorkbook(stocks: StockData[], config: ExportRequest): XLSX.W
   return workbook
 }
 
-// สร้างแถวข้อมูลสำหรับ Export
+// ✅ FIXED: สร้างแถวข้อมูลสำหรับ Export - แก้ไข Logic
 function createExportRow(stock: StockData, config: ExportRequest): ExportRow {
   const availableStock = calculateAvailableStockLocal(stock)
   const lowStock = isLowStockLocal(stock)
   const categoryLabel = getCategoryLabelLocal(stock.drug?.category)
   const stockValue = availableStock * (stock.drug?.pricePerBox || 0)
 
-  const row: ExportRow = {}
-
-  // ใบเบิก Format
+  // ✅ FIXED: ใบเบิก Format - มี return แล้วจบ
   if (config.format === 'requisition') {
-    row['รหัส'] = stock.drug?.hospitalDrugCode || '-'
-    row['ชื่อยา'] = stock.drug?.name || '-'
-    row['รูปแบบ'] = stock.drug?.dosageForm || '-'
-    row['ความแรง'] = stock.drug?.strength && stock.drug?.unit 
-      ? `${stock.drug.strength} ${stock.drug.unit}` 
-      : (stock.drug?.strength || '-')
-    row['ขนาดบรรจุ'] = stock.drug?.packageSize ? `1 x ${stock.drug.packageSize}'s` : '-'
-    row['ขั้นต่ำ'] = stock.minimumStock || 0
-    row['คงเหลือ'] = availableStock
-    row['อัปเดต'] = stock.lastUpdated 
-      ? new Date(stock.lastUpdated).toLocaleString('th-TH', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
-        })
-      : '-'
+    return {
+      'รหัส': stock.drug?.hospitalDrugCode || '-',
+      'ชื่อยา': stock.drug?.name || '-',
+      'รูปแบบ': stock.drug?.dosageForm || '-',
+      'ความแรง': stock.drug?.strength && stock.drug?.unit 
+        ? `${stock.drug.strength} ${stock.drug.unit}` 
+        : (stock.drug?.strength || '-'),
+      'ขนาดบรรจุ': stock.drug?.packageSize ? `1 x ${stock.drug.packageSize}'s` : '-',
+      'ขั้นต่ำ': stock.minimumStock || 0,
+      'คงเหลือ': availableStock,
+      'สถานะ': lowStock ? 'ต้องเบิก' : 'เพียงพอ',
+      'อัปเดต': stock.lastUpdated 
+        ? new Date(stock.lastUpdated).toLocaleString('th-TH', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          })
+        : '-'
+    }
+  }
+
+  // ✅ FIXED: สำหรับ Summary Format
+  if (config.format === 'summary') {
+    return {
+      'รหัสยา': stock.drug?.hospitalDrugCode || '-',
+      'ชื่อยา': stock.drug?.name || '-',
+      'ประเภท': categoryLabel,
+      'รูปแบบ': stock.drug?.dosageForm || '-',
+      'คงเหลือ': availableStock,
+      'ขั้นต่ำ': stock.minimumStock || 0,
+      'สถานะ': lowStock ? 'สต็อกต่ำ' : 'ปกติ',
+      'มูลค่า (บาท)': stockValue.toFixed(2),
+      'อัปเดตล่าสุด': stock.lastUpdated 
+        ? new Date(stock.lastUpdated).toLocaleString('th-TH')
+        : '-'
+    }
+  }
+
+  // ✅ FIXED: สำหรับ Detailed Format
+  if (config.format === 'detailed') {
+    const row: ExportRow = {
+      'รหัสยา': stock.drug?.hospitalDrugCode || '-',
+      'ชื่อยา': stock.drug?.name || '-',
+      'ชื่อสามัญ': stock.drug?.genericName || '-',
+      'ประเภท': categoryLabel,
+      'รูปแบบ': stock.drug?.dosageForm || '-',
+      'ความแรง': stock.drug?.strength ? `${stock.drug.strength} ${stock.drug.unit || ''}` : '-',
+      'ขนาดบรรจุ': stock.drug?.packageSize ? `1 x ${stock.drug.packageSize}'s` : '-',
+      'จำนวนรวม': stock.totalQuantity || 0,
+      'จำนวนจอง': stock.reservedQty || 0,
+      'คงเหลือ': availableStock,
+      'ขั้นต่ำ': stock.minimumStock || 0,
+      'สถานะ': lowStock ? 'สต็อกต่ำ' : 'ปกติ',
+      'ราคาต่อกล่อง': stock.drug?.pricePerBox || 0,
+      'มูลค่ารวม': stockValue.toFixed(2),
+      'อัปเดตล่าสุด': stock.lastUpdated 
+        ? new Date(stock.lastUpdated).toLocaleString('th-TH')
+        : '-'
+    }
+
     return row
   }
 
-  // ข้อมูลพื้นฐาน (summary & detailed)
-  row['รหัสยา'] = stock.drug?.hospitalDrugCode || '-'
-  row['ชื่อยา'] = stock.drug?.name || '-'
-  row['คงเหลือ'] = availableStock
-  row['สถานะ'] = lowStock ? 'สต็อกต่ำ' : 'ปกติ'
-
-  // ข้อมูลยา (ถ้าเลือกไว้)
-  if (config.fields.drugInfo) {
-    row['ชื่อสามัญ'] = stock.drug?.genericName || '-'
-    row['ประเภท'] = categoryLabel
-    row['รูปแบบ'] = stock.drug?.dosageForm || '-'
-    row['ความแรง'] = stock.drug?.strength ? `${stock.drug.strength} ${stock.drug.unit || ''}` : '-'
-    row['ขนาดบรรจุ'] = stock.drug?.packageSize ? `1 x ${stock.drug.packageSize}'s` : '-'
+  // Fallback (shouldn't reach here)
+  return {
+    'รหัสยา': stock.drug?.hospitalDrugCode || '-',
+    'ชื่อยา': stock.drug?.name || '-',
+    'คงเหลือ': availableStock,
+    'สถานะ': lowStock ? 'สต็อกต่ำ' : 'ปกติ'
   }
-
-  // ข้อมูลระดับสต็อก (ถ้าเลือกไว้)
-  if (config.fields.stockLevels) {
-    row['จำนวนขั้นต่ำ'] = stock.minimumStock || 0
-    row['จำนวนจอง'] = stock.reservedQty || 0
-    row['จำนวนรวม'] = stock.totalQuantity || 0
-  }
-
-  // ข้อมูลต้นทุน (ถ้าเลือกไว้)
-  if (config.fields.costInfo) {
-    row['ราคาต่อกล่อง'] = stock.drug?.pricePerBox || 0
-    row['มูลค่ารวม'] = stockValue
-  }
-
-  // วันที่อัปเดต (ถ้าเลือกไว้)
-  if (config.fields.lastUpdated) {
-    row['อัปเดตล่าสุด'] = stock.lastUpdated 
-      ? new Date(stock.lastUpdated).toLocaleString('th-TH')
-      : '-'
-  }
-
-  return row
 }
 
-// สร้างข้อมูลสรุป
+// ✅ UPDATED: สร้างข้อมูลสรุป - Summary data จะใช้ข้อมูลที่เรียงแล้ว
 function createSummaryData(stocks: StockData[], config: ExportRequest): ExportRow[] {
   const totalStocks = stocks.length
   const totalValue = stocks.reduce((sum, stock) => 
@@ -277,7 +308,7 @@ function createSummaryData(stocks: StockData[], config: ExportRequest): ExportRo
   )
   const lowStockCount = stocks.filter(stock => isLowStockLocal(stock)).length
   
-  // สรุปตามประเภทยา
+  // สรุปตามประเภทยา - เรียงตามประเภท
   const categoryStats = stocks.reduce((acc, stock) => {
     const category = stock.drug?.category || 'UNKNOWN'
     if (!acc[category]) {
@@ -306,17 +337,20 @@ function createSummaryData(stocks: StockData[], config: ExportRequest): ExportRo
       'แผนก': '',
       'วันที่ Export': ''
     },
-    ...Object.entries(categoryStats).map(([category, categoryData]) => {
-      const data = categoryData as { count: number, value: number }
-      return {
-        'รายการ': `ประเภท: ${getCategoryLabelLocal(category)}`,
-        'รายการยา': data.count,
-        'มูลค่ารวม': data.value.toFixed(2),
-        'สต็อกต่ำ': '',
-        'แผนก': '',
-        'วันที่ Export': ''
-      }
-    })
+    // ✅ เรียงประเภทตามตัวอักษร
+    ...Object.entries(categoryStats)
+      .sort(([a], [b]) => getCategoryLabelLocal(a).localeCompare(getCategoryLabelLocal(b), 'th'))
+      .map(([category, categoryData]) => {
+        const data = categoryData as { count: number, value: number }
+        return {
+          'รายการ': `ประเภท: ${getCategoryLabelLocal(category)}`,
+          'รายการยา': data.count,
+          'มูลค่ารวม': data.value.toFixed(2),
+          'สต็อกต่ำ': '',
+          'แผนก': '',
+          'วันที่ Export': ''
+        }
+      })
   ]
 
   return summaryData
@@ -351,16 +385,16 @@ function createRequisitionHeader(config: ExportRequest): Array<Record<string, st
     {},
     {
       'ข้อมูล': 'หมายเหตุ:',
-      'ค่า': 'ใบเบิกสำหรับตรวจสอบสต็อกและการเบิกจ่าย'
+      'ค่า': 'ใบเบิกสำหรับตรวจสอบสต็อกและการเบิกจ่าย (เรียงตามชื่อยา A-Z)'
     },
     {
       'ข้อมูล': '',
-      'ค่า': 'อัปเดต = วันเวลาที่อัปเดตสต็อกล่าสุด'
+      'ค่า': 'สถานะ: ต้องเบิก = คงเหลือต่ำกว่าขั้นต่ำ'
     }
   ]
 }
 
-// กำหนดความกว้างคอลัมน์
+// ✅ FIXED: กำหนดความกว้างคอลัมน์ตาม format
 function getColumnWidths(format: 'summary' | 'detailed' | 'requisition'): XLSX.ColInfo[] {
   // ใบเบิก Format
   if (format === 'requisition') {
@@ -370,35 +404,44 @@ function getColumnWidths(format: 'summary' | 'detailed' | 'requisition'): XLSX.C
       { wch: 12 }, // รูปแบบ
       { wch: 15 }, // ความแรง
       { wch: 15 }, // ขนาดบรรจุ
-      { wch: 12 }, // ขั้นต่ำ
+      { wch: 10 }, // ขั้นต่ำ
       { wch: 12 }, // คงเหลือ
-      { wch: 18 }, // อัปเดต (วันเวลา)
+      { wch: 12 }, // สถานะ
+      { wch: 18 }, // อัปเดต
     ]
   }
 
-  const baseWidths: XLSX.ColInfo[] = [
-    { wch: 15 }, // รหัสยา
-    { wch: 30 }, // ชื่อยา
-    { wch: 12 }, // คงเหลือ
-    { wch: 12 }, // สถานะ
-  ]
-
-  if (format === 'detailed') {
+  // Summary Format
+  if (format === 'summary') {
     return [
-      ...baseWidths,
-      { wch: 25 }, // ชื่อสามัญ
+      { wch: 15 }, // รหัสยา
+      { wch: 30 }, // ชื่อยา
       { wch: 15 }, // ประเภท
       { wch: 12 }, // รูปแบบ
-      { wch: 15 }, // ความแรง
-      { wch: 15 }, // ขนาดบรรจุ
-      { wch: 12 }, // ขั้นต่ำ
-      { wch: 10 }, // จอง
-      { wch: 12 }, // รวม
-      { wch: 12 }, // ราคา
+      { wch: 12 }, // คงเหลือ
+      { wch: 10 }, // ขั้นต่ำ
+      { wch: 12 }, // สถานะ
       { wch: 15 }, // มูลค่า
       { wch: 20 }, // อัปเดต
     ]
   }
 
-  return baseWidths
+  // Detailed Format
+  return [
+    { wch: 15 }, // รหัสยา
+    { wch: 30 }, // ชื่อยา
+    { wch: 25 }, // ชื่อสามัญ
+    { wch: 15 }, // ประเภท
+    { wch: 12 }, // รูปแบบ
+    { wch: 15 }, // ความแรง
+    { wch: 15 }, // ขนาดบรรจุ
+    { wch: 10 }, // รวม
+    { wch: 10 }, // จอง
+    { wch: 12 }, // คงเหลือ
+    { wch: 10 }, // ขั้นต่ำ
+    { wch: 12 }, // สถานะ
+    { wch: 12 }, // ราคา
+    { wch: 15 }, // มูลค่า
+    { wch: 20 }, // อัปเดต
+  ]
 }

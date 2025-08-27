@@ -10,7 +10,6 @@ import { TransactionDisplayResponsive } from '../transaction/transaction-display
 import { 
   History, 
   RefreshCw,
-  Download,
   TrendingUp,
   TrendingDown,
   DollarSign,
@@ -156,14 +155,6 @@ export function HistoryTabEnhanced({
     fetchTransactionData(true)
   }
 
-  const handleExport = () => {
-    toast({
-      title: "ฟีเจอร์กำลังพัฒนา",
-      description: "การส่งออกประวัติจะพร้อมใช้งานในเร็วๆ นี้",
-      variant: "default"
-    })
-  }
-
   // ✅ Enhanced: Handle filtered stats from responsive component (similar to stock pattern)
   const handleFilteredStatsChange = useCallback((stats: FilteredStatsData) => {
     setFilteredStats(stats)
@@ -278,16 +269,6 @@ export function HistoryTabEnhanced({
               className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
             />
             {refreshing ? "กำลังอัปเดต..." : "รีเฟรช"}
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExport}
-            className="flex items-center gap-2"
-          >
-            <Download className="h-4 w-4" />
-            ส่งออก
           </Button>
         </div>
       </div>

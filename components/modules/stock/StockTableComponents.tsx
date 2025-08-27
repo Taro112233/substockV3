@@ -1,22 +1,20 @@
-// 📄 File: components/modules/stock/StockTableComponents.tsx
-// ✅ UI Components สำหรับ Stock Table
+// components/modules/stock/StockTableComponents.tsx
+// ✅ FIXED: แก้ไข interface และ Export handler เพื่อส่ง format parameter
 
-import React from 'react'
+import React from "react";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/components/ui/card'
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { TableHead } from "@/components/ui/table";
 import {
-  TableHead,
-} from '@/components/ui/table'
-import { 
   AlertTriangle,
   Search,
   ArrowUpDown,
@@ -25,87 +23,135 @@ import {
   Download,
   Package,
   CheckCircle2,
-} from 'lucide-react'
+} from "lucide-react";
+import { Stock } from "@/types/dashboard";
+import { StockPrintData } from "@/types/print";
+import {
+  ExportButton,
+  StockExportFormat,
+} from "@/components/ui/ExcelExportButton";
 
 // Types
-type SortField = 'name' | 'dosageForm' | 'strength' | 'packageSize' | 'quantity' | 'totalValue' | 'lastUpdated'
-type SortDirection = 'asc' | 'desc' | null
+type SortField =
+  | "name"
+  | "dosageForm"
+  | "strength"
+  | "packageSize"
+  | "quantity"
+  | "totalValue"
+  | "lastUpdated";
+type SortDirection = "asc" | "desc" | null;
 
 interface SortConfig {
-  field: SortField | null
-  direction: SortDirection
+  field: SortField | null;
+  direction: SortDirection;
 }
 
-type DrugCategory = 
-  | 'REFER' | 'HAD' | 'NARCOTIC' | 'REFRIGERATED' | 'PSYCHIATRIC' 
-  | 'FLUID' | 'GENERAL' | 'TABLET' | 'SYRUP' | 'INJECTION' | 'EXTEMP' | 'ALERT'
+type DrugCategory =
+  | "REFER"
+  | "HAD"
+  | "NARCOTIC"
+  | "REFRIGERATED"
+  | "PSYCHIATRIC"
+  | "FLUID"
+  | "GENERAL"
+  | "TABLET"
+  | "SYRUP"
+  | "INJECTION"
+  | "EXTEMP"
+  | "ALERT";
 
-type DosageForm = 
-  | 'APP' | 'BAG' | 'CAP' | 'CR' | 'DOP' | 'ENE' | 'GEL' | 'HAN' | 'IMP' 
-  | 'INJ' | 'LIQ' | 'LOT' | 'LVP' | 'MDI' | 'MIX' | 'NAS' | 'NB' | 'OIN' 
-  | 'PAT' | 'POW' | 'PWD' | 'SAC' | 'SOL' | 'SPR' | 'SUP' | 'SUS' | 'SYR' 
-  | 'TAB' | 'TUR'
+type DosageForm =
+  | "APP"
+  | "BAG"
+  | "CAP"
+  | "CR"
+  | "DOP"
+  | "ENE"
+  | "GEL"
+  | "HAN"
+  | "IMP"
+  | "INJ"
+  | "LIQ"
+  | "LOT"
+  | "LVP"
+  | "MDI"
+  | "MIX"
+  | "NAS"
+  | "NB"
+  | "OIN"
+  | "PAT"
+  | "POW"
+  | "PWD"
+  | "SAC"
+  | "SOL"
+  | "SPR"
+  | "SUP"
+  | "SUS"
+  | "SYR"
+  | "TAB"
+  | "TUR";
 
 interface FilterConfig {
-  category: DrugCategory | 'all'
-  dosageForm: DosageForm | 'all'
+  category: DrugCategory | "all";
+  dosageForm: DosageForm | "all";
 }
 
 // Options Data
 export const categoryOptions = [
-  { value: 'all', label: 'ทุกประเภท' },
-  { value: 'GENERAL', label: 'ยาทั่วไป' },
-  { value: 'TABLET', label: 'ยาเม็ด' },
-  { value: 'SYRUP', label: 'ยาน้ำ' },
-  { value: 'INJECTION', label: 'ยาฉีด' },
-  { value: 'EXTEMP', label: 'ยาใช้ภายนอก/สมุนไพร' },
-  { value: 'FLUID', label: 'สารน้ำ' },
-  { value: 'NARCOTIC', label: 'ยาเสพติด' },
-  { value: 'PSYCHIATRIC', label: 'ยาจิตเวช' },
-  { value: 'REFRIGERATED', label: 'ยาเย็น' },
-  { value: 'HAD', label: 'ยา HAD' },
-  { value: 'REFER', label: 'ยาส่งต่อ' },
-  { value: 'ALERT', label: 'ยาเฝ้าระวัง' }
-]
+  { value: "all", label: "ทุกประเภท" },
+  { value: "GENERAL", label: "ยาทั่วไป" },
+  { value: "TABLET", label: "ยาเม็ด" },
+  { value: "SYRUP", label: "ยาน้ำ" },
+  { value: "INJECTION", label: "ยาฉีด" },
+  { value: "EXTEMP", label: "ยาใช้ภายนอก/สมุนไพร" },
+  { value: "FLUID", label: "สารน้ำ" },
+  { value: "NARCOTIC", label: "ยาเสพติด" },
+  { value: "PSYCHIATRIC", label: "ยาจิตเวช" },
+  { value: "REFRIGERATED", label: "ยาเย็น" },
+  { value: "HAD", label: "ยา HAD" },
+  { value: "REFER", label: "ยาส่งต่อ" },
+  { value: "ALERT", label: "ยาเฝ้าระวัง" },
+];
 
 export const dosageFormOptions = [
-  { value: 'all', label: 'ทุกรูปแบบ' },
-  { value: 'TAB', label: 'TAB' },
-  { value: 'CAP', label: 'CAP' },
-  { value: 'SYR', label: 'SYR' },
-  { value: 'SUS', label: 'SUS' },
-  { value: 'INJ', label: 'INJ' },
-  { value: 'SOL', label: 'SOL' },
-  { value: 'OIN', label: 'OIN' },
-  { value: 'GEL', label: 'GEL' },
-  { value: 'LOT', label: 'LOT' },
-  { value: 'SPR', label: 'SPR' },
-  { value: 'SUP', label: 'SUP' },
-  { value: 'ENE', label: 'ENE' },
-  { value: 'POW', label: 'POW' },
-  { value: 'PWD', label: 'PWD' },
-  { value: 'CR', label: 'CR' },
-  { value: 'BAG', label: 'BAG' },
-  { value: 'APP', label: 'APP' },
-  { value: 'LVP', label: 'LVP' },
-  { value: 'MDI', label: 'MDI' },
-  { value: 'NAS', label: 'NAS' },
-  { value: 'SAC', label: 'SAC' },
-  { value: 'LIQ', label: 'LIQ' },
-  { value: 'MIX', label: 'MIX' }
-]
+  { value: "all", label: "ทุกรูปแบบ" },
+  { value: "TAB", label: "TAB" },
+  { value: "CAP", label: "CAP" },
+  { value: "SYR", label: "SYR" },
+  { value: "SUS", label: "SUS" },
+  { value: "INJ", label: "INJ" },
+  { value: "SOL", label: "SOL" },
+  { value: "OIN", label: "OIN" },
+  { value: "GEL", label: "GEL" },
+  { value: "LOT", label: "LOT" },
+  { value: "SPR", label: "SPR" },
+  { value: "SUP", label: "SUP" },
+  { value: "ENE", label: "ENE" },
+  { value: "POW", label: "POW" },
+  { value: "PWD", label: "PWD" },
+  { value: "CR", label: "CR" },
+  { value: "BAG", label: "BAG" },
+  { value: "APP", label: "APP" },
+  { value: "LVP", label: "LVP" },
+  { value: "MDI", label: "MDI" },
+  { value: "NAS", label: "NAS" },
+  { value: "SAC", label: "SAC" },
+  { value: "LIQ", label: "LIQ" },
+  { value: "MIX", label: "MIX" },
+];
 
-// Export Controls Component
+// ✅ FIXED: Export Controls Component - แก้ไข handler signature
 interface ExportControlsProps {
-  exportStats: { count: number; totalValue: number }
-  currentViewStats: { count: number; totalValue: number }
-  hiddenSelectedCount: number
-  filteredStocksLength: number
-  exportFormat: 'requisition' | 'detailed' | 'summary'
-  setExportFormat: (format: 'requisition' | 'detailed' | 'summary') => void
-  onExport: () => void
-  onCancel: () => void
-  exporting: boolean
+  exportStats: { count: number; totalValue: number; stocks: Stock[] };
+  currentViewStats: { count: number; totalValue: number };
+  hiddenSelectedCount: number;
+  filteredStocksLength: number;
+  onExport: (format: StockExportFormat) => Promise<void>; // ✅ แก้ไขให้รับ format parameter
+  onCancel: () => void;
+  exporting: boolean;
+  department: "PHARMACY" | "OPD";
+  preparePrintData: (stocks: Stock[]) => StockPrintData[];
 }
 
 export function ExportControls({
@@ -113,11 +159,9 @@ export function ExportControls({
   currentViewStats,
   hiddenSelectedCount,
   filteredStocksLength,
-  exportFormat,
-  setExportFormat,
   onExport,
   onCancel,
-  exporting
+  exporting,
 }: ExportControlsProps) {
   return (
     <Card className="border-green-200 bg-green-50">
@@ -129,45 +173,41 @@ export function ExportControls({
               <h3 className="font-medium text-green-900 flex items-center gap-2">
                 โหมดเลือก Export ({exportStats.count} รายการ)
                 {hiddenSelectedCount > 0 && (
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                    <CheckCircle2 className="h-3 w-3 mr-1" />
-                    +{hiddenSelectedCount} นอกมุมมอง
+                  <Badge
+                    variant="secondary"
+                    className="bg-blue-100 text-blue-700"
+                  >
+                    <CheckCircle2 className="h-3 w-3 mr-1" />+
+                    {hiddenSelectedCount} นอกมุมมอง
                   </Badge>
                 )}
               </h3>
               <p className="text-sm text-green-700 mt-1">
-                ในมุมมองนี้: {currentViewStats.count}/{filteredStocksLength} รายการ • 
-                รวมทั้งหมด: {exportStats.count} รายการ (฿{exportStats.totalValue.toLocaleString()})
+                ในมุมมองนี้: {currentViewStats.count}/{filteredStocksLength}{" "}
+                รายการ • รวมทั้งหมด: {exportStats.count} รายการ (฿
+                {exportStats.totalValue.toLocaleString()})
               </p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <label htmlFor="export-format" className="text-sm font-medium">
-                รูปแบบ:
-              </label>
-              <Select value={exportFormat} onValueChange={setExportFormat}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="requisition">ใบเบิก</SelectItem>
-                  <SelectItem value="detailed">รายละเอียด</SelectItem>
-                  <SelectItem value="summary">สรุป</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <Button
-              onClick={onExport}
-              disabled={exportStats.count === 0 || exporting}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              {exporting ? 'กำลัง Export...' : 'Export Excel'}
-            </Button>
-            
+            {/* ✅ FIXED: Excel Export Button - ส่ง format ที่ถูกต้อง */}
+            <ExportButton
+              selectedCount={exportStats.count}
+              exporting={exporting}
+              onExport={(format) => {
+                // ✅ ส่ง format ที่เลือกจาก dropdown ไปยัง handler
+                if (
+                  format === "requisition" ||
+                  format === "detailed" ||
+                  format === "summary"
+                ) {
+                  onExport(format); // ส่ง format ที่เลือก
+                }
+              }}
+              variant="stock"
+            />
+
             <Button
               variant="outline"
               onClick={onCancel}
@@ -179,21 +219,23 @@ export function ExportControls({
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 // Search and Filter Bar Component
 interface SearchFilterBarProps {
-  searchTerm: string
-  setSearchTerm: (term: string) => void
-  filterConfig: FilterConfig
-  setFilterConfig: (config: FilterConfig | ((prev: FilterConfig) => FilterConfig)) => void
-  showLowStockOnly: boolean
-  setShowLowStockOnly: (show: boolean) => void
-  showExportMode: boolean
-  onToggleExportMode: () => void
-  hasActiveFilters: boolean
-  onClearFilters: () => void
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+  filterConfig: FilterConfig;
+  setFilterConfig: (
+    config: FilterConfig | ((prev: FilterConfig) => FilterConfig)
+  ) => void;
+  showLowStockOnly: boolean;
+  setShowLowStockOnly: (show: boolean) => void;
+  showExportMode: boolean;
+  onToggleExportMode: () => void;
+  hasActiveFilters: boolean;
+  onClearFilters: () => void;
 }
 
 export function SearchFilterBar({
@@ -206,7 +248,7 @@ export function SearchFilterBar({
   showExportMode,
   onToggleExportMode,
   hasActiveFilters,
-  onClearFilters
+  onClearFilters,
 }: SearchFilterBarProps) {
   return (
     <div className="space-y-3">
@@ -225,10 +267,12 @@ export function SearchFilterBar({
         <div className="w-48">
           <Select
             value={filterConfig.category}
-            onValueChange={(value) => setFilterConfig(prev => ({ 
-              ...prev, 
-              category: value as DrugCategory | 'all' 
-            }))}
+            onValueChange={(value) =>
+              setFilterConfig((prev) => ({
+                ...prev,
+                category: value as DrugCategory | "all",
+              }))
+            }
           >
             <SelectTrigger>
               <SelectValue placeholder="เลือกประเภทยา" />
@@ -246,10 +290,12 @@ export function SearchFilterBar({
         <div className="w-48">
           <Select
             value={filterConfig.dosageForm}
-            onValueChange={(value) => setFilterConfig(prev => ({ 
-              ...prev, 
-              dosageForm: value as DosageForm | 'all' 
-            }))}
+            onValueChange={(value) =>
+              setFilterConfig((prev) => ({
+                ...prev,
+                dosageForm: value as DosageForm | "all",
+              }))
+            }
           >
             <SelectTrigger>
               <SelectValue placeholder="เลือกรูปแบบยา" />
@@ -311,15 +357,17 @@ export function SearchFilterBar({
             className="pl-10"
           />
         </div>
-        
+
         <div className="flex items-center gap-2">
           <div className="flex-1">
             <Select
               value={filterConfig.category}
-              onValueChange={(value) => setFilterConfig(prev => ({ 
-                ...prev, 
-                category: value as DrugCategory | 'all' 
-              }))}
+              onValueChange={(value) =>
+                setFilterConfig((prev) => ({
+                  ...prev,
+                  category: value as DrugCategory | "all",
+                }))
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="ทุกประเภท" />
@@ -337,10 +385,12 @@ export function SearchFilterBar({
           <div className="flex-1">
             <Select
               value={filterConfig.dosageForm}
-              onValueChange={(value) => setFilterConfig(prev => ({ 
-                ...prev, 
-                dosageForm: value as DosageForm | 'all' 
-              }))}
+              onValueChange={(value) =>
+                setFilterConfig((prev) => ({
+                  ...prev,
+                  dosageForm: value as DosageForm | "all",
+                }))
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="ทุกรูปแบบ" />
@@ -391,78 +441,93 @@ export function SearchFilterBar({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // Sortable Header Component
 interface SortableHeaderProps {
-  field: SortField
-  children: React.ReactNode
-  className?: string
-  align?: 'left' | 'center' | 'right'
-  sortConfig: SortConfig
-  onSort: (field: SortField) => void
+  field: SortField;
+  children: React.ReactNode;
+  className?: string;
+  align?: "left" | "center" | "right";
+  sortConfig: SortConfig;
+  onSort: (field: SortField) => void;
 }
 
-export function SortableHeader({ 
-  field, 
-  children, 
-  className = '',
-  align = 'left',
+export function SortableHeader({
+  field,
+  children,
+  className = "",
+  align = "left",
   sortConfig,
-  onSort
+  onSort,
 }: SortableHeaderProps) {
   const getSortIcon = (field: SortField) => {
     if (sortConfig.field !== field) {
-      return <ArrowUpDown className="h-4 w-4 text-gray-400" />
+      return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
     }
-    
-    if (sortConfig.direction === 'asc') {
-      return <ArrowUp className="h-4 w-4 text-blue-600" />
-    } else if (sortConfig.direction === 'desc') {
-      return <ArrowDown className="h-4 w-4 text-blue-600" />
+
+    if (sortConfig.direction === "asc") {
+      return <ArrowUp className="h-4 w-4 text-blue-600" />;
+    } else if (sortConfig.direction === "desc") {
+      return <ArrowDown className="h-4 w-4 text-blue-600" />;
     }
-    
-    return <ArrowUpDown className="h-4 w-4 text-gray-400" />
-  }
+
+    return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
+  };
 
   return (
-    <TableHead 
+    <TableHead
       className={`cursor-pointer hover:bg-gray-100 transition-colors ${className} ${
-        align === 'center' ? 'text-center' : align === 'right' ? 'text-right' : ''
+        align === "center"
+          ? "text-center"
+          : align === "right"
+          ? "text-right"
+          : ""
       }`}
       onClick={() => onSort(field)}
     >
-      <div className={`flex items-center gap-2 ${
-        align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : ''
-      }`}>
+      <div
+        className={`flex items-center gap-2 ${
+          align === "center"
+            ? "justify-center"
+            : align === "right"
+            ? "justify-end"
+            : ""
+        }`}
+      >
         {children}
         {getSortIcon(field)}
       </div>
     </TableHead>
-  )
+  );
 }
 
 // Select All Header Component
 interface SelectAllHeaderProps {
-  currentViewStats: { count: number }
-  filteredStocksLength: number
-  onSelectAll: () => void
+  currentViewStats: { count: number };
+  filteredStocksLength: number;
+  onSelectAll: () => void;
 }
 
-export function SelectAllHeader({ currentViewStats, filteredStocksLength, onSelectAll }: SelectAllHeaderProps) {
+export function SelectAllHeader({
+  currentViewStats,
+  filteredStocksLength,
+  onSelectAll,
+}: SelectAllHeaderProps) {
   return (
     <TableHead className="w-[50px]">
-      <div 
+      <div
         className="flex items-center justify-center cursor-pointer hover:bg-gray-100 rounded p-1"
         onClick={onSelectAll}
         title={
-          currentViewStats.count === filteredStocksLength 
-            ? "ยกเลิกเลือกทั้งหมดในหน้านี้" 
+          currentViewStats.count === filteredStocksLength
+            ? "ยกเลิกเลือกทั้งหมดในหน้านี้"
             : "เลือกทั้งหมดในหน้านี้"
         }
       >
-        {currentViewStats.count === filteredStocksLength && filteredStocksLength > 0 ? (
+        {currentViewStats.count === filteredStocksLength &&
+        filteredStocksLength > 0 ? (
           <CheckCircle2 className="h-4 w-4 text-green-600" />
         ) : currentViewStats.count > 0 ? (
           <div className="h-4 w-4 border-2 border-blue-600 rounded flex items-center justify-center">
@@ -473,18 +538,18 @@ export function SelectAllHeader({ currentViewStats, filteredStocksLength, onSele
         )}
       </div>
     </TableHead>
-  )
+  );
 }
 
 // Footer Info Component
 interface FooterInfoProps {
-  filteredStocksLength: number
-  totalStocksLength: number
-  totalValue: number
-  showExportMode: boolean
-  currentViewStats: { count: number; totalValue: number }
-  hiddenSelectedCount: number
-  exportStats: { count: number; totalValue: number }
+  filteredStocksLength: number;
+  totalStocksLength: number;
+  totalValue: number;
+  showExportMode: boolean;
+  currentViewStats: { count: number; totalValue: number };
+  hiddenSelectedCount: number;
+  exportStats: { count: number; totalValue: number };
 }
 
 export function FooterInfo({
@@ -494,14 +559,15 @@ export function FooterInfo({
   showExportMode,
   currentViewStats,
   hiddenSelectedCount,
-  exportStats
+  exportStats,
 }: FooterInfoProps) {
   return (
     <div className="flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-gray-500">
       <div className="flex flex-col sm:flex-row gap-2 text-center sm:text-left">
         <span>
-          แสดง <strong className="text-gray-700">{filteredStocksLength}</strong> รายการ
-          จากทั้งหมด <strong className="text-gray-700">{totalStocksLength}</strong> รายการ
+          แสดง <strong className="text-gray-700">{filteredStocksLength}</strong>{" "}
+          รายการ จากทั้งหมด{" "}
+          <strong className="text-gray-700">{totalStocksLength}</strong> รายการ
         </span>
         <span className="text-purple-600 font-medium">
           มูลค่ารวม ฿{totalValue.toLocaleString()}
@@ -517,16 +583,17 @@ export function FooterInfo({
               </span>
             )}
             <span className="text-green-700 font-bold">
-              • รวม Export: {exportStats.count} รายการ (฿{exportStats.totalValue.toLocaleString()})
+              • รวม Export: {exportStats.count} รายการ (฿
+              {exportStats.totalValue.toLocaleString()})
             </span>
           </div>
         )}
       </div>
-      
+
       <div className="flex items-center gap-4 text-xs">
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-          <span>อัปเดต {'>'}14 วัน</span>
+          <span>อัปเดต {">"} 14 วัน</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
@@ -534,35 +601,40 @@ export function FooterInfo({
         </div>
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-          <span>อัปเดต {'<'}7 วัน</span>
+          <span>อัปเดต {"<"} 7 วัน</span>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // Export Instructions Component
 interface ExportInstructionsProps {
-  showExportMode: boolean
-  filteredStocksLength: number
-  hiddenSelectedCount: number
+  showExportMode: boolean;
+  filteredStocksLength: number;
+  hiddenSelectedCount: number;
 }
 
-export function ExportInstructions({ showExportMode, filteredStocksLength, hiddenSelectedCount }: ExportInstructionsProps) {
-  if (!showExportMode || filteredStocksLength === 0) return null
+export function ExportInstructions({
+  showExportMode,
+  filteredStocksLength,
+  hiddenSelectedCount,
+}: ExportInstructionsProps) {
+  if (!showExportMode || filteredStocksLength === 0) return null;
 
   return (
     <div className="text-center text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
       <p>
-        💡 <strong>วิธีใช้:</strong> คลิกเพื่อเลือกรายการยาที่ต้องการ Export 
-        • ระบบจะจำการเลือกข้ามตัวกรองต่างๆ 
-        • ใช้ checkbox ด้านบนเพื่อเลือก/ยกเลิกทั้งหมดในหน้าปัจจุบัน
+        💡 <strong>วิธีใช้:</strong> คลิกเพื่อเลือกรายการยาที่ต้องการ Export •
+        ระบบจะจำการเลือกข้ามตัวกรองต่างๆ • ใช้ checkbox
+        ด้านบนเพื่อเลือก/ยกเลิกทั้งหมดในหน้าปัจจุบัน
       </p>
       {hiddenSelectedCount > 0 && (
         <p className="text-blue-700 font-medium mt-1">
-          🔍 คุณได้เลือก {hiddenSelectedCount} รายการที่ไม่ได้แสดงในตัวกรองปัจจุบัน
+          🔍 คุณได้เลือก {hiddenSelectedCount}{" "}
+          รายการที่ไม่ได้แสดงในตัวกรองปัจจุบัน
         </p>
       )}
     </div>
-  )
+  );
 }

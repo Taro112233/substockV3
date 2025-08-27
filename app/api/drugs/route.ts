@@ -1,136 +1,133 @@
-// 📄 File: app/api/drugs/route.ts (NO AUTHENTICATION)
-// API สำหรับสร้างยาใหม่พร้อมสต็อกเริ่มต้น - ไม่ต้องตรวจสอบ authentication
+// 📄 File: app/api/drugs/route.ts (FIXED CLEAN)
+// API สำหรับสร้างยาใหม่พร้อมสต็อกเริ่มต้น - Type-safe
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z, ZodError, ZodIssue } from "zod";
-import { Prisma } from "@prisma/client";
+import { Prisma, Department, DrugCategory } from "@prisma/client";
 
-// Schema สำหรับ validation การสร้างยาใหม่
+// ✅ Schema สำหรับ validation การสร้างยาใหม่
 const createDrugSchema = z.object({
-  hospitalDrugCode: z
-    .string()
-    .min(1, "รหัสยาโรงพยาบาลเป็นข้อมูลที่จำเป็น")
-    .max(50, "รหัสยาต้องไม่เกิน 50 ตัวอักษร"),
-  name: z
-    .string()
-    .min(1, "ชื่อยาเป็นข้อมูลที่จำเป็น")
-    .max(255, "ชื่อยาต้องไม่เกิน 255 ตัวอักษร"),
+  hospitalDrugCode: z.string().min(1).max(50),
+  name: z.string().min(1).max(255),
   genericName: z
     .string()
-    .max(255, "ชื่อสามัญต้องไม่เกิน 255 ตัวอักษร")
+    .max(255)
     .nullable()
-    .optional(),
+    .optional()
+    .transform((val) => (val === "" ? null : val)),
   dosageForm: z.enum(
     [
-      "APP", "BAG", "CAP", "CR", "DOP", "ENE", "GEL", "HAN", "IMP",
-      "INJ", "LIQ", "LOT", "LVP", "MDI", "MIX", "NAS", "NB", "OIN",
-      "PAT", "POW", "PWD", "SAC", "SOL", "SPR", "SUP", "SUS", "SYR",
-      "TAB", "TUR",
+      "APP",
+      "BAG",
+      "CAP",
+      "CR",
+      "DOP",
+      "ENE",
+      "GEL",
+      "HAN",
+      "IMP",
+      "INJ",
+      "LIQ",
+      "LOT",
+      "LVP",
+      "MDI",
+      "MIX",
+      "NAS",
+      "NB",
+      "OIN",
+      "PAT",
+      "POW",
+      "PWD",
+      "SAC",
+      "SOL",
+      "SPR",
+      "SUP",
+      "SUS",
+      "SYR",
+      "TAB",
+      "TUR",
     ],
-    {
-      message: "รูปแบบยาไม่ถูกต้อง",
-    }
+    { message: "รูปแบบยาไม่ถูกต้อง" }
   ),
   strength: z
     .string()
-    .max(50, "ความแรงต้องไม่เกิน 50 ตัวอักษร")
+    .max(50)
     .nullable()
-    .optional(),
-  unit: z
-    .string()
-    .min(1, "หน่วยเป็นข้อมูลที่จำเป็น")
-    .max(20, "หน่วยต้องไม่เกิน 20 ตัวอักษร"),
+    .optional()
+    .transform((val) => (val === "" ? null : val)),
+  unit: z.string().min(1).max(20),
   packageSize: z
     .string()
-    .max(50, "ขนาดบรรจุต้องไม่เกิน 50 ตัวอักษร")
+    .max(50)
     .nullable()
-    .optional(),
-  pricePerBox: z
-    .number()
-    .min(0, "ราคาต้องไม่น้อยกว่า 0")
-    .max(999999.99, "ราคาต้องไม่เกิน 999,999.99"),
+    .optional()
+    .transform((val) => (val === "" ? null : val)),
+  pricePerBox: z.number().min(0).max(999999.99),
   category: z.enum(
     [
-      "REFER", "HAD", "NARCOTIC", "REFRIGERATED", "PSYCHIATRIC",
-      "FLUID", "GENERAL", "TABLET", "SYRUP", "INJECTION", "EXTEMP", "ALERT",
+      "REFER",
+      "HAD",
+      "NARCOTIC",
+      "REFRIGERATED",
+      "PSYCHIATRIC",
+      "FLUID",
+      "GENERAL",
+      "TABLET",
+      "SYRUP",
+      "INJECTION",
+      "EXTEMP",
+      "ALERT",
     ],
-    {
-      message: "ประเภทยาไม่ถูกต้อง",
-    }
+    { message: "ประเภทยาไม่ถูกต้อง" }
   ),
   notes: z
     .string()
-    .max(1000, "หมายเหตุต้องไม่เกิน 1000 ตัวอักษร")
+    .max(1000)
     .nullable()
-    .optional(),
-  // Stock data
+    .optional()
+    .transform((val) => (val === "" ? null : val)),
+  initialQuantity: z.number().min(0).default(0),
+  minimumStock: z.number().min(0).default(10),
   department: z.enum(["PHARMACY", "OPD"], { message: "แผนกไม่ถูกต้อง" }),
-  initialQuantity: z.number().min(0, "จำนวนเริ่มต้นต้องไม่น้อยกว่า 0"),
-  minimumStock: z.number().min(0, "จำนวนขั้นต่ำต้องไม่น้อยกว่า 0"),
-  // เพิ่ม userId สำหรับการบันทึก transaction
-  userId: z.string().min(1, "User ID เป็นข้อมูลที่จำเป็น"),
 });
 
-// GET - ดึงรายการยาทั้งหมด (สำหรับ search/autocomplete)
+// GET - ดึงรายการยาทั้งหมด
 export async function GET(request: NextRequest) {
   try {
-    // Get query parameters
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get("search");
     const category = searchParams.get("category");
-    const dosageForm = searchParams.get("dosageForm");
-    const isActive = searchParams.get("active") !== "false";
+    const department = searchParams.get("department") as Department | null;
 
-    // ✅ Fixed: ใช้ Prisma.DrugWhereInput แทน any
-    const where: Prisma.DrugWhereInput = {
-      isActive,
-    };
+    // Type-safe where clause
+    const where: Prisma.DrugWhereInput = { isActive: true };
 
     if (search) {
       where.OR = [
         { name: { contains: search, mode: "insensitive" } },
-        { hospitalDrugCode: { contains: search, mode: "insensitive" } },
         { genericName: { contains: search, mode: "insensitive" } },
+        { hospitalDrugCode: { contains: search, mode: "insensitive" } },
       ];
     }
 
-    if (category) {
-      // ✅ Fixed: ใช้ proper enum type
-      where.category = category as Prisma.EnumDrugCategoryFilter;
-    }
-
-    if (dosageForm) {
-      // ✅ Fixed: ใช้ proper enum type
-      where.dosageForm = dosageForm as Prisma.EnumDosageFormFilter;
+    if (
+      category &&
+      Object.values(DrugCategory).includes(category as DrugCategory)
+    ) {
+      where.category = category as DrugCategory;
     }
 
     const drugs = await prisma.drug.findMany({
       where,
       include: {
-        stocks: {
-          select: {
-            id: true,
-            department: true,
-            totalQuantity: true,
-            minimumStock: true,
-            totalValue: true,
-          },
-        },
-        _count: {
-          select: {
-            transferItems: true,
-          },
-        },
+        stocks: department ? { where: { department } } : true,
+        _count: { select: { stocks: true } },
       },
-      orderBy: [{ name: "asc" }],
-      take: 100, // จำกัดจำนวนสูงสุด
+      orderBy: { name: "asc" },
     });
 
-    return NextResponse.json({
-      success: true,
-      data: drugs,
-    });
+    return NextResponse.json({ success: true, data: drugs });
   } catch (error) {
     console.error("Get drugs error:", error);
     return NextResponse.json(
@@ -143,33 +140,23 @@ export async function GET(request: NextRequest) {
 // POST - สร้างยาใหม่พร้อมสต็อกเริ่มต้น
 export async function POST(request: NextRequest) {
   try {
-    // Get and validate input data
     const body = await request.json();
     const validatedData = createDrugSchema.parse(body);
 
-    // ตรวจสอบว่ารหัสยาซ้ำหรือไม่
     const existingDrugByCode = await prisma.drug.findFirst({
-      where: {
-        hospitalDrugCode: validatedData.hospitalDrugCode,
-      },
+      where: { hospitalDrugCode: validatedData.hospitalDrugCode },
     });
-
     if (existingDrugByCode) {
       return NextResponse.json(
-        {
-          error: "รหัสยานี้มีอยู่ในระบบแล้ว",
-        },
-        { status: 400 }
+        { error: "รหัสยาโรงพยาบาลนี้มีอยู่ในระบบแล้ว" },
+        { status: 409 }
       );
     }
 
-    // คำนวณมูลค่าเริ่มต้น
     const initialTotalValue =
       validatedData.initialQuantity * validatedData.pricePerBox;
 
-    // ใช้ transaction เพื่อสร้างยาและสต็อกพร้อมกัน
     const result = await prisma.$transaction(async (tx) => {
-      // สร้างยาใหม่
       const newDrug = await tx.drug.create({
         data: {
           hospitalDrugCode: validatedData.hospitalDrugCode,
@@ -186,136 +173,105 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // สร้างสต็อกสำหรับทั้ง 2 แผนก
-      const primaryDepartment = validatedData.department;
-      const secondaryDepartment =
-        validatedData.department === "PHARMACY" ? "OPD" : "PHARMACY";
-
-      // สร้างสต็อกสำหรับแผนกหลัก (ที่มีจำนวนเริ่มต้น)
       const primaryStock = await tx.stock.create({
         data: {
           drugId: newDrug.id,
-          department: primaryDepartment,
+          department: validatedData.department,
           totalQuantity: validatedData.initialQuantity,
           reservedQty: 0,
           minimumStock: validatedData.minimumStock,
-          fixedStock: 0,
           totalValue: initialTotalValue,
+          lastUpdated: new Date(),
         },
       });
 
-      // สร้างสต็อกสำหรับแผนกรอง (เริ่มต้นที่ 0)
-      const secondaryStock = await tx.stock.create({
+      // secondary stock (ไม่ต้องเก็บค่าไว้ก็ได้)
+      const secondaryDepartment =
+        validatedData.department === "PHARMACY" ? "OPD" : "PHARMACY";
+      await tx.stock.create({
         data: {
           drugId: newDrug.id,
-          department: secondaryDepartment,
+          department: secondaryDepartment as Department,
           totalQuantity: 0,
           reservedQty: 0,
           minimumStock: 0,
-          fixedStock: 0,
           totalValue: 0,
+          lastUpdated: new Date(),
         },
       });
 
-      // บันทึก transaction log เริ่มต้น (ถ้ามีจำนวนเริ่มต้น)
       if (validatedData.initialQuantity > 0) {
         await tx.stockTransaction.create({
           data: {
             stockId: primaryStock.id,
-            userId: validatedData.userId,
-            type: "RECEIVE_EXTERNAL",
+            userId: "SYSTEM",
+            type: "TRANSFER_IN",
             quantity: validatedData.initialQuantity,
             beforeQty: 0,
             afterQty: validatedData.initialQuantity,
-            unitCost: validatedData.pricePerBox,
-            totalCost: initialTotalValue,
-            reference: `INITIAL_STOCK_${Date.now()}`,
-            note: `สต็อกเริ่มต้นเมื่อสร้างยาใหม่ (แผนก ${primaryDepartment})`,
+            reference: `INITIAL_${newDrug.hospitalDrugCode}`,
+            note: `สร้างสต็อกเริ่มต้น - ${newDrug.name}`,
           },
         });
       }
 
-      // บันทึก transaction log สำหรับแผนกรอง (เริ่มต้น 0)
-      await tx.stockTransaction.create({
-        data: {
-          stockId: secondaryStock.id,
-          userId: validatedData.userId,
-          type: "ADJUST_INCREASE",
-          quantity: 0,
-          beforeQty: 0,
-          afterQty: 0,
-          unitCost: validatedData.pricePerBox,
-          totalCost: 0,
-          reference: `INITIAL_STOCK_${Date.now()}`,
-          note: `สร้างสต็อกเริ่มต้นสำหรับแผนก ${secondaryDepartment} (เริ่มต้น 0)`,
-        },
-      });
-
-      // ส่งคืนข้อมูล primary stock สำหรับ frontend
       return {
-        ...primaryStock,
+        id: primaryStock.id,
+        drugId: newDrug.id,
+        department: validatedData.department,
+        totalQuantity: validatedData.initialQuantity,
+        reservedQty: 0,
+        minimumStock: validatedData.minimumStock,
+        totalValue: initialTotalValue,
+        lastUpdated: primaryStock.lastUpdated,
         drug: {
-          ...newDrug,
-          stocks: [primaryStock, secondaryStock],
+          id: newDrug.id,
+          hospitalDrugCode: newDrug.hospitalDrugCode,
+          name: newDrug.name,
+          genericName: newDrug.genericName,
+          dosageForm: newDrug.dosageForm,
+          strength: newDrug.strength,
+          unit: newDrug.unit,
+          category: newDrug.category,
+          pricePerBox: newDrug.pricePerBox,
+          isActive: newDrug.isActive,
         },
       };
     });
 
-    const secondaryDepartment =
-      validatedData.department === "PHARMACY" ? "OPD" : "PHARMACY";
-
     return NextResponse.json({
       success: true,
       data: result,
-      message: `สร้างยา "${validatedData.name}" สำเร็จ | ${
-        validatedData.department
-      }: ${validatedData.initialQuantity.toLocaleString()} กล่อง (minimum: ${validatedData.minimumStock}) | ${secondaryDepartment}: 0 กล่อง (minimum: 0)`,
-      details: {
-        primaryDepartment: validatedData.department,
-        primaryQuantity: validatedData.initialQuantity,
-        primaryMinimumStock: validatedData.minimumStock,
-        secondaryDepartment:
-          validatedData.department === "PHARMACY" ? "OPD" : "PHARMACY",
-        secondaryQuantity: 0,
-        secondaryMinimumStock: 0,
-        totalStocks: 2,
-      },
+      message: `เพิ่มยา "${result.drug.name}" เรียบร้อยแล้ว`,
     });
   } catch (error) {
-    console.error("Create drug error:", error);
-
-    // ✅ Fixed: Type-safe error handling
     if (error instanceof ZodError) {
       return NextResponse.json(
         {
           error: "ข้อมูลไม่ถูกต้อง",
           details: error.issues
-            .map((issue: ZodIssue) => `${issue.path.join(".")}: ${issue.message}`)
+            .map(
+              (issue: ZodIssue) => `${issue.path.join(".")}: ${issue.message}`
+            )
             .join(", "),
+          validationErrors: error.issues,
         },
         { status: 400 }
       );
     }
 
-    // Handle Prisma unique constraint errors
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === "P2002") {
-        // ✅ Fixed: Type-safe meta target access
         const target = error.meta?.target;
         const field = Array.isArray(target) ? target[0] : undefined;
         let message = "ข้อมูลซ้ำกับรายการที่มีอยู่แล้ว";
-
-        if (field === "hospitalDrugCode") {
+        if (field === "hospitalDrugCode")
           message = "รหัสยาโรงพยาบาลนี้มีอยู่ในระบบแล้ว";
-        } else if (field === "name") {
-          message = "ชื่อยานี้มีอยู่ในระบบแล้ว";
-        }
-
-        return NextResponse.json({ error: message }, { status: 400 });
+        else if (field === "name") message = "ชื่อยานี้มีอยู่ในระบบแล้ว";
+        return NextResponse.json({ error: message }, { status: 409 });
       }
     }
 
-    // Generic error handling
     return NextResponse.json(
       { error: "เกิดข้อผิดพลาดในการสร้างยาใหม่" },
       { status: 500 }

@@ -1,5 +1,5 @@
-// 📄 File: components/modules/stock/stock-table-enhanced.tsx
-// ✅ REFACTORED: Main Stock Table Component (Clean & Modular)
+// components/modules/stock/stock-table-enhanced.tsx
+// ✅ แก้ไข props pass ลงไปใน ExportControls - Remove exportFormat props
 
 import React, { useState } from 'react'
 import {
@@ -62,8 +62,6 @@ export function StockTableEnhanced({
     
     // Export state
     selectedForExport,
-    exportFormat,
-    setExportFormat,
     showExportMode,
     exporting,
     
@@ -74,6 +72,7 @@ export function StockTableEnhanced({
     // Utility functions
     calculateStockValue,
     getLastUpdatedColor,
+    preparePrintData,
     
     // Handlers
     handleSort,
@@ -162,18 +161,18 @@ export function StockTableEnhanced({
   return (
     <>
       <div className="space-y-4">
-        {/* Export Controls */}
+        {/* Export Controls - เอา exportFormat และ setExportFormat props ออก */}
         {showExportMode && (
           <ExportControls
             exportStats={exportStats}
             currentViewStats={currentViewStats}
             hiddenSelectedCount={hiddenSelectedCount}
             filteredStocksLength={filteredStocks.length}
-            exportFormat={exportFormat}
-            setExportFormat={setExportFormat}
             onExport={handleExport}
             onCancel={handleToggleExportMode}
             exporting={exporting}
+            department={department}
+            preparePrintData={preparePrintData}
           />
         )}
 

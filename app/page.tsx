@@ -459,7 +459,7 @@ export default function LandingPage() {
                     <li><strong>1.</strong> คลิกขวาบน Desktop → เลือก <strong>New → Shortcut</strong></li>
                     <li><strong>2.</strong> ในช่อง <strong>Location</strong> ใส่:
                       <div className="bg-gray-100 p-2 mt-1 rounded text-xs font-mono break-all">
-                        "C:\Program Files\Google\Chrome\Application\chrome.exe" --new-window https://substock-thoen.vercel.app/
+                        &quot;C:\Program Files\Google\Chrome\Application\chrome.exe&quot; --new-window https://substock-thoen.vercel.app/
                       </div>
                     </li>
                     <li><strong>3.</strong> กด <strong>Next</strong> → ตั้งชื่อ เช่น `Substock`</li>
@@ -477,7 +477,7 @@ export default function LandingPage() {
                     <li><strong>2.</strong> เพิ่ม Action → <strong>Run Shell Script</strong></li>
                     <li><strong>3.</strong> ใส่คำสั่งนี้:
                       <div className="bg-gray-100 p-2 mt-1 rounded text-xs font-mono break-all">
-                        open -a "Google Chrome" https://substock-thoen.vercel.app/
+                        open -a &quot;Google Chrome&quot; https://substock-thoen.vercel.app/
                       </div>
                     </li>
                     <li><strong>4.</strong> Save เป็น `Substock.app` → ลากไปไว้ Desktop/Dock</li>

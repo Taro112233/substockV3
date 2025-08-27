@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/app/utils/auth-client';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,8 +19,7 @@ import {
   XCircle, 
   AlertTriangle,
   ArrowRight,
-  Home,
-  RefreshCw
+  Home
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -32,7 +32,6 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [loginSuccess, setLoginSuccess] = useState(false);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(false);
   
   const { login, loading, user } = useAuth();
   const router = useRouter();
@@ -105,7 +104,6 @@ export default function LoginPage() {
         
         toast.success('เข้าสู่ระบบสำเร็จ!', {
           description: `ยินดีต้อนรับเข้าสู่ระบบจัดการสต็อกยา`,
-          icon: <CheckCircle2 className="w-4 h-4" />,
           duration: 3000,
         });
         
@@ -154,46 +152,6 @@ export default function LoginPage() {
       });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // ฟังก์ชันไปหน้า dashboard แบบ manual
-  const handleManualDashboardNavigation = async () => {
-    setIsCheckingAuth(true);
-    
-    try {
-      const response = await fetch('/api/auth/me', {
-        credentials: 'include'
-      });
-      
-      if (response.ok) {
-        const userData = await response.json();
-        if (userData.success && userData.data?.user) {
-          toast.success('พบข้อมูลผู้ใช้แล้ว!', {
-            description: 'กำลังนำไปยังแดshboard',
-            icon: <CheckCircle2 className="w-4 h-4" />,
-          });
-          router.push('/dashboard');
-        } else {
-          toast.error('ยังไม่พร้อม', {
-            description: 'ยังไม่พบข้อมูลการยืนยันตัวตน กรุณารอสักครู่',
-            icon: <AlertTriangle className="w-4 h-4" />,
-          });
-        }
-      } else {
-        toast.error('ไม่สามารถตรวจสอบสถานะได้', {
-          description: 'กรุณาลองเข้าสู่ระบบใหม่อีกครั้ง',
-          icon: <XCircle className="w-4 h-4" />,
-        });
-      }
-    } catch (error) {
-      console.error('Auth check error:', error);
-      toast.error('เกิดข้อผิดพลาด', {
-        description: 'ไม่สามารถตรวจสอบสถานะการเข้าสู่ระบบได้',
-        icon: <XCircle className="w-4 h-4" />,
-      });
-    } finally {
-      setIsCheckingAuth(false);
     }
   };
 
@@ -342,42 +300,17 @@ export default function LoginPage() {
               {/* Manual Dashboard Navigation - แสดงหลัง login success */}
               {loginSuccess && (
                 <div className="space-y-3">
-                  <Button 
-                    type="button"
-                    onClick={() => router.push('/dashboard')}
-                    className="w-full h-11 text-base bg-green-500 hover:bg-green-600"
-                    disabled={false}
-                  >
-                    <Home className="w-4 h-4 mr-2" />
-                    เข้าสู่ dashboard
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                  
-                  {/* ปุ่มตรวจสอบสถานะ auth */}
-                  <Button 
-                    type="button"
-                    variant="outline"
-                    onClick={handleManualDashboardNavigation}
-                    className="w-full h-11 text-base"
-                    disabled={isCheckingAuth}
-                  >
-                    {isCheckingAuth ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        กำลังตรวจสอบ...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        ตรวจสอบสถานะและเข้า Dashboard
-                      </>
-                    )}
-                  </Button>
+                  <Link href="/dashboard">
+                    <Button className="w-full h-11 text-base bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
+                      <Home className="w-4 h-4 mr-2" />
+                      เข้าสู่ dashboard
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
                   
                   {/* คำแนะนำ */}
                   <p className="text-xs text-gray-600 text-center leading-relaxed">
-                    หากระบบไม่นำไปยังหน้าแรกโดยอัตโนมัติ ให้กดปุ่ม &quot;เข้าสู่ dashboard&quot; 
-                    หรือกดปุ่ม &quot;ตรวจสอบสถานะ&quot; เพื่อยืนยันการเข้าสู่ระบบ
+                    หากระบบไม่นำไปยังหน้าแรกโดยอัตโนมัติ ให้กดปุ่ม &quot;เข้าสู่ dashboard&quot;
                   </p>
                 </div>
               )}

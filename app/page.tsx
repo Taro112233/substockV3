@@ -423,6 +423,142 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Installation Guide Section */}
+      <section className="py-16 px-4 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              📲 วิธีสร้าง Shortcut บนอุปกรณ์
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              สร้างทางลัดเข้าระบบแบบคลิกเดียว ไม่ต้องจำ URL หรือพิมพ์ใหม่ทุกครั้ง
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-8 mb-12">
+            {/* Desktop Section */}
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                    <Activity className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold">💻 Desktop (คอมพิวเตอร์)</div>
+                    <div className="text-sm text-gray-500">Windows & MacOS</div>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Windows */}
+                <div className="bg-white/60 p-4 rounded-lg">
+                  <h4 className="font-semibold text-blue-700 mb-3 flex items-center gap-2">
+                    <span className="text-lg">🪟</span> Windows
+                  </h4>
+                  <ol className="text-sm space-y-2 text-gray-700">
+                    <li><strong>1.</strong> คลิกขวาบน Desktop → เลือก <strong>New → Shortcut</strong></li>
+                    <li><strong>2.</strong> ในช่อง <strong>Location</strong> ใส่:
+                      <div className="bg-gray-100 p-2 mt-1 rounded text-xs font-mono break-all">
+                        "C:\Program Files\Google\Chrome\Application\chrome.exe" --new-window https://substock-thoen.vercel.app/
+                      </div>
+                    </li>
+                    <li><strong>3.</strong> กด <strong>Next</strong> → ตั้งชื่อ เช่น `Substock`</li>
+                    <li><strong>4.</strong> กด <strong>Finish</strong> → ได้ไอคอนบน Desktop</li>
+                  </ol>
+                </div>
+
+                {/* MacOS */}
+                <div className="bg-white/60 p-4 rounded-lg">
+                  <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <span className="text-lg">🍎</span> MacOS
+                  </h4>
+                  <ol className="text-sm space-y-2 text-gray-700">
+                    <li><strong>1.</strong> เปิด <strong>Automator</strong> → สร้าง <strong>New Application</strong></li>
+                    <li><strong>2.</strong> เพิ่ม Action → <strong>Run Shell Script</strong></li>
+                    <li><strong>3.</strong> ใส่คำสั่งนี้:
+                      <div className="bg-gray-100 p-2 mt-1 rounded text-xs font-mono break-all">
+                        open -a "Google Chrome" https://substock-thoen.vercel.app/
+                      </div>
+                    </li>
+                    <li><strong>4.</strong> Save เป็น `Substock.app` → ลากไปไว้ Desktop/Dock</li>
+                  </ol>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Mobile Section */}
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-emerald-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                    <Smartphone className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold">📱 มือถือ (Mobile)</div>
+                    <div className="text-sm text-gray-500">Android & iOS</div>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Android */}
+                <div className="bg-white/60 p-4 rounded-lg">
+                  <h4 className="font-semibold text-green-700 mb-3 flex items-center gap-2">
+                    <span className="text-lg">🤖</span> Android (Chrome)
+                  </h4>
+                  <ol className="text-sm space-y-2 text-gray-700">
+                    <li><strong>1.</strong> เปิด Chrome → เข้า `https://substock-thoen.vercel.app/`</li>
+                    <li><strong>2.</strong> กดปุ่มเมนู (⋮) → เลือก <strong>Add to Home screen</strong></li>
+                    <li><strong>3.</strong> ได้ไอคอนแอปบน Home screen <strong>เหมือน App จริง!</strong></li>
+                  </ol>
+                </div>
+
+                {/* iOS */}
+                <div className="bg-white/60 p-4 rounded-lg">
+                  <h4 className="font-semibold text-purple-700 mb-3 flex items-center gap-2">
+                    <span className="text-lg">📱</span> iOS (Safari/Chrome)
+                  </h4>
+                  <ol className="text-sm space-y-2 text-gray-700">
+                    <li><strong>1.</strong> เปิด Safari → เข้า `https://substock-thoen.vercel.app/`</li>
+                    <li><strong>2.</strong> กด <strong>Share</strong> → เลือก <strong>Add to Home Screen</strong></li>
+                    <li><strong>3.</strong> ได้ไอคอนบนหน้าจอ <strong>เหมือนแอป!</strong></li>
+                  </ol>
+                  <p className="text-xs text-gray-500 mt-2">
+                    💡 แนะนำใช้ Safari เพราะ Add to Home screen ได้แน่นอน
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Benefits */}
+          <div className="text-center">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">✨ ประโยชน์ของการสร้าง Shortcut</h3>
+            <div className="grid md:grid-cols-4 gap-4">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="text-2xl mb-2">⚡</div>
+                <h4 className="font-semibold">เข้าถึงรวดเร็ว</h4>
+                <p className="text-sm text-gray-600">คลิกเดียวเข้าระบบ</p>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <div className="text-2xl mb-2">📱</div>
+                <h4 className="font-semibold">เหมือน App</h4>
+                <p className="text-sm text-gray-600">ประสบการณ์เหมือนแอปจริง</p>
+              </div>
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <div className="text-2xl mb-2">🔒</div>
+                <h4 className="font-semibold">ไม่ต้องจำ URL</h4>
+                <p className="text-sm text-gray-600">ไม่ต้องพิมพ์ใหม่ทุกครั้ง</p>
+              </div>
+              <div className="bg-orange-50 p-4 rounded-lg">
+                <div className="text-2xl mb-2">💾</div>
+                <h4 className="font-semibold">ไม่เปลื่อง Storage</h4>
+                <p className="text-sm text-gray-600">ไม่ต้องติดตั้งแอป</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 px-4 bg-gradient-to-br from-gray-50 to-blue-50">
         <div className="max-w-4xl mx-auto text-center">

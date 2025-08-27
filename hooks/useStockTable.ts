@@ -1,4 +1,4 @@
-// hooks/useStockTable.ts - แก้ไข scope และ type issues
+// hooks/useStockTable.ts - ✅ FIXED: Export format selection
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { Stock } from '@/types/dashboard'
@@ -193,7 +193,6 @@ export function useStockTable({ stocks, department, onFilteredStatsChange }: Use
     })
   }, [sortedStocks, searchTerm, showLowStockOnly, filterConfig])
 
-  // แก้ไข: ย้าย preparePrintData ลงมาหลัง filteredStocks
   const preparePrintData = useCallback((stocksToConvert: Stock[]): StockPrintData[] => {
     return stocksToConvert.map(stock => ({
       id: stock.id,
@@ -204,7 +203,7 @@ export function useStockTable({ stocks, department, onFilteredStatsChange }: Use
         dosageForm: stock.drug?.dosageForm || '',
         strength: stock.drug?.strength,
         unit: stock.drug?.unit || '',
-        packageSize: stock.drug?.packageSize // รองรับทั้ง string และ number
+        packageSize: stock.drug?.packageSize
       },
       totalQuantity: calculateAvailableStock(stock),
       minimumStock: stock.minimumStock || 0,
@@ -294,8 +293,11 @@ export function useStockTable({ stocks, department, onFilteredStatsChange }: Use
     }
   }
 
-  // Handle Export
-  const handleExport = async () => {
+  // ✅ FIXED: Handle Export with correct format
+  const handleExport = async (selectedFormat?: 'requisition' | 'detailed' | 'summary') => {
+    // ใช้ format ที่ส่งมาจาก dropdown แทนที่ state
+    const formatToUse = selectedFormat || exportFormat
+    
     const exportStats = calculateExportStats()
     
     if (exportStats.count === 0) {
@@ -309,14 +311,16 @@ export function useStockTable({ stocks, department, onFilteredStatsChange }: Use
 
     setExporting(true)
     try {
+      console.log(`🔄 Exporting ${exportStats.count} stocks in ${formatToUse} format`)
+      
       const exportData = {
         currentView: exportStats.stocks,
         additionalStocks: [],
-        format: exportFormat,
+        format: formatToUse, // ✅ ใช้ format ที่ถูกต้อง
         fields: {
-          drugInfo: exportFormat === 'detailed',
-          stockLevels: exportFormat === 'detailed',
-          costInfo: exportFormat === 'detailed',
+          drugInfo: formatToUse === 'detailed',
+          stockLevels: formatToUse === 'detailed',
+          costInfo: formatToUse === 'detailed',
           lastUpdated: true,
         },
         department,
@@ -331,7 +335,7 @@ export function useStockTable({ stocks, department, onFilteredStatsChange }: Use
 
       toast({
         title: 'กำลัง Export ข้อมูล...',
-        description: `กำลังสร้างไฟล์ Excel สำหรับ ${exportStats.count} รายการ`,
+        description: `กำลังสร้างไฟล์ Excel สำหรับ ${exportStats.count} รายการ (${formatToUse})`,
         variant: 'default',
       })
 
@@ -351,8 +355,8 @@ export function useStockTable({ stocks, department, onFilteredStatsChange }: Use
       
       const departmentName = department === 'PHARMACY' ? 'คลังยา' : 'OPD'
       const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
-      const formatSuffix = exportFormat === 'requisition' ? 'ใบเบิก' : 
-                          exportFormat === 'detailed' ? 'รายละเอียด' : 'สรุป'
+      const formatSuffix = formatToUse === 'requisition' ? 'ใบเบิก' : 
+                          formatToUse === 'detailed' ? 'รายละเอียด' : 'สรุป'
       const filename = `สต็อกยา_${departmentName}_${formatSuffix}_${timestamp}.xlsx`
       
       const link = document.createElement('a')
@@ -366,7 +370,7 @@ export function useStockTable({ stocks, department, onFilteredStatsChange }: Use
 
       toast({
         title: 'Export สำเร็จ!',
-        description: `ส่งออกข้อมูลสต็อก ${exportStats.count} รายการเรียบร้อย`,
+        description: `ส่งออกข้อมูลสต็อก ${exportStats.count} รายการ (${formatSuffix}) เรียบร้อย`,
         variant: 'default',
       })
 
@@ -440,7 +444,7 @@ export function useStockTable({ stocks, department, onFilteredStatsChange }: Use
     handleToggleExportMode,
     handleSelectAll,
     handleToggleStock,
-    handleExport,
+    handleExport, // ✅ แก้ไขแล้วรับ format parameter
     handleClearFilters,
     
     // Export stats

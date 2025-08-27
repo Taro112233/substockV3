@@ -1,7 +1,7 @@
-// components/ui/ExcelExportButton.tsx
+// 📄 File: components/ui/ExcelExportButton.tsx (FIXED CLEAN)
 
-import React from 'react'
-import { Button } from '@/components/ui/button'
+import React from "react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,31 +9,34 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuLabel,
-} from '@/components/ui/dropdown-menu'
-import { 
-  Download, 
-  FileSpreadsheet, 
-  FileText, 
-  AlertTriangle, 
+} from "@/components/ui/dropdown-menu";
+import {
+  Download,
+  FileSpreadsheet,
+  FileText,
+  AlertTriangle,
   ReceiptText,
   ChevronDown,
-  Loader2
-} from 'lucide-react'
+  Loader2,
+} from "lucide-react";
 
 // Define specific types for each variant
-type StockExportFormat = 'requisition' | 'detailed' | 'summary'
-type TransactionExportFormat = 'detailed' | 'summary' | 'financial'
-type StockManagementExportFormat = 'excel'
+export type StockExportFormat = "requisition" | "detailed" | "summary";
+export type TransactionExportFormat = "detailed" | "summary" | "financial";
+export type StockManagementExportFormat = "excel";
 
-type ExportFormat = StockExportFormat | TransactionExportFormat | StockManagementExportFormat
+type ExportFormat =
+  | StockExportFormat
+  | TransactionExportFormat
+  | StockManagementExportFormat;
 
 interface ExportButtonProps {
-  selectedCount: number
-  disabled?: boolean
-  exporting?: boolean
-  variant?: 'stock' | 'transaction' | 'stockManagement'
-  className?: string
-  onExport: (format: any) => void // Use any to allow different format types
+  selectedCount: number;
+  disabled?: boolean;
+  exporting?: boolean;
+  variant?: "stock" | "transaction" | "stockManagement";
+  className?: string;
+  onExport: (format: ExportFormat) => void;
 }
 
 export function ExportButton({
@@ -41,81 +44,100 @@ export function ExportButton({
   disabled = false,
   exporting = false,
   onExport,
-  variant = 'stock',
+  variant = "stock",
   className = "",
 }: ExportButtonProps) {
-
-  const stockOptions = [
+  const stockOptions: {
+    format: StockExportFormat;
+    label: string;
+    description: string;
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
+  }[] = [
     {
-      format: 'requisition' as const,
-      label: 'ใบเบิกยา',
-      description: 'รายการยาที่ต้องการเบิก',
+      format: "requisition",
+      label: "ใบเบิกยา",
+      description: "รายการยาที่ต้องการเบิก",
       icon: FileText,
-      color: 'text-blue-600'
+      color: "text-blue-600",
     },
     {
-      format: 'detailed' as const,
-      label: 'รายละเอียดเต็ม',
-      description: 'ข้อมูลครบถ้วนพร้อมราคา',
+      format: "detailed",
+      label: "รายละเอียดเต็ม",
+      description: "ข้อมูลครบถ้วนพร้อมราคา",
       icon: FileSpreadsheet,
-      color: 'text-green-600'
+      color: "text-green-600",
     },
     {
-      format: 'summary' as const,
-      label: 'สรุปสต็อก',
-      description: 'ข้อมูลสรุปพื้นฐาน',
+      format: "summary",
+      label: "สรุปสต็อก",
+      description: "ข้อมูลสรุปพื้นฐาน",
       icon: AlertTriangle,
-      color: 'text-orange-600'
-    }
-  ]
+      color: "text-orange-600",
+    },
+  ];
 
-  const transactionOptions = [
+  const transactionOptions: {
+    format: TransactionExportFormat;
+    label: string;
+    description: string;
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
+  }[] = [
     {
-      format: 'detailed' as const,
-      label: 'รายละเอียดครบถ้วน',
-      description: 'ข้อมูลทุก field',
+      format: "detailed",
+      label: "รายละเอียดครบถ้วน",
+      description: "ข้อมูลทุก field",
       icon: FileSpreadsheet,
-      color: 'text-green-600'
+      color: "text-green-600",
     },
     {
-      format: 'summary' as const,
-      label: 'สรุปย่อ',
-      description: 'สรุปเฉพาะรายการสำคัญ',
+      format: "summary",
+      label: "สรุปย่อ",
+      description: "สรุปเฉพาะรายการสำคัญ",
       icon: FileText,
-      color: 'text-blue-600'
+      color: "text-blue-600",
     },
     {
-      format: 'financial' as const,
-      label: 'รายงานการเงิน',
-      description: 'สรุปต้นทุน กำไร และมูลค่า',
+      format: "financial",
+      label: "รายงานการเงิน",
+      description: "สรุปต้นทุน กำไร และมูลค่า",
       icon: ReceiptText,
-      color: 'text-purple-600'
-    }
-  ]
+      color: "text-purple-600",
+    },
+  ];
 
-  const stockManagementOptions = [
+  const stockManagementOptions: {
+    format: StockManagementExportFormat;
+    label: string;
+    description: string;
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
+  }[] = [
     {
-      format: 'excel' as const,
-      label: 'Export Excel',
-      description: 'ดาวน์โหลดเป็นไฟล์ Excel',
+      format: "excel",
+      label: "Export Excel",
+      description: "ดาวน์โหลดเป็นไฟล์ Excel",
       icon: FileSpreadsheet,
-      color: 'text-green-600'
-    }
-  ]
+      color: "text-green-600",
+    },
+  ];
 
-  let exportOptions
-  if (variant === 'transaction') exportOptions = transactionOptions
-  else if (variant === 'stock') exportOptions = stockOptions
-  else exportOptions = stockManagementOptions
+  let exportOptions:
+    | typeof stockOptions
+    | typeof transactionOptions
+    | typeof stockManagementOptions;
+  if (variant === "transaction") exportOptions = transactionOptions;
+  else if (variant === "stock") exportOptions = stockOptions;
+  else exportOptions = stockManagementOptions;
 
-  // ถ้าเป็น stock management → ใช้ปุ่มเดี่ยว
-  if (variant === 'stockManagement') {
+  if (variant === "stockManagement") {
     return (
       <Button
         variant="outline"
         size="sm"
         disabled={disabled || exporting || selectedCount === 0}
-        onClick={() => onExport('excel')}
+        onClick={() => onExport("excel")}
         className={`flex items-center gap-2 bg-[#217346] text-white hover:bg-[#1e5f3a] border-[#217346] hover:border-[#1e5f3a] ${className}`}
       >
         {exporting ? (
@@ -123,25 +145,24 @@ export function ExportButton({
         ) : (
           <Download className="h-4 w-4" />
         )}
-        {exporting ? 'กำลัง Export...' : 'Export Excel'}
+        {exporting ? "กำลัง Export..." : "Export Excel"}
       </Button>
-    )
+    );
   }
 
-  // ถ้าไม่ใช่ → ใช้ dropdown
   if (selectedCount === 0) {
     return (
-      <Button 
-        disabled 
-        variant="outline" 
-        size="sm" 
+      <Button
+        disabled
+        variant="outline"
+        size="sm"
         className={`flex items-center gap-2 ${className}`}
       >
         <Download className="h-4 w-4" />
         Export
         <ChevronDown className="h-4 w-4" />
       </Button>
-    )
+    );
   }
 
   return (
@@ -158,7 +179,7 @@ export function ExportButton({
           ) : (
             <Download className="h-4 w-4" />
           )}
-          {exporting ? 'กำลัง Export...' : 'Export'}
+          {exporting ? "กำลัง Export..." : "Export"}
           <ChevronDown className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
@@ -191,14 +212,10 @@ export function ExportButton({
         ))}
 
         <DropdownMenuSeparator />
-        
         <div className="px-3 py-2 text-xs text-muted-foreground">
           รองรับ Excel (.xlsx) และ CSV (.csv)
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }
-
-// Export specific type interfaces for use in components
-export type { StockExportFormat, TransactionExportFormat, StockManagementExportFormat }

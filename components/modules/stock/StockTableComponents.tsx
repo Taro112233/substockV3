@@ -1,5 +1,5 @@
 // components/modules/stock/StockTableComponents.tsx
-// ✅ แก้ไข interface และเพิ่ม department + selectedStocks
+// ✅ FIXED: แก้ไข interface และ Export handler เพื่อส่ง format parameter
 
 import React from "react";
 import {
@@ -26,8 +26,10 @@ import {
 } from "lucide-react";
 import { Stock } from "@/types/dashboard";
 import { StockPrintData } from "@/types/print";
-import { PrintButton } from "@/components/ui/PrintButton";
-import { ExportButton, StockExportFormat } from "@/components/ui/ExcelExportButton";
+import {
+  ExportButton,
+  StockExportFormat,
+} from "@/components/ui/ExcelExportButton";
 
 // Types
 type SortField =
@@ -139,16 +141,15 @@ export const dosageFormOptions = [
   { value: "MIX", label: "MIX" },
 ];
 
-// Export Controls Component - แก้ไข interface
+// ✅ FIXED: Export Controls Component - แก้ไข handler signature
 interface ExportControlsProps {
   exportStats: { count: number; totalValue: number; stocks: Stock[] };
   currentViewStats: { count: number; totalValue: number };
   hiddenSelectedCount: number;
   filteredStocksLength: number;
-  onExport: (format: StockExportFormat) => void;
+  onExport: (format: StockExportFormat) => Promise<void>; // ✅ แก้ไขให้รับ format parameter
   onCancel: () => void;
   exporting: boolean;
-  // เพิ่ม props ใหม่
   department: "PHARMACY" | "OPD";
   preparePrintData: (stocks: Stock[]) => StockPrintData[];
 }
@@ -161,8 +162,6 @@ export function ExportControls({
   onExport,
   onCancel,
   exporting,
-  department,
-  preparePrintData,
 }: ExportControlsProps) {
   return (
     <Card className="border-green-200 bg-green-50">
@@ -192,21 +191,22 @@ export function ExportControls({
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Excel Export Button - ใช้ dropdown */}
+            {/* ✅ FIXED: Excel Export Button - ส่ง format ที่ถูกต้อง */}
             <ExportButton
               selectedCount={exportStats.count}
               exporting={exporting}
-              onExport={onExport}
+              onExport={(format) => {
+                // ✅ ส่ง format ที่เลือกจาก dropdown ไปยัง handler
+                if (
+                  format === "requisition" ||
+                  format === "detailed" ||
+                  format === "summary"
+                ) {
+                  onExport(format); // ส่ง format ที่เลือก
+                }
+              }}
               variant="stock"
             />
-
-            {/* เพิ่ม Print Button
-            <PrintButton
-              stocks={preparePrintData(exportStats.stocks)}
-              department={department}
-              selectedCount={exportStats.count}
-              disabled={exportStats.count === 0}
-            /> */}
 
             <Button
               variant="outline"

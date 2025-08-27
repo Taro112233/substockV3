@@ -1,5 +1,5 @@
-// 📄 File: components/modules/transaction/TransactionTableComponents.tsx
-// ✅ Modular components สำหรับ Transaction Table พร้อม Export Button Dropdown
+// components/modules/transaction/TransactionTableComponents.tsx
+// ✅ FIXED: Modular components สำหรับ Transaction Table พร้อม Export Button Dropdown
 
 import React from 'react'
 import {
@@ -84,13 +84,13 @@ export const dateRangeOptions = [
   { value: 'month', label: '30 วันที่ผ่านมา' }
 ]
 
-// Export Controls Component - ใช้ ExportButton จาก ui/ExcelExportButton.tsx
+// ✅ FIXED: Export Controls Component - แก้ไข handler signature
 interface ExportControlsProps {
   exportStats: FilteredStatsData
   currentViewStats: { count: number; totalValue: number }
   hiddenSelectedCount: number
   filteredTransactionsLength: number
-  onExport: (format: TransactionExportFormat) => void
+  onExport: (format: TransactionExportFormat) => Promise<void> // ✅ แก้ไขให้รับ format parameter
   onCancel: () => void
   exporting: boolean
   department: 'PHARMACY' | 'OPD'
@@ -129,11 +129,20 @@ export function ExportControls({
           </div>
           
           <div className="flex items-center gap-3">
-            {/* ใช้ ExportButton แบบ dropdown สำหรับ transaction */}
+            {/* ✅ FIXED: ใช้ ExportButton แบบ dropdown สำหรับ transaction */}
             <ExportButton
               selectedCount={exportStats.totalTransactions}
               exporting={exporting}
-              onExport={onExport}
+              onExport={(format) => {
+                // ✅ ส่ง format ที่เลือกจาก dropdown ไปยัง handler
+                if (
+                  format === "detailed" ||
+                  format === "summary" ||
+                  format === "financial"
+                ) {
+                  onExport(format); // ส่ง format ที่เลือก
+                }
+              }}
               variant="transaction"
               className=""
             />

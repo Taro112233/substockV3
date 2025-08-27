@@ -1,6 +1,4 @@
-// 📄 File: hooks/useTransactionTable.ts
-// ✅ Custom hook สำหรับจัดการ Transaction Table เหมือนกับ useStockTable
-
+// hooks/useTransactionTable.ts - ✅ FIXED: Export format selection
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { Transaction } from '@/types/dashboard'
 import { useToast } from '@/hooks/use-toast'
@@ -305,7 +303,11 @@ export function useTransactionTable({
     }
   }, [filteredTransactions, selectedForExport])
 
-  const handleExport = useCallback(async () => {
+  // ✅ FIXED: Handle Export with API call and correct format
+  const handleExport = useCallback(async (selectedFormat?: 'detailed' | 'summary' | 'financial') => {
+    // ใช้ format ที่ส่งมาจาก dropdown แทนที่ state
+    const formatToUse = selectedFormat || exportFormat
+    
     if (selectedForExport.size === 0) {
       toast({
         title: "ไม่มีรายการที่เลือก",
@@ -318,77 +320,65 @@ export function useTransactionTable({
     setExporting(true)
 
     try {
-      const selectedTransactions = transactions.filter(t => selectedForExport.has(t.id))
+      console.log(`🔄 Exporting ${selectedForExport.size} transactions in ${formatToUse} format`)
       
-      // Create Excel data based on format
-      const excelData = selectedTransactions.map(transaction => {
-        const baseCost = calculateTransactionCost(transaction)
-        const amount = formatTransactionAmount(transaction.type, transaction.quantity, transaction)
+      const selectedTransactions = transactions.filter(t => selectedForExport.has(t.id))
+      const totalValue = selectedTransactions.reduce((sum, t) => sum + calculateTransactionCost(t), 0)
 
-        if (exportFormat === 'summary') {
-          return {
-            'วันที่': new Date(transaction.createdAt).toLocaleDateString('th-TH'),
-            'รหัสยา': transaction.drug?.hospitalDrugCode || '',
-            'ชื่อยา': transaction.drug?.name || '',
-            'ประเภท': getTransactionTypeBadge(transaction.type).label,
-            'จำนวน': amount.formatted,
-            'มูลค่า': `฿${baseCost.toLocaleString()}`
-          }
-        } else if (exportFormat === 'financial') {
-          return {
-            'วันที่': new Date(transaction.createdAt).toLocaleDateString('th-TH'),
-            'เวลา': new Date(transaction.createdAt).toLocaleTimeString('th-TH'),
-            'รหัสยา': transaction.drug?.hospitalDrugCode || '',
-            'ชื่อยา': transaction.drug?.name || '',
-            'ประเภท': getTransactionTypeBadge(transaction.type).label,
-            'จำนวน': Math.abs(transaction.quantity),
-            'ราคาต่อหน่วย': transaction.drug?.pricePerBox || 0,
-            'มูลค่ารวม': baseCost,
-            'หมายเหตุ': transaction.note || '',
-            'อ้างอิง': transaction.reference || '',
-            'ผู้ดำเนินการ': `${transaction.user.firstName} ${transaction.user.lastName}`
-          }
-        } else {
-          // detailed format
-          return {
-            'วันที่': new Date(transaction.createdAt).toLocaleDateString('th-TH'),
-            'เวลา': new Date(transaction.createdAt).toLocaleTimeString('th-TH'),
-            'รหัสยา': transaction.drug?.hospitalDrugCode || '',
-            'ชื่อยา': transaction.drug?.name || '',
-            'ชื่อสามัญ': transaction.drug?.genericName || '',
-            'รูปแบบ': transaction.drug?.dosageForm || '',
-            'ความแรง': `${transaction.drug?.strength || ''} ${transaction.drug?.unit || ''}`.trim(),
-            'ขนาดบรรจุ': transaction.drug?.packageSize || '',
-            'ประเภท': getTransactionTypeBadge(transaction.type).label,
-            'จำนวน': transaction.quantity,
-            'จำนวนสุทธิ': amount.formatted,
-            'สต็อกก่อน': transaction.beforeQty,
-            'สต็อกหลัง': transaction.afterQty,
-            'ราคาต่อหน่วย': transaction.drug?.pricePerBox || 0,
-            'มูลค่ารวม': baseCost,
-            'แบทช์': transaction.batchNumber || '',
-            'หมายเหตุ': transaction.note || '',
-            'อ้างอิง': transaction.reference || '',
-            'ผู้ดำเนินการ': `${transaction.user.firstName} ${transaction.user.lastName}`,
-            'แผนก': department === 'PHARMACY' ? 'คลังยา' : 'OPD'
-          }
+      // ✅ สร้าง export data สำหรับ API
+      const exportData = {
+        currentView: selectedTransactions,
+        additionalTransactions: [],
+        format: formatToUse, // ✅ ใช้ format ที่ถูกต้อง
+        department,
+        timestamp: new Date().toISOString(),
+        stats: {
+          totalSelected: selectedTransactions.length,
+          currentViewCount: selectedTransactions.length,
+          additionalCount: 0,
+          totalValue
         }
+      }
+
+      toast({
+        title: "กำลังส่งออกข้อมูล...",
+        description: `กำลังสร้างไฟล์ Excel สำหรับ ${selectedForExport.size} รายการ (${formatToUse})`,
+        variant: "default"
       })
 
-      // Create and download Excel file
-      const XLSX = await import('xlsx')
-      const worksheet = XLSX.utils.json_to_sheet(excelData)
-      const workbook = XLSX.utils.book_new()
+      // ✅ เรียก API แทนการสร้าง Excel ใน client
+      const response = await fetch('/api/transactions/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(exportData)
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
       
-      const sheetName = `ประวัติ-${department === 'PHARMACY' ? 'คลังยา' : 'OPD'}-${exportFormat}`
-      XLSX.utils.book_append_sheet(workbook, worksheet, sheetName)
+      const departmentName = department === 'PHARMACY' ? 'คลังยา' : 'OPD'
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
+      const formatName = formatToUse === 'financial' ? 'การเงิน' : 
+                        formatToUse === 'detailed' ? 'รายละเอียด' : 'สรุป'
+      const filename = `ประวัติการเคลื่อนไหว_${departmentName}_${formatName}_${timestamp}.xlsx`
       
-      const fileName = `ประวัติการเคลื่อนไหว-${department === 'PHARMACY' ? 'คลังยา' : 'OPD'}-${exportFormat}-${new Date().toISOString().split('T')[0]}.xlsx`
-      XLSX.writeFile(workbook, fileName)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
 
       toast({
         title: "ส่งออกสำเร็จ",
-        description: `ส่งออกประวัติ ${selectedForExport.size} รายการเรียบร้อยแล้ว`,
+        description: `ส่งออกประวัติ ${selectedForExport.size} รายการ (${formatName}) เรียบร้อยแล้ว`,
         variant: "default"
       })
 
@@ -400,13 +390,13 @@ export function useTransactionTable({
       console.error('Export error:', error)
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถส่งออกไฟล์ได้",
+        description: "ไม่สามารถส่งออกไฟล์ได้ กรุณาลองใหม่",
         variant: "destructive"
       })
     } finally {
       setExporting(false)
     }
-  }, [selectedForExport, transactions, exportFormat, calculateTransactionCost, formatTransactionAmount, getTransactionTypeBadge, department, toast])
+  }, [selectedForExport, transactions, exportFormat, calculateTransactionCost, department, toast])
 
   const handleClearFilters = useCallback(() => {
     setSearchTerm('')
@@ -484,7 +474,7 @@ export function useTransactionTable({
     handleToggleExportMode,
     handleSelectAll,
     handleToggleTransaction,
-    handleExport,
+    handleExport, // ✅ แก้ไขแล้วรับ format parameter และเรียก API
     handleClearFilters,
     
     // Export stats

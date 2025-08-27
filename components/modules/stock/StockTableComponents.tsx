@@ -29,6 +29,7 @@ import {
 import { Stock } from '@/types/dashboard'
 import { StockPrintData } from '@/types/print'
 import { PrintButton } from '@/components/ui/PrintButton'
+import { ExcelExportButton } from '@/components/ui/ExcelExportButton'
 
 // Types
 type SortField = 'name' | 'dosageForm' | 'strength' | 'packageSize' | 'quantity' | 'totalValue' | 'lastUpdated'
@@ -151,30 +152,13 @@ export function ExportControls({
           </div>
           
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <label htmlFor="export-format" className="text-sm font-medium">
-                รูปแบบ:
-              </label>
-              <Select value={exportFormat} onValueChange={setExportFormat}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="requisition">ใบเบิก</SelectItem>
-                  <SelectItem value="detailed">รายละเอียด</SelectItem>
-                  <SelectItem value="summary">สรุป</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <Button
-              onClick={onExport}
+            {/* Excel Export Button - ใช้ dropdown */}
+            <ExcelExportButton
+              selectedCount={exportStats.count}
               disabled={exportStats.count === 0 || exporting}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              {exporting ? 'กำลัง Export...' : 'Export Excel'}
-            </Button>
+              exporting={exporting}
+              onExport={onExport}
+            />
 
             {/* เพิ่ม Print Button */}
             <PrintButton

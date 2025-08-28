@@ -48,7 +48,7 @@ export async function GET() {
       orderBy: {
         createdAt: "desc",
       },
-      take: 100, // แสดง 100 รายการล่าสุด
+      take: 9999, // แสดง 9999 รายการล่าสุด
     });
 
     // คำนวณสถิติ

@@ -1,5 +1,5 @@
 // 📄 File: app/api/stock/export/route.ts
-// ✅ FIXED: แก้ไข Format Logic ให้ทำงานถูกต้อง + เรียงชื่อยา A-Z
+// ✅ UPDATED: เพิ่มคอลัมน์ราคาต่อกล่องและราคาต่อหน่วยในใบเบิก format
 
 import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
@@ -81,6 +81,12 @@ function getCategoryLabelLocal(category: string | null | undefined): string {
   }
   
   return labels[category] || category
+}
+
+// ✅ NEW: คำนวณราคาต่อหน่วย
+function calculatePricePerUnit(pricePerBox: number | null | undefined, packageSize: number | null | undefined): number {
+  if (!pricePerBox || !packageSize || packageSize === 0) return 0
+  return pricePerBox / packageSize
 }
 
 // ✅ NEW: Sort stocks by drug name A-Z (Thai locale support)
@@ -196,6 +202,11 @@ function createExcelWorkbook(stocks: StockData[], config: ExportRequest): XLSX.W
   const columnWidths = getColumnWidths(config.format)
   mainSheet['!cols'] = columnWidths
 
+  // ✅ NEW: เพิ่ม Cell Formatting สำหรับตัวเลข (ชิดขวา)
+  if (config.format === 'requisition') {
+    applyCellFormatting(mainSheet, mainData)
+  }
+
   // เพิ่ม Sheet ลงใน Workbook
   const departmentName = config.department === 'PHARMACY' ? 'คลังยา' : 'OPD'
   XLSX.utils.book_append_sheet(workbook, mainSheet, `สต็อก_${departmentName}`)
@@ -217,14 +228,16 @@ function createExcelWorkbook(stocks: StockData[], config: ExportRequest): XLSX.W
   return workbook
 }
 
-// ✅ FIXED: สร้างแถวข้อมูลสำหรับ Export - แก้ไข Logic
+// ✅ UPDATED: สร้างแถวข้อมูลสำหรับ Export - เพิ่มคอลัมน์ราคา
 function createExportRow(stock: StockData, config: ExportRequest): ExportRow {
   const availableStock = calculateAvailableStockLocal(stock)
   const lowStock = isLowStockLocal(stock)
   const categoryLabel = getCategoryLabelLocal(stock.drug?.category)
   const stockValue = availableStock * (stock.drug?.pricePerBox || 0)
+  const pricePerBox = stock.drug?.pricePerBox || 0
+  const pricePerUnit = calculatePricePerUnit(stock.drug?.pricePerBox, stock.drug?.packageSize)
 
-  // ✅ FIXED: ใบเบิก Format - มี return แล้วจบ
+  // ✅ UPDATED: ใบเบิก Format - เพิ่มคอลัมน์ราคา
   if (config.format === 'requisition') {
     return {
       'รหัส': stock.drug?.hospitalDrugCode || '-',
@@ -234,6 +247,8 @@ function createExportRow(stock: StockData, config: ExportRequest): ExportRow {
         ? `${stock.drug.strength} ${stock.drug.unit}` 
         : (stock.drug?.strength || '-'),
       'ขนาดบรรจุ': stock.drug?.packageSize ? `1 x ${stock.drug.packageSize}'s` : '-',
+      'ราคาต่อกล่อง': pricePerBox, // ✅ ส่งเป็น number
+      'ราคาต่อหน่วย': pricePerUnit, // ✅ ส่งเป็น number
       'ขั้นต่ำ': stock.minimumStock || 0,
       'คงเหลือ': availableStock,
       'สถานะ': lowStock ? 'ต้องเบิก' : 'เพียงพอ',
@@ -394,9 +409,57 @@ function createRequisitionHeader(config: ExportRequest): Array<Record<string, st
   ]
 }
 
-// ✅ FIXED: กำหนดความกว้างคอลัมน์ตาม format
+// ✅ NEW: ฟังก์ชั่นสำหรับ Format Cell ให้ตัวเลขชิดขวา
+function applyCellFormatting(worksheet: XLSX.WorkSheet, data: ExportRow[]) {
+  if (!data.length) return
+
+  const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1')
+  
+  // หาตำแหน่งคอลัมน์ราคา (คอลัมน์ที่ 6 และ 7 = F และ G)
+  const pricePerBoxCol = 5 // คอลัมน์ F (ราคาต่อกล่อง)
+  const pricePerUnitCol = 6 // คอลัมน์ G (ราคาต่อหน่วย)
+  const minimumCol = 7 // คอลัมน์ H (ขั้นต่ำ)
+  const availableCol = 8 // คอลัมน์ I (คงเหลือ)
+
+  // วนลูปแต่ละแถว (เริ่มจากแถวที่ 2 เพราะแถวแรกเป็น header)
+  for (let row = 1; row <= range.e.r; row++) {
+    // Format ราคาต่อกล่อง (2 ทศนิยม, ชิดขวา)
+    const priceBoxCellRef = XLSX.utils.encode_cell({ r: row, c: pricePerBoxCol })
+    if (worksheet[priceBoxCellRef]) {
+      worksheet[priceBoxCellRef].z = '#,##0.00' // Number format with 2 decimal places
+      if (!worksheet[priceBoxCellRef].s) worksheet[priceBoxCellRef].s = {}
+      worksheet[priceBoxCellRef].s.alignment = { horizontal: 'right' }
+    }
+
+    // Format ราคาต่อหน่วย (4 ทศนิยม, ชิดขวา)
+    const priceUnitCellRef = XLSX.utils.encode_cell({ r: row, c: pricePerUnitCol })
+    if (worksheet[priceUnitCellRef]) {
+      worksheet[priceUnitCellRef].z = '#,##0.0000' // Number format with 4 decimal places
+      if (!worksheet[priceUnitCellRef].s) worksheet[priceUnitCellRef].s = {}
+      worksheet[priceUnitCellRef].s.alignment = { horizontal: 'right' }
+    }
+
+    // Format ขั้นต่ำ (ชิดขวา)
+    const minCellRef = XLSX.utils.encode_cell({ r: row, c: minimumCol })
+    if (worksheet[minCellRef]) {
+      worksheet[minCellRef].z = '#,##0' // Integer format
+      if (!worksheet[minCellRef].s) worksheet[minCellRef].s = {}
+      worksheet[minCellRef].s.alignment = { horizontal: 'right' }
+    }
+
+    // Format คงเหลือ (ชิดขวา)
+    const availCellRef = XLSX.utils.encode_cell({ r: row, c: availableCol })
+    if (worksheet[availCellRef]) {
+      worksheet[availCellRef].z = '#,##0' // Integer format
+      if (!worksheet[availCellRef].s) worksheet[availCellRef].s = {}
+      worksheet[availCellRef].s.alignment = { horizontal: 'right' }
+    }
+  }
+}
+
+// ✅ UPDATED: กำหนดความกว้างคอลัมน์ตาม format - เพิ่มคอลัมน์ราคา
 function getColumnWidths(format: 'summary' | 'detailed' | 'requisition'): XLSX.ColInfo[] {
-  // ใบเบิก Format
+  // ✅ UPDATED: ใบเบิก Format - เพิ่มคอลัมน์ราคา
   if (format === 'requisition') {
     return [
       { wch: 15 }, // รหัส
@@ -404,6 +467,8 @@ function getColumnWidths(format: 'summary' | 'detailed' | 'requisition'): XLSX.C
       { wch: 12 }, // รูปแบบ
       { wch: 15 }, // ความแรง
       { wch: 15 }, // ขนาดบรรจุ
+      { wch: 12 }, // ราคาต่อกล่อง
+      { wch: 14 }, // ราคาต่อหน่วย
       { wch: 10 }, // ขั้นต่ำ
       { wch: 12 }, // คงเหลือ
       { wch: 12 }, // สถานะ

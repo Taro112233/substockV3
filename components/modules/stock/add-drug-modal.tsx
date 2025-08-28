@@ -1,5 +1,5 @@
 // 📄 File: components/modules/stock/add-drug-modal.tsx (FIXED - No Authentication)
-// ✅ ลบการเช็ค Authentication ออกทั้งหมด + Enhanced Error Handling
+// ✅ ลบการเช็ค Authentication ออกทั้งหมด + Enhanced Error Handling + Fixed TypeScript Warnings
 
 import { useEffect, useState, useCallback } from "react";
 import {
@@ -33,7 +33,6 @@ import {
   XCircle,
   AlertTriangle,
   Loader2,
-  Bug
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -108,9 +107,8 @@ export function AddDrugModal({
   const [formData, setFormData] = useState<NewDrugData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
-  // Debug state
+  // Debug state for development
   const [debugMode, setDebugMode] = useState(false);
-  const [lastError, setLastError] = useState<string>("");
 
   // Real-time validation hook
   const {
@@ -222,7 +220,6 @@ export function AddDrugModal({
     setErrors({});
     setWasFilledFromDuplicate(false);
     setUserDataBeforeDuplicate(null);
-    setLastError("");
     updateCode("");
     onClose();
   };
@@ -232,7 +229,6 @@ export function AddDrugModal({
     setErrors({});
     setWasFilledFromDuplicate(false);
     setUserDataBeforeDuplicate(null);
-    setLastError("");
     updateCode("");
     toast.info("รีเซ็ตฟอร์มแล้ว", {
       description: "ข้อมูลทั้งหมดถูกล้างเรียบร้อยแล้ว",
@@ -313,11 +309,10 @@ export function AddDrugModal({
     });
 
     setLoading(true);
-    setLastError("");
 
     try {
-      // Debug: Log the request data
-      if (debugMode) {
+      // Debug: Log the request data (for development only)
+      if (debugMode && process.env.NODE_ENV === 'development') {
         console.log("🔍 Sending drug data:", {
           ...formData,
           department,
@@ -335,8 +330,8 @@ export function AddDrugModal({
         }),
       });
 
-      // Debug: Log response details
-      if (debugMode) {
+      // Debug: Log response details (for development only)
+      if (debugMode && process.env.NODE_ENV === 'development') {
         console.log("🔍 Response status:", response.status);
         console.log("🔍 Response headers:", Object.fromEntries(response.headers.entries()));
       }
@@ -344,12 +339,11 @@ export function AddDrugModal({
       let responseData;
       try {
         responseData = await response.json();
-        if (debugMode) {
+        if (debugMode && process.env.NODE_ENV === 'development') {
           console.log("🔍 Response data:", responseData);
         }
       } catch (parseError) {
         console.error("❌ Failed to parse response JSON:", parseError);
-        setLastError("ไม่สามารถอ่านข้อมูลตอบกลับจากเซิร์ฟเวอร์ได้");
         
         toast.dismiss(progressToast);
         toast.error("ข้อผิดพลาดในการตอบสนอง", {
@@ -379,7 +373,6 @@ export function AddDrugModal({
             return;
 
           case 400:
-            setLastError("ข้อมูลไม่ถูกต้อง - " + (responseData?.error || "ตรวจสอบข้อมูลที่กรอก"));
             toast.error("ข้อมูลไม่ถูกต้อง", {
               description: responseData?.error || "โปรดตรวจสอบข้อมูลที่กรอก",
               icon: <AlertTriangle className="w-4 h-4" />,
@@ -388,7 +381,6 @@ export function AddDrugModal({
             return;
 
           case 500:
-            setLastError("ข้อผิดพลาดของเซิร์ฟเวอร์");
             toast.error("ข้อผิดพลาดของเซิร์ฟเวอร์", {
               description: "โปรดลองใหม่อีกครั้ง หรือติดต่อผู้ดูแลระบบ",
               icon: <XCircle className="w-4 h-4" />,
@@ -401,7 +393,6 @@ export function AddDrugModal({
             return;
 
           default:
-            setLastError(`HTTP ${response.status}: ${responseData?.error || "ข้อผิดพลาดไม่ทราบสาเหตุ"}`);
             toast.error(`ข้อผิดพลาด (${response.status})`, {
               description: responseData?.error || "เกิดข้อผิดพลาดไม่ทราบสาเหตุ",
               icon: <XCircle className="w-4 h-4" />,
@@ -445,7 +436,6 @@ export function AddDrugModal({
       
       // Enhanced error handling for network issues
       if (error instanceof TypeError && error.message.includes("fetch")) {
-        setLastError("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ - Network Error");
         toast.error("ไม่สามารถเชื่อมต่อได้", {
           description: "โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ต และลองใหม่อีกครั้ง",
           icon: <XCircle className="w-4 h-4" />,
@@ -456,9 +446,6 @@ export function AddDrugModal({
           },
         });
       } else {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        setLastError(errorMessage);
-        
         toast.error("เกิดข้อผิดพลาด", {
           description: "ไม่สามารถเพิ่มยาได้ โปรดลองใหม่อีกครั้ง",
           icon: <XCircle className="w-4 h-4" />,

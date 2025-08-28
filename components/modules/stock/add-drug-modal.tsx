@@ -1,6 +1,5 @@
-// 📄 File: components/modules/stock/add-drug-modal.tsx (Updated with Real-time Validation)
-// ✅ Added: Real-time duplicate checking for hospital drug code
-// =====================================================
+// 📄 File: components/modules/stock/add-drug-modal.tsx (FIXED - No Authentication)
+// ✅ ลบการเช็ค Authentication ออกทั้งหมด + Enhanced Error Handling
 
 import { useEffect, useState, useCallback } from "react";
 import {
@@ -33,7 +32,8 @@ import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
-  Loader2
+  Loader2,
+  Bug
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -77,29 +77,9 @@ const DRUG_CATEGORIES = [
 
 // Dosage forms
 const DOSAGE_FORMS = [
-  "TAB",
-  "CAP",
-  "SYR",
-  "SUS",
-  "INJ",
-  "SOL",
-  "OIN",
-  "GEL",
-  "LOT",
-  "SPR",
-  "SUP",
-  "ENE",
-  "POW",
-  "PWD",
-  "CR",
-  "BAG",
-  "APP",
-  "LVP",
-  "MDI",
-  "NAS",
-  "SAC",
-  "LIQ",
-  "MIX",
+  "TAB", "CAP", "SYR", "SUS", "INJ", "SOL", "OIN", "GEL", "LOT", 
+  "SPR", "SUP", "ENE", "POW", "PWD", "CR", "BAG", "APP", "LVP", 
+  "MDI", "NAS", "SAC", "LIQ", "MIX",
 ];
 
 // Initial form data
@@ -127,8 +107,12 @@ export function AddDrugModal({
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<NewDrugData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  // Debug state
+  const [debugMode, setDebugMode] = useState(false);
+  const [lastError, setLastError] = useState<string>("");
 
-  // ✅ Real-time validation hook
+  // Real-time validation hook
   const {
     code: drugCode,
     isChecking,
@@ -142,11 +126,10 @@ export function AddDrugModal({
 
   // Sync drug code with form data
   const handleDrugCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newCode = e.target.value.toUpperCase(); // Auto uppercase
+    const newCode = e.target.value.toUpperCase();
     setFormData((prev) => ({ ...prev, hospitalDrugCode: newCode }));
     updateCode(newCode);
 
-    // Clear hospital drug code error when typing
     if (errors.hospitalDrugCode) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -156,26 +139,24 @@ export function AddDrugModal({
     }
   };
 
-  const [wasFilledFromDuplicate, setWasFilledFromDuplicate] = useState(false); // ✅ Track if form was auto-filled
-  const [userDataBeforeDuplicate, setUserDataBeforeDuplicate] =
-    useState<NewDrugData | null>(null); // ✅ Backup user data
+  const [wasFilledFromDuplicate, setWasFilledFromDuplicate] = useState(false);
+  const [userDataBeforeDuplicate, setUserDataBeforeDuplicate] = useState<NewDrugData | null>(null);
 
-  // ✅ Restore user data that was entered before duplicate
+  // Restore user data
   const restoreUserData = useCallback(() => {
-  if (userDataBeforeDuplicate) {
-    const restoredData: NewDrugData = {
-      ...userDataBeforeDuplicate,
-      hospitalDrugCode: formData.hospitalDrugCode,
+    if (userDataBeforeDuplicate) {
+      const restoredData: NewDrugData = {
+        ...userDataBeforeDuplicate,
+        hospitalDrugCode: formData.hospitalDrugCode,
+      };
+      setFormData(restoredData);
+      setUserDataBeforeDuplicate(null);
+      setErrors({});
     }
-    setFormData(restoredData)
-    setUserDataBeforeDuplicate(null)
-    setErrors({})
-  }
-}, [userDataBeforeDuplicate, formData.hospitalDrugCode])
+  }, [userDataBeforeDuplicate, formData.hospitalDrugCode]);
 
-  // ✅ Fill form with existing drug data (no new code generation)
-  const fillFromExistingDrug = useCallback(
-  (
+  // Fill form with existing drug data
+  const fillFromExistingDrug = useCallback((
     drug: Partial<NewDrugData> & { hospitalDrugCode: string; name: string },
     generateNewCode = true
   ) => {
@@ -194,41 +175,35 @@ export function AddDrugModal({
       notes: drug.notes ?? null,
       initialQuantity: 0,
       minimumStock: 10,
-    }
+    };
 
-    setFormData(filledData)
-    if (generateNewCode) updateCode(filledData.hospitalDrugCode)
-    setErrors({})
-  },
-  [updateCode]
-)
+    setFormData(filledData);
+    if (generateNewCode) updateCode(filledData.hospitalDrugCode);
+    setErrors({});
+  }, [updateCode]);
 
-// ✅ Auto-fill when duplicate is detected (but disable editing)
+  // Auto-fill when duplicate is detected
   useEffect(() => {
-  if (
-    isDuplicate &&
-    existingDrug &&
-    formData.hospitalDrugCode === drugCode.trim()
-  ) {
-    if (!wasFilledFromDuplicate) {
-      setUserDataBeforeDuplicate({ ...formData })
-      fillFromExistingDrug(existingDrug, false)
-      setWasFilledFromDuplicate(true)
+    if (isDuplicate && existingDrug && formData.hospitalDrugCode === drugCode.trim()) {
+      if (!wasFilledFromDuplicate) {
+        setUserDataBeforeDuplicate({ ...formData });
+        fillFromExistingDrug(existingDrug, false);
+        setWasFilledFromDuplicate(true);
+      }
+    } else if (!isDuplicate && wasFilledFromDuplicate && userDataBeforeDuplicate) {
+      restoreUserData();
+      setWasFilledFromDuplicate(false);
     }
-  } else if (!isDuplicate && wasFilledFromDuplicate && userDataBeforeDuplicate) {
-    restoreUserData()
-    setWasFilledFromDuplicate(false)
-  }
-}, [
-  isDuplicate,
-  existingDrug,
-  drugCode,
-  wasFilledFromDuplicate,
-  formData,
-  userDataBeforeDuplicate,
-  fillFromExistingDrug,
-  restoreUserData,   // ✅ no more warning
-])
+  }, [
+    isDuplicate,
+    existingDrug,
+    drugCode,
+    wasFilledFromDuplicate,
+    formData,
+    userDataBeforeDuplicate,
+    fillFromExistingDrug,
+    restoreUserData,
+  ]);
 
   // Helper function to generate new drug code
   const generateNewDrugCode = (originalCode: string) => {
@@ -238,8 +213,6 @@ export function AddDrugModal({
       const number = parseInt(match[2]);
       return `${prefix}${String(number + 1).padStart(match[2].length, "0")}`;
     }
-
-    // If no pattern found, add suffix
     return `${originalCode}_V2`;
   };
 
@@ -249,6 +222,7 @@ export function AddDrugModal({
     setErrors({});
     setWasFilledFromDuplicate(false);
     setUserDataBeforeDuplicate(null);
+    setLastError("");
     updateCode("");
     onClose();
   };
@@ -258,6 +232,7 @@ export function AddDrugModal({
     setErrors({});
     setWasFilledFromDuplicate(false);
     setUserDataBeforeDuplicate(null);
+    setLastError("");
     updateCode("");
     toast.info("รีเซ็ตฟอร์มแล้ว", {
       description: "ข้อมูลทั้งหมดถูกล้างเรียบร้อยแล้ว",
@@ -266,7 +241,7 @@ export function AddDrugModal({
     });
   };
 
-  // Validation with real-time check integration
+  // Enhanced validation
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
     let firstErrorField = "";
@@ -328,46 +303,116 @@ export function AddDrugModal({
     return true;
   };
 
-  // Submit form
+  // Enhanced submit with comprehensive error handling (NO AUTH CHECK)
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
     const progressToast = toast.loading("กำลังเพิ่มยา...", {
-      description: `เพิ่ม "${formData.name}" (${
-        formData.hospitalDrugCode
-      }) ไปยัง ${department === "PHARMACY" ? "คลังยา" : "OPD"}`,
+      description: `เพิ่ม "${formData.name}" (${formData.hospitalDrugCode}) ไปยัง ${department === "PHARMACY" ? "คลังยา" : "OPD"}`,
       icon: <Loader2 className="w-4 h-4 animate-spin" />,
     });
 
     setLoading(true);
+    setLastError("");
+
     try {
+      // Debug: Log the request data
+      if (debugMode) {
+        console.log("🔍 Sending drug data:", {
+          ...formData,
+          department,
+        });
+      }
+
       const response = await fetch("/api/drugs", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
         body: JSON.stringify({
           ...formData,
           department,
         }),
       });
 
-      const responseData = await response.json();
+      // Debug: Log response details
+      if (debugMode) {
+        console.log("🔍 Response status:", response.status);
+        console.log("🔍 Response headers:", Object.fromEntries(response.headers.entries()));
+      }
+
+      let responseData;
+      try {
+        responseData = await response.json();
+        if (debugMode) {
+          console.log("🔍 Response data:", responseData);
+        }
+      } catch (parseError) {
+        console.error("❌ Failed to parse response JSON:", parseError);
+        setLastError("ไม่สามารถอ่านข้อมูลตอบกลับจากเซิร์ฟเวอร์ได้");
+        
+        toast.dismiss(progressToast);
+        toast.error("ข้อผิดพลาดในการตอบสนอง", {
+          description: "เซิร์ฟเวอร์ตอบกลับข้อมูลที่ไม่ถูกต้อง",
+          icon: <XCircle className="w-4 h-4" />,
+          duration: 6000,
+          action: {
+            label: "ดูรายละเอียด",
+            onClick: () => setDebugMode(true),
+          },
+        });
+        return;
+      }
 
       if (!response.ok) {
         toast.dismiss(progressToast);
 
-        if (response.status === 409) {
-          toast.error("รหัสยาซ้ำ!", {
-            description: `รหัสยา "${formData.hospitalDrugCode}" มีอยู่ในระบบแล้ว`,
-            icon: <AlertCircle className="w-4 h-4" />,
-            duration: 5000,
-          });
-          return;
-        }
+        // Handle specific error cases
+        switch (response.status) {
+          case 409:
+            toast.error("รหัสยาซ้ำ!", {
+              description: `รหัสยา "${formData.hospitalDrugCode}" มีอยู่ในระบบแล้ว`,
+              icon: <AlertCircle className="w-4 h-4" />,
+              duration: 5000,
+            });
+            setErrors({ hospitalDrugCode: 'รหัสยานี้มีอยู่ในระบบแล้ว' });
+            return;
 
-        throw new Error(responseData.error || "เกิดข้อผิดพลาดในการเพิ่มยา");
+          case 400:
+            setLastError("ข้อมูลไม่ถูกต้อง - " + (responseData?.error || "ตรวจสอบข้อมูลที่กรอก"));
+            toast.error("ข้อมูลไม่ถูกต้อง", {
+              description: responseData?.error || "โปรดตรวจสอบข้อมูลที่กรอก",
+              icon: <AlertTriangle className="w-4 h-4" />,
+              duration: 6000,
+            });
+            return;
+
+          case 500:
+            setLastError("ข้อผิดพลาดของเซิร์ฟเวอร์");
+            toast.error("ข้อผิดพลาดของเซิร์ฟเวอร์", {
+              description: "โปรดลองใหม่อีกครั้ง หรือติดต่อผู้ดูแลระบบ",
+              icon: <XCircle className="w-4 h-4" />,
+              duration: 6000,
+              action: {
+                label: "ลองอีกครั้ง",
+                onClick: () => handleSubmit(),
+              },
+            });
+            return;
+
+          default:
+            setLastError(`HTTP ${response.status}: ${responseData?.error || "ข้อผิดพลาดไม่ทราบสาเหตุ"}`);
+            toast.error(`ข้อผิดพลาด (${response.status})`, {
+              description: responseData?.error || "เกิดข้อผิดพลาดไม่ทราบสาเหตุ",
+              icon: <XCircle className="w-4 h-4" />,
+              duration: 6000,
+              action: {
+                label: "ดูรายละเอียด",
+                onClick: () => setDebugMode(true),
+              },
+            });
+            return;
+        }
       }
 
       const { data: newStock } = responseData;
@@ -392,18 +437,36 @@ export function AddDrugModal({
 
       onDrugAdded?.(newStock);
       handleClose();
-    } catch (error) {
-      console.error("Error adding drug:", error);
-      toast.dismiss(progressToast);
 
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      if (!errorMessage.includes("รหัสยา")) {
-        toast.error("เชื่อมต่อไม่ได้", {
-          description:
-            "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบอินเทอร์เน็ต",
+    } catch (error) {
+      console.error("❌ Add drug error:", error);
+      
+      toast.dismiss(progressToast);
+      
+      // Enhanced error handling for network issues
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        setLastError("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ - Network Error");
+        toast.error("ไม่สามารถเชื่อมต่อได้", {
+          description: "โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ต และลองใหม่อีกครั้ง",
+          icon: <XCircle className="w-4 h-4" />,
+          duration: 8000,
+          action: {
+            label: "ลองอีกครั้ง",
+            onClick: () => handleSubmit(),
+          },
+        });
+      } else {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        setLastError(errorMessage);
+        
+        toast.error("เกิดข้อผิดพลาด", {
+          description: "ไม่สามารถเพิ่มยาได้ โปรดลองใหม่อีกครั้ง",
           icon: <XCircle className="w-4 h-4" />,
           duration: 6000,
+          action: {
+            label: "ดูรายละเอียด",
+            onClick: () => setDebugMode(true),
+          },
         });
       }
     } finally {
@@ -411,7 +474,7 @@ export function AddDrugModal({
     }
   };
 
-  // Helper functions for other form fields
+  // Helper functions for form inputs
   const handleInputChange = <K extends keyof NewDrugData>(
     field: K,
     value: NewDrugData[K]
@@ -480,7 +543,7 @@ export function AddDrugModal({
   const canSubmit =
     !loading &&
     !isChecking &&
-    !isDuplicate && // ✅ Can't submit if duplicate
+    !isDuplicate &&
     formData.hospitalDrugCode.trim() !== "" &&
     formData.name.trim() !== "" &&
     formData.unit.trim() !== "" &&
@@ -497,6 +560,7 @@ export function AddDrugModal({
         </DialogHeader>
 
         <div className="space-y-6">
+
           {/* Drug Information */}
           <Card>
             <CardHeader className="pb-3">
@@ -507,7 +571,7 @@ export function AddDrugModal({
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* ✅ รหัสยาโรงพยาบาล with Real-time Validation */}
+                {/* รหัสยาโรงพยาบาล with Real-time Validation */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium flex items-center gap-2">
                     รหัสยาโรงพยาบาล *{getValidationIcon()}
@@ -527,10 +591,16 @@ export function AddDrugModal({
                           ? "border-green-500"
                           : ""
                       } ${isChecking ? "pr-8" : ""}`}
-                      disabled={loading} // ✅ Only disable when loading, NOT when duplicate
+                      disabled={loading}
                       autoComplete="off"
                     />
                   </div>
+                  {errors.hospitalDrugCode && (
+                    <p className="text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.hospitalDrugCode}
+                    </p>
+                  )}
                 </div>
 
                 {/* ชื่อยา */}
@@ -546,6 +616,12 @@ export function AddDrugModal({
                     }`}
                     disabled={loading || isDuplicate}
                   />
+                  {errors.name && (
+                    <p className="text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.name}
+                    </p>
+                  )}
                 </div>
 
                 {/* ชื่อสามัญ */}
@@ -565,9 +641,7 @@ export function AddDrugModal({
                   <label className="text-sm font-medium">รูปแบบยา</label>
                   <Select
                     value={formData.dosageForm}
-                    onValueChange={(value) =>
-                      handleInputChange("dosageForm", value)
-                    }
+                    onValueChange={(value) => handleInputChange("dosageForm", value)}
                     disabled={loading || isDuplicate}
                   >
                     <SelectTrigger className={isDuplicate ? "bg-gray-100" : ""}>
@@ -704,7 +778,7 @@ export function AddDrugModal({
                 {/* จำนวนสต็อก */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">
-                    จำนวนสต็อกเริ่มต้น
+                    จำนวนสต็อกปัจจุบัน
                   </label>
                   <Input
                     type="number"
@@ -727,7 +801,7 @@ export function AddDrugModal({
 
                 {/* จำนวนขั้นต่ำ */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">จำนวนขั้นต่ำ</label>
+                  <label className="text-sm font-medium">ระบุขั้นต่ำ</label>
                   <Input
                     type="number"
                     min="0"

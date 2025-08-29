@@ -592,16 +592,19 @@ export function FooterInfo({
 
       <div className="flex items-center gap-4 text-xs">
         <div className="flex items-center gap-1">
-          <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-          <span>อัปเดต {">"} 14 วัน</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-          <span>อัปเดต 7-13 วัน</span>
+          <span>อัปเดต</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-          <span>อัปเดต {"<"} 7 วัน</span>
+          <span>{"<"} 7 วัน</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+          <span>7-13 วัน</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+          <span>{">"} 14 วัน</span>
         </div>
       </div>
     </div>

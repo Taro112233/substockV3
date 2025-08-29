@@ -12,7 +12,6 @@ import { HistoryTabEnhanced } from "@/components/modules/dashboard/history-tab-e
 import { TransferDetailModal } from "@/components/modules/transfer/transfer-detail-modal";
 import { Transfer } from "@/types/dashboard";
 import { Package, FileText, History, ArrowLeft } from "lucide-react";
-import { SimpleStatusIndicator } from "@/components/SimpleStatusIndicator";
 
 export default function OpdDashboard() {
   const router = useRouter();

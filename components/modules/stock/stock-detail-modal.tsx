@@ -35,6 +35,7 @@ import {
   X,
   RotateCcw,
   Target,
+  ArrowLeft,
 } from 'lucide-react'
 
 interface StockDetailModalProps {
@@ -275,21 +276,6 @@ export function StockDetailModalEnhanced({
     })
   }
 
-  const handleResetDrug = () => {
-    setDrugFormData({
-      hospitalDrugCode: stock.drug.hospitalDrugCode,
-      name: stock.drug.name,
-      genericName: stock.drug.genericName || null,
-      dosageForm: stock.drug.dosageForm,
-      strength: stock.drug.strength || null,
-      unit: stock.drug.unit,  // ✅ เพิ่ม unit field
-      packageSize: stock.drug.packageSize || null,
-      pricePerBox: stock.drug.pricePerBox,
-      category: stock.drug.category,
-      notes: stock.drug.notes || null
-    })
-  }
-
   // ✅ Save stock changes - ปรับให้กดได้ตลอด ไม่มีเงื่อนไข
   const handleSaveStock = async () => {
     setLoading(true)
@@ -525,7 +511,7 @@ export function StockDetailModalEnhanced({
 
                 {/* Manual Input */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">ระบุจำนวนที่ต้องการ</label>
+                  <label className="text-sm font-medium">ระบุจำนวนสต็อกปัจจุบัน</label>
                   <div className="flex gap-2">
                     <Input
                       type="number"
@@ -611,12 +597,12 @@ export function StockDetailModalEnhanced({
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                onClick={handleResetStock}
+                onClick={onClose}
                 disabled={loading}
                 className="flex-1"
               >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                รีเซ็ต
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                กลับ
               </Button>
               <Button
                 onClick={handleSaveStock}
@@ -624,7 +610,7 @@ export function StockDetailModalEnhanced({
                 className="flex-1"
               >
                 <Save className="h-4 w-4 mr-2" />
-                {loading ? 'กำลังบันทึก...' : 'บันทึก'}
+                {loading ? 'กำลังอัพเดท...' : 'อัพเดท'}
               </Button>
             </div>
           </TabsContent>
@@ -767,12 +753,12 @@ export function StockDetailModalEnhanced({
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                onClick={handleResetDrug}
+                onClick={onClose}
                 disabled={loading || !hasDrugChanges}
                 className="flex-1"
               >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                รีเซ็ต
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                กลับ
               </Button>
               <Button
                 onClick={handleSaveDrug}

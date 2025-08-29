@@ -1,69 +1,75 @@
 // app/login/page.tsx
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/app/utils/auth-client';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Loader2, 
-  Hospital, 
-  Eye, 
-  EyeOff, 
-  CheckCircle2, 
-  XCircle, 
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@/app/utils/auth-client";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Loader2,
+  Hospital,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+  XCircle,
   AlertTriangle,
   ArrowRight,
-  Home
-} from 'lucide-react';
-import { toast } from 'sonner';
+  Home,
+} from "lucide-react";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
-    username: '',
-    password: '',
+    username: "",
+    password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loginSuccess, setLoginSuccess] = useState(false);
-  
+
   const { login, loading, user } = useAuth();
   const router = useRouter();
 
   // ตรวจสอบสถานะ auth ทุก 2 วินาที หลัง login success
   useEffect(() => {
     let authCheckInterval: NodeJS.Timeout;
-    
+
     if (loginSuccess && !user) {
       authCheckInterval = setInterval(async () => {
         try {
-          const response = await fetch('/api/auth/me', {
-            credentials: 'include'
+          const response = await fetch("/api/auth/me", {
+            credentials: "include",
           });
-          
+
           if (response.ok) {
             const userData = await response.json();
             if (userData.success && userData.data?.user) {
               // พบ authentication แล้ว - redirect ไป dashboard
-              toast.success('พร้อมใช้งาน!', {
-                description: 'การยืนยันตัวตนเสร็จสมบูรณ์',
+              toast.success("พร้อมใช้งาน!", {
+                description: "การยืนยันตัวตนเสร็จสมบูรณ์",
                 icon: <CheckCircle2 className="w-4 h-4" />,
               });
-              router.push('/dashboard');
+              router.push("/dashboard");
             }
           }
         } catch (error) {
-          console.error('Auth check error:', error);
+          console.error("Auth check error:", error);
         }
       }, 2000); // ตรวจสอบทุก 2 วินาที
     }
-    
+
     return () => {
       if (authCheckInterval) {
         clearInterval(authCheckInterval);
@@ -73,11 +79,11 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.username || !formData.password) {
-      setError('กรุณากรอกUsernameและรหัสผ่าน');
-      toast.error('กรุณากรอกข้อมูลให้ครบถ้วน', {
-        description: 'Username และรหัสผ่านจำเป็นต้องกรอก',
+      setError("กรุณากรอกUsernameและรหัสผ่าน");
+      toast.error("กรุณากรอกข้อมูลให้ครบถ้วน", {
+        description: "Username และรหัสผ่านจำเป็นต้องกรอก",
         icon: <AlertTriangle className="w-4 h-4" />,
         duration: 4000,
       });
@@ -85,48 +91,48 @@ export default function LoginPage() {
     }
 
     setIsLoading(true);
-    setError('');
+    setError("");
     setLoginSuccess(false);
 
     // Show loading toast
-    const loadingToast = toast.loading('กำลังเข้าสู่ระบบ...', {
-      description: 'กรุณารอสักครู่',
+    const loadingToast = toast.loading("กำลังเข้าสู่ระบบ...", {
+      description: "กรุณารอสักครู่",
     });
 
     try {
       const result = await login(formData.username, formData.password);
-      
+
       // Dismiss loading toast
       toast.dismiss(loadingToast);
-      
+
       if (result.success) {
         setLoginSuccess(true);
-        
-        toast.success('เข้าสู่ระบบสำเร็จ!', {
+
+        toast.success("เข้าสู่ระบบสำเร็จ!", {
           description: `ยินดีต้อนรับเข้าสู่ระบบจัดการสต็อกยา`,
           duration: 3000,
         });
-        
+
         // หากมี user data ทันที ให้ redirect
         if (result.success) {
-          router.push('/dashboard');
+          router.push("/dashboard");
         }
         // หากไม่มี ให้รอ useEffect ตรวจสอบ
-        
       } else {
-        const errorMsg = result.error || 'เข้าสู่ระบบไม่สำเร็จ';
+        const errorMsg = result.error || "เข้าสู่ระบบไม่สำเร็จ";
         setError(errorMsg);
-        toast.error('เข้าสู่ระบบไม่สำเร็จ', {
-          description: errorMsg === 'เข้าสู่ระบบไม่สำเร็จ' 
-            ? 'กรุณาตรวจสอบ Username และรหัสผ่าน' 
-            : errorMsg,
+        toast.error("เข้าสู่ระบบไม่สำเร็จ", {
+          description:
+            errorMsg === "เข้าสู่ระบบไม่สำเร็จ"
+              ? "กรุณาตรวจสอบ Username และรหัสผ่าน"
+              : errorMsg,
           icon: <XCircle className="w-4 h-4" />,
           duration: 5000,
           action: {
             label: "ลองอีกครั้ง",
             onClick: () => {
-              setError('');
-              setFormData({ username: '', password: '' });
+              setError("");
+              setFormData({ username: "", password: "" });
             },
           },
         });
@@ -134,18 +140,18 @@ export default function LoginPage() {
     } catch (error) {
       // Dismiss loading toast
       toast.dismiss(loadingToast);
-      
-      console.error('Login error:', error);
-      const errorMsg = 'เกิดข้อผิดพลาดในการเชื่อมต่อ';
+
+      console.error("Login error:", error);
+      const errorMsg = "เกิดข้อผิดพลาดในการเชื่อมต่อ";
       setError(errorMsg);
-      toast.error('ไม่สามารถเชื่อมต่อได้', {
-        description: 'กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตและลองใหม่อีกครั้ง',
+      toast.error("ไม่สามารถเชื่อมต่อได้", {
+        description: "กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตและลองใหม่อีกครั้ง",
         icon: <XCircle className="w-4 h-4" />,
         duration: 6000,
         action: {
           label: "ลองอีกครั้ง",
           onClick: () => {
-            setError('');
+            setError("");
             handleSubmit(e);
           },
         },
@@ -157,21 +163,21 @@ export default function LoginPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
-    
+
     // ล้าง error เมื่อ user เริ่มพิมพ์
-    if (error) setError('');
+    if (error) setError("");
   };
 
   const handleRegisterClick = () => {
-    toast.info('กำลังไปหน้าสมัครสมาชิก', {
-      description: 'จะนำไปยังหน้าลงทะเบียนในอีกสักครู่',
+    toast.info("กำลังไปหน้าสมัครสมาชิก", {
+      description: "จะนำไปยังหน้าลงทะเบียนในอีกสักครู่",
       duration: 2000,
     });
-    router.push('/register');
+    router.push("/register");
   };
 
   // Loading spinner ขณะตรวจสอบ auth status
@@ -196,8 +202,12 @@ export default function LoginPage() {
               <Hospital className="w-7 h-7 text-white" />
             </div>
             <div className="text-left">
-              <h1 className="text-2xl font-bold text-gray-900">Hospital Pharmacy</h1>
-              <p className="text-sm text-gray-600">Stock Management System V3.0</p>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Hospital Pharmacy
+              </h1>
+              <p className="text-sm text-gray-600">
+                Stock Management System V3.0
+              </p>
             </div>
           </div>
         </div>
@@ -210,10 +220,9 @@ export default function LoginPage() {
               กรอก Username และรหัสผ่านเพื่อเข้าสู่ระบบ
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-
               <div className="space-y-2">
                 <Label htmlFor="username">Username</Label>
                 <Input
@@ -236,7 +245,7 @@ export default function LoginPage() {
                   <Input
                     id="password"
                     name="password"
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     value={formData.password}
                     onChange={handleInputChange}
                     placeholder="กรอกรหัสผ่าน"
@@ -269,20 +278,10 @@ export default function LoginPage() {
                 </Alert>
               )}
 
-              {/* Success State Alert */}
-              {loginSuccess && (
-                <Alert className="border-green-200 bg-green-50">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  <AlertDescription className="text-green-800">
-                    เข้าสู่ระบบสำเร็จแล้ว! กำลังเตรียมข้อมูลของคุณ...
-                  </AlertDescription>
-                </Alert>
-              )}
-
               {/* Login Button */}
               {!loginSuccess && (
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full h-11 text-base bg-blue-500 hover:bg-blue-600"
                   disabled={isLoading}
                 >
@@ -292,7 +291,7 @@ export default function LoginPage() {
                       กำลังเข้าสู่ระบบ...
                     </>
                   ) : (
-                    'เข้าสู่ระบบ'
+                    "เข้าสู่ระบบ"
                   )}
                 </Button>
               )}
@@ -300,17 +299,21 @@ export default function LoginPage() {
               {/* Manual Dashboard Navigation - แสดงหลัง login success */}
               {loginSuccess && (
                 <div className="space-y-3">
-                  <Link href="/dashboard">
-                    <Button className="w-full h-11 text-base bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
+                  <Link href="/dashboard" className="block w-full">
+                    <Button
+                      variant="secondary"
+                      className="w-full h-11 text-base"
+                    >
                       <Home className="w-4 h-4 mr-2" />
-                      เข้าสู่ dashboard
+                      เข้าสู่ Dashboard
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </Link>
-                  
+
                   {/* คำแนะนำ */}
                   <p className="text-xs text-gray-600 text-center leading-relaxed">
-                    หากระบบไม่นำไปยังหน้าแรกโดยอัตโนมัติ ให้กดปุ่ม &quot;เข้าสู่ dashboard&quot;
+                    หากระบบไม่นำไปยังหน้าแรกโดยอัตโนมัติ ให้กดปุ่ม &quot;เข้าสู่
+                    dashboard&quot;
                   </p>
                 </div>
               )}
@@ -320,7 +323,7 @@ export default function LoginPage() {
             {!loginSuccess && (
               <div className="mt-6 text-center">
                 <p className="text-sm text-gray-600">
-                  ยังไม่มีบัญชี?{' '}
+                  ยังไม่มีบัญชี?{" "}
                   <Button
                     variant="link"
                     className="p-0 h-auto text-blue-600 hover:text-blue-800"

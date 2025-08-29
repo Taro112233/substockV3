@@ -24,8 +24,6 @@ import {
   Download,
   History,
   CheckCircle2,
-  TrendingUp,
-  TrendingDown,
 } from 'lucide-react'
 import { Transaction } from '@/types/dashboard'
 import { ExportButton, TransactionExportFormat } from '@/components/ui/ExcelExportButton'
@@ -459,7 +457,7 @@ export function FooterInfo({
           จากทั้งหมด <strong className="text-gray-700">{totalTransactionsLength}</strong> รายการ
         </span>
         <span className="text-purple-600 font-medium">
-          มูลค่ารวม ฿{totalValue.toLocaleString()}
+          มูลค่าการเคลื่อนไหวรวม ฿{totalValue.toLocaleString()}
         </span>
         {showExportMode && (
           <div className="flex flex-col sm:flex-row gap-1">
@@ -476,17 +474,6 @@ export function FooterInfo({
             </span>
           </div>
         )}
-      </div>
-      
-      <div className="flex items-center gap-4 text-xs">
-        <div className="flex items-center gap-1">
-          <TrendingUp className="w-3 h-3 text-green-500" />
-          <span>รับเข้า ({exportStats.incomingCount})</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <TrendingDown className="w-3 h-3 text-red-500" />
-          <span>จ่ายออก ({exportStats.outgoingCount})</span>
-        </div>
       </div>
     </div>
   )

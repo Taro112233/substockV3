@@ -18,7 +18,7 @@ interface SortConfig {
 
 type DrugCategory = 
   | 'REFER' | 'HAD' | 'NARCOTIC' | 'REFRIGERATED' | 'PSYCHIATRIC' 
-  | 'FLUID' | 'GENERAL' | 'TABLET' | 'SYRUP' | 'INJECTION' | 'EXTEMP' | 'ALERT'
+  | 'FLUID' | 'GENERAL' | 'TABLET' | 'SYRUP' | 'INJECTION' | 'EXTEMP' | 'ALERT' | 'CANCELLED'
 
 type DosageForm = 
   | 'APP' | 'BAG' | 'CAP' | 'CR' | 'DOP' | 'ENE' | 'GEL' | 'HAN' | 'IMP' 

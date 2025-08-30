@@ -72,13 +72,34 @@ const DRUG_CATEGORIES = [
   { value: "FLUID", label: "สารน้ำ" },
   { value: "REFER", label: "ยาส่งต่อ" },
   { value: "ALERT", label: "ยาเฝ้าระวัง" },
+  { value: "CANCELLED", label: "ยกเลิกการใช้" },
 ];
 
 // Dosage forms
 const DOSAGE_FORMS = [
-  "TAB", "CAP", "SYR", "SUS", "INJ", "SOL", "OIN", "GEL", "LOT", 
-  "SPR", "SUP", "ENE", "POW", "PWD", "CR", "BAG", "APP", "LVP", 
-  "MDI", "NAS", "SAC", "LIQ", "MIX",
+  "TAB",
+  "CAP",
+  "SYR",
+  "SUS",
+  "INJ",
+  "SOL",
+  "OIN",
+  "GEL",
+  "LOT",
+  "SPR",
+  "SUP",
+  "ENE",
+  "POW",
+  "PWD",
+  "CR",
+  "BAG",
+  "APP",
+  "LVP",
+  "MDI",
+  "NAS",
+  "SAC",
+  "LIQ",
+  "MIX",
 ];
 
 // Initial form data
@@ -106,7 +127,7 @@ export function AddDrugModal({
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<NewDrugData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
+
   // Debug state for development
   const [debugMode, setDebugMode] = useState(false);
 
@@ -138,7 +159,8 @@ export function AddDrugModal({
   };
 
   const [wasFilledFromDuplicate, setWasFilledFromDuplicate] = useState(false);
-  const [userDataBeforeDuplicate, setUserDataBeforeDuplicate] = useState<NewDrugData | null>(null);
+  const [userDataBeforeDuplicate, setUserDataBeforeDuplicate] =
+    useState<NewDrugData | null>(null);
 
   // Restore user data
   const restoreUserData = useCallback(() => {
@@ -154,41 +176,52 @@ export function AddDrugModal({
   }, [userDataBeforeDuplicate, formData.hospitalDrugCode]);
 
   // Fill form with existing drug data
-  const fillFromExistingDrug = useCallback((
-    drug: Partial<NewDrugData> & { hospitalDrugCode: string; name: string },
-    generateNewCode = true
-  ) => {
-    const filledData: NewDrugData = {
-      hospitalDrugCode: generateNewCode
-        ? generateNewDrugCode(drug.hospitalDrugCode)
-        : drug.hospitalDrugCode,
-      name: drug.name,
-      genericName: drug.genericName ?? null,
-      dosageForm: drug.dosageForm ?? "TAB",
-      strength: drug.strength ?? null,
-      unit: drug.unit ?? "",
-      packageSize: drug.packageSize ?? null,
-      pricePerBox: drug.pricePerBox || 0,
-      category: drug.category ?? "GENERAL",
-      notes: drug.notes ?? null,
-      initialQuantity: 0,
-      minimumStock: 10,
-    };
+  const fillFromExistingDrug = useCallback(
+    (
+      drug: Partial<NewDrugData> & { hospitalDrugCode: string; name: string },
+      generateNewCode = true
+    ) => {
+      const filledData: NewDrugData = {
+        hospitalDrugCode: generateNewCode
+          ? generateNewDrugCode(drug.hospitalDrugCode)
+          : drug.hospitalDrugCode,
+        name: drug.name,
+        genericName: drug.genericName ?? null,
+        dosageForm: drug.dosageForm ?? "TAB",
+        strength: drug.strength ?? null,
+        unit: drug.unit ?? "",
+        packageSize: drug.packageSize ?? null,
+        pricePerBox: drug.pricePerBox || 0,
+        category: drug.category ?? "GENERAL",
+        notes: drug.notes ?? null,
+        initialQuantity: 0,
+        minimumStock: 10,
+      };
 
-    setFormData(filledData);
-    if (generateNewCode) updateCode(filledData.hospitalDrugCode);
-    setErrors({});
-  }, [updateCode]);
+      setFormData(filledData);
+      if (generateNewCode) updateCode(filledData.hospitalDrugCode);
+      setErrors({});
+    },
+    [updateCode]
+  );
 
   // Auto-fill when duplicate is detected
   useEffect(() => {
-    if (isDuplicate && existingDrug && formData.hospitalDrugCode === drugCode.trim()) {
+    if (
+      isDuplicate &&
+      existingDrug &&
+      formData.hospitalDrugCode === drugCode.trim()
+    ) {
       if (!wasFilledFromDuplicate) {
         setUserDataBeforeDuplicate({ ...formData });
         fillFromExistingDrug(existingDrug, false);
         setWasFilledFromDuplicate(true);
       }
-    } else if (!isDuplicate && wasFilledFromDuplicate && userDataBeforeDuplicate) {
+    } else if (
+      !isDuplicate &&
+      wasFilledFromDuplicate &&
+      userDataBeforeDuplicate
+    ) {
       restoreUserData();
       setWasFilledFromDuplicate(false);
     }
@@ -304,7 +337,9 @@ export function AddDrugModal({
     if (!validateForm()) return;
 
     const progressToast = toast.loading("กำลังเพิ่มยา...", {
-      description: `เพิ่ม "${formData.name}" (${formData.hospitalDrugCode}) ไปยัง ${department === "PHARMACY" ? "คลังยา" : "OPD"}`,
+      description: `เพิ่ม "${formData.name}" (${
+        formData.hospitalDrugCode
+      }) ไปยัง ${department === "PHARMACY" ? "คลังยา" : "OPD"}`,
       icon: <Loader2 className="w-4 h-4 animate-spin" />,
     });
 
@@ -312,7 +347,7 @@ export function AddDrugModal({
 
     try {
       // Debug: Log the request data (for development only)
-      if (debugMode && process.env.NODE_ENV === 'development') {
+      if (debugMode && process.env.NODE_ENV === "development") {
         console.log("🔍 Sending drug data:", {
           ...formData,
           department,
@@ -331,20 +366,23 @@ export function AddDrugModal({
       });
 
       // Debug: Log response details (for development only)
-      if (debugMode && process.env.NODE_ENV === 'development') {
+      if (debugMode && process.env.NODE_ENV === "development") {
         console.log("🔍 Response status:", response.status);
-        console.log("🔍 Response headers:", Object.fromEntries(response.headers.entries()));
+        console.log(
+          "🔍 Response headers:",
+          Object.fromEntries(response.headers.entries())
+        );
       }
 
       let responseData;
       try {
         responseData = await response.json();
-        if (debugMode && process.env.NODE_ENV === 'development') {
+        if (debugMode && process.env.NODE_ENV === "development") {
           console.log("🔍 Response data:", responseData);
         }
       } catch (parseError) {
         console.error("❌ Failed to parse response JSON:", parseError);
-        
+
         toast.dismiss(progressToast);
         toast.error("ข้อผิดพลาดในการตอบสนอง", {
           description: "เซิร์ฟเวอร์ตอบกลับข้อมูลที่ไม่ถูกต้อง",
@@ -369,7 +407,7 @@ export function AddDrugModal({
               icon: <AlertCircle className="w-4 h-4" />,
               duration: 5000,
             });
-            setErrors({ hospitalDrugCode: 'รหัสยานี้มีอยู่ในระบบแล้ว' });
+            setErrors({ hospitalDrugCode: "รหัสยานี้มีอยู่ในระบบแล้ว" });
             return;
 
           case 400:
@@ -428,12 +466,11 @@ export function AddDrugModal({
 
       onDrugAdded?.(newStock);
       handleClose();
-
     } catch (error) {
       console.error("❌ Add drug error:", error);
-      
+
       toast.dismiss(progressToast);
-      
+
       // Enhanced error handling for network issues
       if (error instanceof TypeError && error.message.includes("fetch")) {
         toast.error("ไม่สามารถเชื่อมต่อได้", {
@@ -547,7 +584,6 @@ export function AddDrugModal({
         </DialogHeader>
 
         <div className="space-y-6">
-
           {/* Drug Information */}
           <Card>
             <CardHeader className="pb-3">
@@ -628,7 +664,9 @@ export function AddDrugModal({
                   <label className="text-sm font-medium">รูปแบบยา</label>
                   <Select
                     value={formData.dosageForm}
-                    onValueChange={(value) => handleInputChange("dosageForm", value)}
+                    onValueChange={(value) =>
+                      handleInputChange("dosageForm", value)
+                    }
                     disabled={loading || isDuplicate}
                   >
                     <SelectTrigger className={isDuplicate ? "bg-gray-100" : ""}>
@@ -646,7 +684,9 @@ export function AddDrugModal({
 
                 {/* ความแรง */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">ความแรง หรือปริมาตร</label>
+                  <label className="text-sm font-medium">
+                    ความแรง หรือปริมาตร
+                  </label>
                   <Input
                     value={formData.strength || ""}
                     onChange={handleStringInputChange("strength")}
@@ -658,7 +698,9 @@ export function AddDrugModal({
 
                 {/* หน่วย */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">หน่วย ความแรงหรือปริมาตร *</label>
+                  <label className="text-sm font-medium">
+                    หน่วย ความแรงหรือปริมาตร *
+                  </label>
                   <Input
                     name="unit"
                     value={formData.unit}

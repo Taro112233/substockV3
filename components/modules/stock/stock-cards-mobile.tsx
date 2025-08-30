@@ -43,7 +43,8 @@ type DrugCategory =
   | "SYRUP"
   | "INJECTION"
   | "EXTEMP"
-  | "ALERT";
+  | "ALERT"
+  | "CANCELLED";
 
 type DosageForm =
   | "APP"
@@ -131,6 +132,7 @@ export function StockCardsMobile({
     { value: 'HAD', label: 'ยา HAD' },
     { value: 'REFER', label: 'ยาส่งต่อ' },
     { value: 'ALERT', label: 'ยาเฝ้าระวัง' },
+    { value: 'CANCELLED', label: "ยกเลิกการใช้" }
   ];
 
   // Dosage form options with Thai labels

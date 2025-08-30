@@ -77,7 +77,8 @@ function getCategoryLabelLocal(category: string | null | undefined): string {
     'SYRUP': 'ยาน้ำ',
     'INJECTION': 'ยาฉีด',
     'EXTEMP': 'ยาผสม',
-    'ALERT': 'ยาแจ้งเตือน'
+    'ALERT': 'ยาแจ้งเตือน',
+    'CANCELLED': 'ยกเลิกการใช้'
   }
   
   return labels[category] || category

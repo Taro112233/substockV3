@@ -171,7 +171,8 @@ const getCategoryColor = (category: string) => {
     'REFER': 'bg-pink-100 text-pink-800 border-pink-200',
     'ALERT': 'bg-orange-100 text-orange-800 border-orange-200',
     'EXTEMP': 'bg-emerald-100 text-emerald-800 border-emerald-200',
-    'GENERAL': 'bg-gray-100 text-gray-800 border-gray-200'
+    'GENERAL': 'bg-gray-100 text-gray-800 border-gray-200',
+    'CANCELLED': 'bg-red-100 text-red-800 border-red-200'
   }
   return colors[category as keyof typeof colors] || colors.GENERAL
 }
@@ -189,7 +190,8 @@ const getCategoryLabel = (category: string) => {
     'GENERAL': 'ยาทั่วไป',
     'TABLET': 'ยาเม็ด',
     'SYRUP': 'ยาน้ำ',
-    'INJECTION': 'ยาฉีด'
+    'INJECTION': 'ยาฉีด',
+    'CANCELLED': 'ยกเลิกการใช้'
   }
   return labels[category as keyof typeof labels] || category
 }

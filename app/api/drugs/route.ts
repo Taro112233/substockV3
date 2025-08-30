@@ -79,6 +79,7 @@ const createDrugSchema = z.object({
       "INJECTION",
       "EXTEMP",
       "ALERT",
+      "CANCELLED"
     ],
     { message: "ประเภทยาไม่ถูกต้อง" }
   ),

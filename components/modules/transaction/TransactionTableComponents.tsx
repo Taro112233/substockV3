@@ -60,19 +60,19 @@ interface FilteredStatsData {
 export const transactionTypeOptions = [
   { value: 'all', label: 'ทุกประเภท' },
   { value: 'RECEIVE_EXTERNAL', label: 'รับจากภายนอก' },
-  { value: 'DISPENSE_EXTERNAL', label: 'จ่ายให้ผู้ป่วย' },
+  // { value: 'DISPENSE_EXTERNAL', label: 'จ่ายให้ผู้ป่วย' },
   { value: 'TRANSFER_IN', label: 'รับโอนจากแผนกอื่น' },
-  { value: 'TRANSFER_OUT', label: 'ส่งโอนให้แผนกอื่น' },
+  // { value: 'TRANSFER_OUT', label: 'ส่งโอนให้แผนกอื่น' },
   { value: 'ADJUST_INCREASE', label: 'ปรับเพิ่มสต็อก' },
   { value: 'ADJUST_DECREASE', label: 'ปรับลดสต็อก' },
-  { value: 'RESERVE', label: 'จองยา' },
-  { value: 'UNRESERVE', label: 'ยกเลิกจอง' },
+  // { value: 'RESERVE', label: 'จองยา' },
+  // { value: 'UNRESERVE', label: 'ยกเลิกจอง' },
   { value: 'MIN_STOCK_INCREASE', label: 'ปรับเพิ่มขั้นต่ำ' },
   { value: 'MIN_STOCK_DECREASE', label: 'ปรับลดขั้นต่ำ' },
-  { value: 'MIN_STOCK_RESET', label: 'กำหนดจำนวนขั้นต่ำใหม่' },
+  // { value: 'MIN_STOCK_RESET', label: 'กำหนดจำนวนขั้นต่ำใหม่' },
   { value: 'DATA_UPDATE', label: 'อัปเดตข้อมูล' },
-  { value: 'PRICE_UPDATE', label: 'อัปเดตราคา' },
-  { value: 'INFO_CORRECTION', label: 'แก้ไขข้อมูล' }
+  // { value: 'PRICE_UPDATE', label: 'อัปเดตราคา' },
+  // { value: 'INFO_CORRECTION', label: 'แก้ไขข้อมูล' }
 ]
 
 export const dateRangeOptions = [

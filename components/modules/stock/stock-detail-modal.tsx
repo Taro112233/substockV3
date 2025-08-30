@@ -101,7 +101,8 @@ const DRUG_CATEGORIES = [
   { value: 'REFRIGERATED', label: 'ยาเย็น' },
   { value: 'FLUID', label: 'สารน้ำ' },
   { value: 'REFER', label: 'ยาส่งต่อ' },
-  { value: 'ALERT', label: 'ยาเฝ้าระวัง' }
+  { value: 'ALERT', label: 'ยาเฝ้าระวัง' },
+  { value: 'CANCELLED', label: "ยกเลิกการใช้" }
 ]
 
 // Dosage forms

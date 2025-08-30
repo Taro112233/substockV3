@@ -95,4 +95,5 @@ enum DrugCategory {
   INJECTION       // ยาฉีด
   EXTEMP       // ยาภายนอก
   ALERT           // ยาที่ต้องเฝ้าระวังพิเศษ (อัตราใช้ผันผวนสูง)
+  CANCELLED       // ยกเลิกการใช้
 }

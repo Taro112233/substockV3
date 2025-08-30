@@ -62,7 +62,8 @@ export function getCategoryColor(category: string): string {
     'CONTROLLED': 'bg-purple-100 text-purple-800 border-purple-200',
     'VACCINE': 'bg-green-100 text-green-800 border-green-200',
     'REFER': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    'ALERT': 'bg-red-200 text-red-900 border-red-300'
+    'ALERT': 'bg-red-200 text-red-900 border-red-300',
+    'CANCELLED': 'bg-red-200 text-red-900 border-red-300'
   }
   return colors[category] || 'bg-gray-100 text-gray-800 border-gray-200'
 }
@@ -89,7 +90,8 @@ export function getCategoryLabel(category: string): string {
     'CONTROLLED': 'ยาควบคุม',
     'VACCINE': 'วัคซีน',
     'REFER': 'ยาส่งต่อ',
-    'ALERT': 'ยาเฝ้าระวัง'
+    'ALERT': 'ยาเฝ้าระวัง',
+    'CANCELLED': 'ยกเลิกการใช้'
   }
   return labels[category] || category
 }

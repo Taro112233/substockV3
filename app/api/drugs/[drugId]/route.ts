@@ -50,7 +50,7 @@ const updateDrugSchema = z.object({
     .max(999999.99, 'ราคาต้องไม่เกิน 999,999.99'),
   category: z.enum([
     'REFER', 'HAD', 'NARCOTIC', 'REFRIGERATED', 'PSYCHIATRIC',
-    'FLUID', 'GENERAL', 'TABLET', 'SYRUP', 'INJECTION', 'EXTEMP', 'ALERT'
+    'FLUID', 'GENERAL', 'TABLET', 'SYRUP', 'INJECTION', 'EXTEMP', 'ALERT', 'CANCELLED'
   ], {
     message: 'ประเภทยาไม่ถูกต้อง'
   }),

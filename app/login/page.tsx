@@ -296,24 +296,22 @@ export default function LoginPage() {
                 </Button>
               )}
 
-              {/* Manual Dashboard Navigation - แสดงหลัง login success */}
+              {/* Manual Page Refresh - แสดงหลัง login success */}
               {loginSuccess && (
                 <div className="space-y-3">
-                  <Link href="/dashboard" className="block w-full">
-                    <Button
-                      variant="secondary"
-                      className="w-full h-11 text-base"
-                    >
-                      <Home className="w-4 h-4 mr-2" />
-                      เข้าสู่ Dashboard
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
+                  <Button
+                    variant="secondary"
+                    className="w-full h-11 text-base"
+                    onClick={() => window.location.reload()}
+                  >
+                    <ArrowRight className="w-4 h-4 mr-2" />
+                    รีเฟรชหน้าเว็บ
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
 
                   {/* คำแนะนำ */}
                   <p className="text-xs text-gray-600 text-center leading-relaxed">
-                    หากระบบไม่นำไปยังหน้าแรกโดยอัตโนมัติ ให้กดปุ่ม &quot;เข้าสู่
-                    dashboard&quot;
+                    หากระบบไม่นำไปยังหน้าแรกโดยอัตโนมัติ ให้กดปุ่ม &quot;รีเฟรชหน้าเว็บ&quot;
                   </p>
                 </div>
               )}

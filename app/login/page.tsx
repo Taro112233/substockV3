@@ -3,7 +3,6 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/app/utils/auth-client";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -25,7 +24,6 @@ import {
   XCircle,
   AlertTriangle,
   ArrowRight,
-  Home,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -296,22 +294,21 @@ export default function LoginPage() {
                 </Button>
               )}
 
-              {/* Manual Page Refresh - แสดงหลัง login success */}
+              {/* Manual Dashboard Navigation - แสดงหลัง login success */}
               {loginSuccess && (
                 <div className="space-y-3">
                   <Button
                     variant="secondary"
-                    className="w-full h-11 text-base"
-                    onClick={() => window.location.reload()}
+                    className="w-full h-11 text-base bg-green-500"
+                    onClick={() => window.location.href = 'https://substock-thoen.vercel.app/dashboard'}
                   >
-                    <ArrowRight className="w-4 h-4 mr-2" />
-                    รีเฟรชหน้าเว็บ
+                    เข้าสู่ Dashboard
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
 
                   {/* คำแนะนำ */}
                   <p className="text-xs text-gray-600 text-center leading-relaxed">
-                    หากระบบไม่นำไปยังหน้าแรกโดยอัตโนมัติ ให้กดปุ่ม &quot;รีเฟรชหน้าเว็บ&quot;
+                    หากระบบไม่นำไปยังหน้าแรกโดยอัตโนมัติ ให้กดปุ่ม &quot;เข้าสู่ Dashboard&quot;
                   </p>
                 </div>
               )}
